@@ -26,13 +26,42 @@ else()
    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-find_package(OpenCV 3.0 QUIET)
+find_package(OpenCV QUIET)
 find_package(Eigen3 REQUIRED)
+MESSAGE("Found OpenCV: ${OpenCV_FOUND}") 
+MESSAGE("Found Eigen: ${EIGEN3_FOUND}") 
 
+# TODO Not the best way to do this, move to target_include... later 
 include_directories(${PROJECT_SOURCE_DIR}
-                    ${PROJECT_SOURCE_DIR}/include
+                    ${PROJECT_SOURCE_DIR}/src
                     ${EIGEN3_INCLUDE_DIR}
 )
 
+###############
+## Libraries ##
+###############
+add_library(stereo_slam SHARED
+            src/slam.cpp
+)
+target_include_directories(stereo_slam PUBLIC
+                           ${PROJECT_SOURCE_DIR}/src
+                           ${OpenCV_INCLUDE_DIRS}
+)
+target_link_libraries(stereo_slam
+                      ${OpenCV_LIBS}
+                      ${EIGEN3_LIBS}
+)
+
+
+#################
+## Executables ##
+#################
 add_executable(main_exe main.cpp)
+target_include_directories(main_exe PUBLIC 
+                           ${OpenCV_INCLUDE_DIRS}
+)
+target_link_libraries(main_exe ${OpenCV_LIBS}
+                               ${EIGEN3_LIBS}
+                               stereo_slam
+)
 
