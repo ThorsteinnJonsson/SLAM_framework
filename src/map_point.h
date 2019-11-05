@@ -52,10 +52,6 @@ public:
   int MapPoint::PredictScale(const float currentDist, KeyFrame* pKF);
   int MapPoint::PredictScale(const float currentDist, Frame* pF);
 
-
-
-
-
 private:
 
 public:

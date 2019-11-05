@@ -21,7 +21,7 @@ MapPoint::MapPoint(const cv::Mat& Pos, KeyFrame* pRefKF, Map* pMap)
   , mnVisible(1)
   , mnFound(1)
   , mbBad(false)
-  , mpReplaced(static_cast<MapPoint*>(nullptr))
+  , mpReplaced(nullptr)
   , mfMinDistance(0)
   , mfMaxDistance(0)
   , mpMap(pMap) 
@@ -46,7 +46,7 @@ MapPoint::MapPoint(const cv::Mat& Pos, Map* pMap, Frame* pFrame, const int &idxF
   , mnCorrectedByKF(0)
   , mnCorrectedReference(0)
   , mnBAGlobalForKF(0)
-  , mpRefKF(static_cast<KeyFrame*>(nullptr))
+  , mpRefKF(nullptr)
   , mnVisible(1)
   , mnFound(1)
   , mbBad(false)
@@ -400,6 +400,3 @@ int MapPoint::PredictScale(const float currentDist, Frame* pF) {
   }
   return nScale;
 }
-
-
-
