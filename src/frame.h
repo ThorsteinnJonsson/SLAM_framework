@@ -70,9 +70,9 @@ public:
                  int& posX, 
                  int& posY);
 
-  std::vector<size_t> GetFeaturesInArea(const float& x, 
-                                        const float& y, 
-                                        const float& r, 
+  std::vector<size_t> GetFeaturesInArea(const float x, 
+                                        const float y, 
+                                        const float r, 
                                         const int minLevel=-1, 
                                         const int maxLevel=-1) const;
 
@@ -82,7 +82,7 @@ public:
   void ComputeStereoMatches();
 
   // Associate a "right" coordinate to a keypoint if there is valid depth in the depthmap.
-  void ComputeStereoFromRGBD(const cv::Mat& imDepth); // TODO do we need this for only stereo?
+  // void ComputeStereoFromRGBD(const cv::Mat& imDepth); // TODO do we need this for only stereo?
 
   // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
   cv::Mat UnprojectStereo(const int i);
@@ -119,7 +119,7 @@ public:
   float mThDepth;
 
   // Number of KeyPoints.
-  int N;
+  int mN;
 
   // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
   // In the stereo case, mvKeysUn is redundant as images must be rectified.
@@ -151,7 +151,8 @@ public:
   // when projecting MapPoints.
   static float mfGridElementWidthInv;
   static float mfGridElementHeightInv;
-  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS]; // TODO make more clear syntax
+  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS]; 
+  // TODO above line have more clear syntax. This creates a double array of std::vectors
 
   // Camera pose.
   cv::Mat mTcw;
