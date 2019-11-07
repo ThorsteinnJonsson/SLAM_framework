@@ -98,8 +98,7 @@ Frame::Frame(const cv::Mat& imLeft,
   mvbOutlier = std::vector<bool>(N,false); // vector of bools is bad
 
   // This is done only for the first Frame (or after a change in the calibration)
-  if(mbInitialComputations) 
-  {
+  if(mbInitialComputations)  {
     ComputeImageBounds(imLeft);
 
     mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
@@ -466,10 +465,80 @@ void Frame::ComputeStereoMatches() {
   }
 }
 
+
 cv::Mat Frame::UnprojectStereo(const int i) {
-  // TODO
+  const float z = mvDepth[i];
+  if(z > 0) {
+    const float u = mvKeysUn[i].pt.x;
+    const float v = mvKeysUn[i].pt.y;
+    const float x = (u - cx) * z * invfx;
+    const float y = (v - cy) * z * invfy;
+    cv::Mat x3Dc = (cv::Mat_<float>(3,1) << x, y, z);
+    return mRwc*x3Dc+mOw;
+  } else {
+    return cv::Mat();
+  }
 }
 
 
+void Frame::UndistortKeyPoints() {
 
+  if(mDistCoef.at<float>(0) == 0.0f) {
+    mvKeysUn=mvKeys;
+    return;
+  }
+
+  // Fill matrix with points
+  cv::Mat mat(mN,2,CV_32F);
+  for(int i=0; i < mN; ++i) {
+    mat.at<float>(i,0) = mvKeys[i].pt.x;
+    mat.at<float>(i,1) = mvKeys[i].pt.y;
+  }
+
+  // Undistort points
+  mat = mat.reshape(2);
+  cv::undistortPoints(mat, mat, mK, mDistCoef, cv::Mat(), mK);
+  mat = mat.reshape(1);
+
+  // Fill undistorted keypoint vector
+  mvKeysUn.resize(mN);
+  for(int i=0; i < N; ++i) {
+    cv::KeyPoint kp = mvKeys[i];
+    kp.pt.x = mat.at<float>(i,0);
+    kp.pt.y = mat.at<float>(i,1);
+    mvKeysUn[i]=kp;
+  }
+}
+
+
+void Frame::ComputeImageBounds(const cv::Mat& imLeft) {
+
+  if(mDistCoef.at<float>(0) != 0.0) {
+    cv::Mat mat(4,2,CV_32F);
+    mat.at<float>(0,0) = 0.0; 
+    mat.at<float>(0,1)= 0.0;
+    mat.at<float>(1,0) = imLeft.cols; 
+    mat.at<float>(1,1) = 0.0;
+    mat.at<float>(2,0) = 0.0; 
+    mat.at<float>(2,1) = imLeft.rows;
+    mat.at<float>(3,0) = imLeft.cols; 
+    mat.at<float>(3,1) = imLeft.rows;
+
+    // Undistort corners
+    mat = mat.reshape(2);
+    cv::undistortPoints(mat, mat, mK, mDistCoef, cv::Mat(), mK);
+    mat = mat.reshape(1);
+
+    mnMinX = std::min(mat.at<float>(0,0), mat.at<float>(2,0));
+    mnMaxX = std::max(mat.at<float>(1,0), mat.at<float>(3,0));
+    mnMinY = std::min(mat.at<float>(0,1), mat.at<float>(1,1));
+    mnMaxY = std::max(mat.at<float>(2,1), mat.at<float>(3,1));
+  
+  } else {
+    mnMinX = 0.0f;
+    mnMaxX = imLeft.cols;
+    mnMinY = 0.0f;
+    mnMaxY = imLeft.rows;
+  }
+}
 
