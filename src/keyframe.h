@@ -21,10 +21,10 @@ class KeyFrameDatabase;
 
 class KeyFrame{
 public:
-  KeyFrame(Frame &F, Map* pMap, KeyFrameDatabase* pKFDB);
+  KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB);
   ~KeyFrame() {}
 
-  void SetPose(const cv::Mat &Tcw);
+  void SetPose(const cv::Mat& Tcw);
   cv::Mat GetPose();
   cv::Mat GetPoseInverse();
   cv::Mat GetCameraCenter();
@@ -36,10 +36,10 @@ public:
   void ComputeBoW();
 
   // Covisibility graph functions
-  void AddConnection(KeyFrame* pKF, const int &weight);
+  void AddConnection(KeyFrame* pKF, const int weight);
   void EraseConnection(KeyFrame* pKF);
+  void UpdateBestCovisibles(); // TODO can't this be private??
   void UpdateConnections();
-  void UpdateBestCovisibles();
   std::set<KeyFrame*> GetConnectedKeyFrames();
   std::vector<KeyFrame*> GetVectorCovisibleKeyFrames();
   std::vector<KeyFrame*> GetBestCovisibilityKeyFrames(const int N);
@@ -86,7 +86,7 @@ public:
   // Compute Scene Depth (q=2 median). Used in monocular.
   // float ComputeSceneMedianDepth(const int q); // TODO probably not necessary  
 
-  static bool weightComp(int a, int b) { return a > b; }
+  static bool weightComp(int a, int b) { return a > b; } // TODO just use lambda
 
   static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->mnId < pKF2->mnId; }
 
