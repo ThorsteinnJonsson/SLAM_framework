@@ -120,32 +120,32 @@ void MapPoint::AddObservation(KeyFrame* pKF, size_t idx) {
 }
 
 void MapPoint::EraseObservation(KeyFrame* pKF) {
-    bool bBad=false;
-    { 
-      std::unique_lock<std::mutex> lock(mMutexFeatures);
-      if(mObservations.count(pKF)) {
-        int idx = mObservations[pKF];
-        if(pKF->mvuRight[idx] >= 0) {
-          nObs-=2;
-        } else {
-          nObs--;            
-        }
-        mObservations.erase(pKF);
+  bool bBad = false;
+  { 
+    std::unique_lock<std::mutex> lock(mMutexFeatures);
+    if(mObservations.count(pKF)) {
+      int idx = mObservations[pKF];
+      if(pKF->mvuRight[idx] >= 0) {
+        nObs-=2;
+      } else {
+        nObs--;            
+      }
+      mObservations.erase(pKF);
 
-        if(mpRefKF==pKF) {
-          mpRefKF = mObservations.begin()->first;
-        }
+      if(mpRefKF==pKF) {
+        mpRefKF = mObservations.begin()->first;
+      }
 
-        // If only 2 observations or less, discard point
-        if(nObs<=2) {
-          bBad = true;
-        }
+      // If only 2 observations or less, discard point
+      if(nObs<=2) {
+        bBad = true;
       }
     }
+  }
 
-    if(bBad) {
-      SetBadFlag();
-    }
+  if(bBad) {
+    SetBadFlag();
+  }
 }
 
 int MapPoint::GetIndexInKeyFrame(KeyFrame* pKF) {

@@ -4,9 +4,15 @@
 class Map{
 public:
   Map();
-  ~Map();
+  ~Map() {}
 
-private:
+protected:
+  //  TODO
+  
+  long unsigned int mnMaxKFid;
+  
+  // Index related to a big change in the map (loop closure, global BA)
+  int mnBigChangeIdx;
 
 };
 
