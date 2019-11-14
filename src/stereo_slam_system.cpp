@@ -1,6 +1,6 @@
-#include "slam.h"
+#include "stereo_slam_system.h"
 
-StereoSlam::StereoSlam() {
+StereoSlamSystem::StereoSlamSystem() {
 
   //Create KeyFrame Database
   // mpKeyFrameDatabase = new KeyFrameDatabase(*mpVocabulary);
@@ -12,7 +12,7 @@ StereoSlam::StereoSlam() {
   // //(it will live in the main thread of execution, the one that called this constructor)
   // mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
   //                           mpMap, mpKeyFrameDatabase, strSettingsFile, mSensor);
-  tracker = new Tracker();
+  tracker = new Tracker(this, mpVocabulary, mpMap, mpKeyFrameDatabase, strSettingsFile, SENSOR_TYPE::STEREO); //TODO fix
 
   // //Initialize the Local Mapping thread and launch
   // mpLocalMapper = new LocalMapping(mpMap, mSensor==MONOCULAR);
@@ -25,11 +25,11 @@ StereoSlam::StereoSlam() {
 
 }
 
-StereoSlam::~StereoSlam() {
+StereoSlamSystem::~StereoSlamSystem() {
 
 }
 
-void StereoSlam::TrackStereo(const cv::Mat& l_image, const cv::Mat& r_image, const double& timestamp) {
+void StereoSlamSystem::TrackStereo(const cv::Mat& l_image, const cv::Mat& r_image, const double& timestamp) {
 
   // TODO lots of stuff
 

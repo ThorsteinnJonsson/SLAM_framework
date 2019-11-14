@@ -41,7 +41,7 @@ include_directories(${PROJECT_SOURCE_DIR}
 ## Libraries ##
 ###############
 add_library(stereo_slam SHARED
-            src/slam.cpp
+            src/stereo_slam_system.cpp
             src/tracker.cpp
 )
 target_include_directories(stereo_slam PUBLIC

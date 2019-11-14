@@ -56,5 +56,10 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "string": "cpp"
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#273112",
+    "titleBar.activeBackground": "#374419",
+    "titleBar.activeForeground": "#F9FBF4"
   }
 }

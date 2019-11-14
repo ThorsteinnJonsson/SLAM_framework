@@ -10,10 +10,15 @@
 
 #include "tracker.h"
 
-class StereoSlam {
+enum SENSOR_TYPE {
+  STEREO = 0,
+  RGBD = 1
+};
+
+class StereoSlamSystem {
 public:
-  StereoSlam();
-  ~StereoSlam();
+  StereoSlamSystem();
+  ~StereoSlamSystem();
 
   void TrackStereo(const cv::Mat& l_image, const cv::Mat& r_image, const double& timestamp);
 
