@@ -1,7 +1,9 @@
 #include "keyframe.h"
 #include "converter.h"
 
-KeyFrame::KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB) 
+KeyFrame::KeyFrame(Frame& F, 
+                   Map* pMap, 
+                   KeyframeDatabase* pKFDB) 
       : mnFrameId(F.mnId)
       , mTimeStamp(F.mTimeStamp)
       , mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS)

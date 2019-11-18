@@ -16,12 +16,12 @@
 class Map;
 class MapPoint;
 class Frame;
-class KeyFrameDatabase;
+class KeyframeDatabase;
 
 
 class KeyFrame{
 public:
-  KeyFrame(Frame& F, Map* pMap, KeyFrameDatabase* pKFDB);
+  KeyFrame(Frame& F, Map* pMap, KeyframeDatabase* pKFDB);
   ~KeyFrame() {}
 
   void SetPose(const cv::Mat& Tcw);
@@ -174,7 +174,7 @@ protected:
   std::vector<MapPoint*> mvpMapPoints;
 
   // BoW
-  KeyFrameDatabase* mpKeyFrameDB;
+  KeyframeDatabase* mpKeyFrameDB;
   OrbVocabulary* mpORBvocabulary;
 
   // Grid over the image to speed up feature matching

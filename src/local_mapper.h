@@ -6,6 +6,8 @@ public:
   LocalMapper();
   ~LocalMapper();
 
+  void RequestReset() {} //temp
+  void InsertKeyFrame(KeyFrame* pKF) {} //temp
 private:
 
 };

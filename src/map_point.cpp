@@ -244,66 +244,66 @@ float MapPoint::GetFoundRatio() {
 }
 
 void MapPoint::ComputeDistinctiveDescriptors() {
-    // Retrieve all observed descriptors
-    std::vector<cv::Mat> vDescriptors;
-    
-    std::map<KeyFrame*, size_t> observations;
-    {
-      std::unique_lock<std::mutex> lock1(mMutexFeatures);
-      if (mbBad) {
-        return;
-      }
-      observations = mObservations;
-    }
-    
-    if (observations.empty()) {
+  // Retrieve all observed descriptors
+  std::vector<cv::Mat> vDescriptors;
+  
+  std::map<KeyFrame*, size_t> observations;
+  {
+    std::unique_lock<std::mutex> lock1(mMutexFeatures);
+    if (mbBad) {
       return;
     }
+    observations = mObservations;
+  }
+  
+  if (observations.empty()) {
+    return;
+  }
 
-    vDescriptors.reserve(observations.size());
-    for (std::map<KeyFrame*, size_t>::iterator mit = observations.begin(); 
-         mit != observations.end(); 
-         mit++) 
-    {
-      KeyFrame* pKF = mit->first;
-      if (!pKF->isBad()) {
-        vDescriptors.push_back(pKF->mDescriptors.row(mit->second));
-      }      
-    }
-    if (vDescriptors.empty()) {
-      return;
-    }
+  vDescriptors.reserve(observations.size());
+  for (std::map<KeyFrame*, size_t>::iterator mit = observations.begin(); 
+        mit != observations.end(); 
+        mit++) 
+  {
+    KeyFrame* pKF = mit->first;
+    if (!pKF->isBad()) {
+      vDescriptors.push_back(pKF->mDescriptors.row(mit->second));
+    }      
+  }
+  if (vDescriptors.empty()) {
+    return;
+  }
 
-    // Compute distances between them
-    const size_t N = vDescriptors.size();
-    float Distances[N][N]; // TODO some better way than this using vectors or something
-    for (size_t i = 0; i < N; i++) {
-      Distances[i][i] = 0;
-      for (size_t j = i + 1; j < N; j++) {
-          int distij = OrbMatcher::DescriptorDistance(vDescriptors[i], vDescriptors[j]);
-          Distances[i][j] = distij;
-          Distances[j][i] = distij;
-      }
+  // Compute distances between them
+  const size_t N = vDescriptors.size();
+  float Distances[N][N]; // TODO some better way than this using vectors or something
+  for (size_t i = 0; i < N; i++) {
+    Distances[i][i] = 0;
+    for (size_t j = i + 1; j < N; j++) {
+        int distij = OrbMatcher::DescriptorDistance(vDescriptors[i], vDescriptors[j]);
+        Distances[i][j] = distij;
+        Distances[j][i] = distij;
     }
+  }
 
-    // Take the descriptor with least median distance to the rest
-    int BestMedian = INT_MAX;
-    int BestIdx = 0;
-    for (size_t i = 0; i < N; i++) {
-      std::vector<int> vDists(Distances[i], Distances[i] + N);
-      std::sort(vDists.begin(), vDists.end());
-      int median = vDists[0.5 * (N - 1)];
+  // Take the descriptor with least median distance to the rest
+  int BestMedian = INT_MAX;
+  int BestIdx = 0;
+  for (size_t i = 0; i < N; i++) {
+    std::vector<int> vDists(Distances[i], Distances[i] + N);
+    std::sort(vDists.begin(), vDists.end());
+    int median = vDists[0.5 * (N - 1)];
 
-      if (median < BestMedian) {
-        BestMedian = median;
-        BestIdx = i;
-      }
+    if (median < BestMedian) {
+      BestMedian = median;
+      BestIdx = i;
     }
+  }
 
-    {
-      std::unique_lock<std::mutex> lock(mMutexFeatures);
-      mDescriptor = vDescriptors[BestIdx].clone();
-    }
+  {
+    std::unique_lock<std::mutex> lock(mMutexFeatures);
+    mDescriptor = vDescriptors[BestIdx].clone();
+  }
 }
 
 cv::Mat MapPoint::GetDescriptor() {

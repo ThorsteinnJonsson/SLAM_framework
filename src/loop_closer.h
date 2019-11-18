@@ -6,6 +6,8 @@ public:
   LoopCloser();
   ~LoopCloser();
 
+  void RequestReset() {}
+  
 private:
 
 };

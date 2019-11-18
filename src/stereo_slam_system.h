@@ -22,6 +22,8 @@ public:
 
   void TrackStereo(const cv::Mat& l_image, const cv::Mat& r_image, const double& timestamp);
 
+  void Reset() {} // TODO
+
 
 private:
   // KeyFrame database for place recognition (relocalization and loop detection).

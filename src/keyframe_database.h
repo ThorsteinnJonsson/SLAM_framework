@@ -3,8 +3,10 @@
 
 class KeyframeDatabase {
 public:
-  KeyframeDatabase();
-  ~KeyframeDatabase();
+  KeyframeDatabase() {}
+  ~KeyframeDatabase() {}
+
+  void clear() {}
 
 private:
 

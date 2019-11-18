@@ -12,8 +12,8 @@
 #include"loop_closer.h"
 #include"frame.h"
 #include "orb_vocabulary.h"
-#include"keyframe_database.h"
-#include"orb_extractor.h"
+#include "keyframe_database.h"
+#include "orb_extractor.h"
 // #include "Initializer.h"
 // #include "MapDrawer.h"
 #include "stereo_slam_system.h"
@@ -32,7 +32,7 @@ public:
   Tracker(StereoSlamSystem* pSys, 
           OrbVocabulary* pVoc, 
           Map* pMap,
-          KeyFrameDatabase* pKFDB, 
+          KeyframeDatabase* pKFDB, 
           const std::string& strSettingPath, 
           const int sensor);
   ~Tracker() {}
@@ -92,11 +92,11 @@ public:
   bool mbOnlyTracking;
 
 protected:
-  // Main tracking function. It is independent of the input sensor.
-  void Track();
-
   // Map initialization for stereo and RGB-D
   void StereoInitialization();
+
+  // Main tracking function. It is independent of the input sensor.
+  void Track();
 
   void CheckReplacedInLastFrame();
   bool TrackReferenceKeyFrame();
@@ -132,7 +132,7 @@ protected:
   ORBextractor* mpIniORBextractor;
 
   OrbVocabulary* mpORBVocabulary;
-  KeyFrameDatabase* mpKeyFrameDB;
+  KeyframeDatabase* mpKeyFrameDB;
 
   //Local Map
   KeyFrame* mpReferenceKF;
@@ -175,7 +175,7 @@ protected:
   //Color order (true RGB, false BGR, ignored if grayscale)
   bool mbRGB;
 
-  std::list<MapPoint*> mlpTemporalPoints;
+  std::list<MapPoint*> mlpTemporalPoints; // TODO do we ever use this
 };
 
 
