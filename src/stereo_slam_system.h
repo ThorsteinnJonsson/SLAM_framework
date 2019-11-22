@@ -12,7 +12,8 @@
 
 enum SENSOR_TYPE {
   STEREO = 0,
-  RGBD = 1
+  RGBD = 1,
+  MONOCULAR = 2 // TODO not implemented
 };
 
 class StereoSlamSystem {

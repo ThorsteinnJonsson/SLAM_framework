@@ -2,6 +2,21 @@
 
 #include <unistd.h> // usleep
 
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
+
+#include "orb_matcher.h"
+#include "converter.h"
+#include "map.h"
+
+#include "optimizer.h"
+#include "pnp_solver.h"
+
+#include <iostream>
+
+#include <mutex>
+
+
 Tracker::Tracker(StereoSlamSystem* pSys, 
                  OrbVocabulary* pVoc, 
                  Map* pMap,
@@ -439,17 +454,192 @@ void Tracker::Track() {
 }
 
 void Tracker::CheckReplacedInLastFrame() {
-
+  for (int i=0; i < mLastFrame.mN; ++i) {
+    MapPoint* pMP = mLastFrame.mvpMapPoints[i];
+    if (pMP) {
+      MapPoint* pRep = pMP->GetReplaced();
+      if (pRep) {
+        mLastFrame.mvpMapPoints[i] = pRep;
+      }
+    }
+  }
 }
 
 bool Tracker::TrackReferenceKeyFrame() {
+  // Compute Bag of Words vector
+  mCurrentFrame.ComputeBoW();
 
+  // We perform first an ORB matching with the reference keyframe
+  // If enough matches are found we setup a PnP solver
+  OrbMatcher matcher(0.7, true);
+  std::vector<MapPoint*> vpMapPointMatches;
+
+  int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
+
+  if (nmatches < 15) {
+    return false;
+  }
+
+  mCurrentFrame.mvpMapPoints = vpMapPointMatches;
+  mCurrentFrame.SetPose(mLastFrame.mTcw);
+
+  Optimizer::PoseOptimization(&mCurrentFrame);
+
+  // Discard outliers
+  int nmatchesMap = 0;
+  for (int i = 0; i < mCurrentFrame.mN; ++i) {
+    if (mCurrentFrame.mvpMapPoints[i]) {
+      if (mCurrentFrame.mvbOutlier[i]) {
+        MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+
+        // mCurrentFrame.mvpMapPoints[i] = static_cast<MapPoint*>(NULL);
+        mCurrentFrame.mvpMapPoints[i] = nullptr;
+        mCurrentFrame.mvbOutlier[i] = false;
+        pMP->mbTrackInView = false;
+        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+        --nmatches;
+      } else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0) {
+        nmatchesMap++;
+      }
+    }
+  }
+
+  return (nmatchesMap >= 10); // TODO change to parameter
 }
 
 void Tracker::UpdateLastFrame() {
+  // Update pose according to reference keyframe
+  KeyFrame* pRef = mLastFrame.mpReferenceKF;
+  cv::Mat Tlr = mlRelativeFramePoses.back();
 
+  mLastFrame.SetPose(Tlr * pRef->GetPose());
+
+  if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || !mbOnlyTracking) {
+    return;
+  }
+
+  // Create "visual odometry" MapPoints
+  // We sort points according to their measured depth by the stereo/RGB-D sensor
+  std::vector<std::pair<float,int>> vDepthIdx;
+  vDepthIdx.reserve(mLastFrame.mN);
+  for (int i = 0; i < mLastFrame.mN; ++i) {
+    float z = mLastFrame.mvDepth[i];
+    if(z > 0) {
+      vDepthIdx.push_back(std::make_pair(z,i));
+    }
+  }
+
+  if(vDepthIdx.empty()) {
+    return;
+  }
+
+  std::sort(vDepthIdx.begin(), vDepthIdx.end());
+
+  // We insert all close points (depth < mThDepth)
+  // If less than 100 close points, we insert the 100 closest ones.
+  int nPoints = 0;
+  for (size_t j = 0; j < vDepthIdx.size(); ++j) {
+    int i = vDepthIdx[j].second;
+    bool bCreateNew = false;
+    MapPoint* pMP = mLastFrame.mvpMapPoints[i];
+    if (!pMP) {
+      bCreateNew = true;
+    } else if (pMP->Observations() < 1) {
+      bCreateNew = true;
+    }
+
+    if (bCreateNew) {
+      cv::Mat x3D = mLastFrame.UnprojectStereo(i);
+      MapPoint* pNewMP = new MapPoint(x3D,
+                                      mpMap,
+                                      &mLastFrame,
+                                      i); // TODO Probably not the best practice
+
+      mLastFrame.mvpMapPoints[i] = pNewMP;
+      mlpTemporalPoints.push_back(pNewMP);
+      ++nPoints;  
+    } else {
+      ++nPoints; // TODO Is this needed? Can be outside of if-statement
+    }
+
+    if (vDepthIdx[j].first > mThDepth && nPoints > 100) {
+      break;
+    }
+  }
 }
 
 bool Tracker::TrackWithMotionModel() {
+  OrbMatcher matcher(0.9, true);
 
+  // Update last frame pose according to its reference keyframe
+  // Create "visual odometry" points if in Localization Mode
+  UpdateLastFrame();
+
+  mCurrentFrame.SetPose(mVelocity * mLastFrame.mTcw);
+
+  std::fill(mCurrentFrame.mvpMapPoints.begin(),
+            mCurrentFrame.mvpMapPoints.end(),
+            nullptr);
+
+  // Project points seen in previous frame
+  int th;
+  if (mSensor != SENSOR_TYPE::STEREO) {
+    th=15;
+  } else {
+    th=7;
+  }
+  int nmatches = matcher.SearchByProjection(mCurrentFrame,
+                                            mLastFrame,
+                                            th,
+                                            mSensor==SENSOR_TYPE::MONOCULAR);
+
+  // If few matches, uses a wider window search
+  if(nmatches < 20) {
+    std::fill(mCurrentFrame.mvpMapPoints.begin(),
+              mCurrentFrame.mvpMapPoints.end(),
+              nullptr);
+    nmatches = matcher.SearchByProjection(mCurrentFrame,
+                                          mLastFrame,
+                                          2*th,
+                                          mSensor==SENSOR_TYPE::MONOCULAR);
+  }
+
+  if (nmatches < 20) {
+    return false;
+  }
+      
+  // Optimize frame pose with all matches
+  Optimizer::PoseOptimization(&mCurrentFrame);
+
+  // Discard outliers
+  int nmatchesMap = 0;
+  for (int i = 0; i < mCurrentFrame.mN; ++i) {
+    if (mCurrentFrame.mvpMapPoints[i]) {
+      if (mCurrentFrame.mvbOutlier[i]) {
+        MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+
+        mCurrentFrame.mvpMapPoints[i] = nullptr;
+        mCurrentFrame.mvbOutlier[i] = false;
+        pMP->mbTrackInView = false;
+        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+        --nmatches;
+      } else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0) {
+        ++nmatchesMap;
+      }
+    }
+  }    
+
+  if (mbOnlyTracking) {
+    mbVO = (nmatchesMap < 10);
+    return (nmatches > 20);
+  } else {
+    return (nmatchesMap >= 10);
+  }  
 }
+
+bool Tracker::Relocalization() {
+  // TODO
+  
+}
+
+
