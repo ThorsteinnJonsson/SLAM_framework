@@ -514,7 +514,9 @@ void Tracker::UpdateLastFrame() {
 
   mLastFrame.SetPose(Tlr * pRef->GetPose());
 
-  if(mnLastKeyFrameId==mLastFrame.mnId || mSensor==System::MONOCULAR || !mbOnlyTracking) {
+  if (mnLastKeyFrameId == mLastFrame.mnId 
+      || mSensor==SENSOR_TYPE::MONOCULAR 
+      || !mbOnlyTracking) {
     return;
   }
 
@@ -638,8 +640,318 @@ bool Tracker::TrackWithMotionModel() {
 }
 
 bool Tracker::Relocalization() {
-  // TODO
-  
+  // Compute Bag of Words Vector
+  mCurrentFrame.ComputeBoW();
+
+  // Relocalization is performed when tracking is lost
+  // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
+  std::vector<KeyFrame*> vpCandidateKFs = 
+                mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
+
+  if (vpCandidateKFs.empty()) {
+    return false;
+  }
+
+  const int nKFs = vpCandidateKFs.size();
+
+  // We perform first an ORB matching with each candidate
+  // If enough matches are found we setup a PnP solver
+  OrbMatcher matcher(0.75, true);
+
+  std::vector<PnPsolver*> vpPnPsolvers;
+  vpPnPsolvers.resize(nKFs);
+
+  std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
+  vvpMapPointMatches.resize(nKFs);
+
+  std::vector<bool> vbDiscarded; // TODO bool of vectors
+  vbDiscarded.resize(nKFs);
+
+  int nCandidates = 0;
+
+  for (int i = 0; i < nKFs; ++i) {
+    KeyFrame* pKF = vpCandidateKFs[i];
+    if (pKF->isBad()) {
+      vbDiscarded[i] = true;
+    } else {
+      int nmatches = matcher.SearchByBoW(pKF, 
+                                         mCurrentFrame, 
+                                         vvpMapPointMatches[i]);
+      if(nmatches < 15) {
+        vbDiscarded[i] = true;
+        continue;
+      } else {
+        PnPsolver* pSolver = new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]); // TODO new rip
+        pSolver->SetRansacParameters(0.99,
+                                     10,
+                                     300,
+                                     4,
+                                     0.5,
+                                     5.991);
+        vpPnPsolvers[i] = pSolver;
+        ++nCandidates;
+      }
+    }
+  }
+
+  // Alternatively perform some iterations of P4P RANSAC
+  // Until we found a camera pose supported by enough inliers
+  bool bMatch = false;
+  OrbMatcher matcher2(0.9, true);
+
+  while (nCandidates > 0 && !bMatch) {
+    for (int i = 0; i < nKFs; ++i) {
+      if(vbDiscarded[i]) {
+        continue;
+      }
+
+      // Perform 5 Ransac Iterations
+      std::vector<bool> vbInliers; // TODO vector of bools
+      int nInliers;
+      bool bNoMore;
+
+      PnPsolver* pSolver = vpPnPsolvers[i];
+      constexpr int num_iter = 5;
+      cv::Mat Tcw = pSolver->iterate(num_iter,
+                                     bNoMore,
+                                     vbInliers,
+                                     nInliers);
+
+      // If Ransac reachs max iterations discard keyframe
+      if (bNoMore) {
+        vbDiscarded[i] = true;
+        --nCandidates;
+      }
+
+      // If a Camera Pose is computed, optimize
+      if(!Tcw.empty()) {
+        Tcw.copyTo(mCurrentFrame.mTcw);
+
+        std::set<MapPoint*> sFound;
+
+        for (int j = 0; j < vbInliers.size(); ++j) {
+          if (vbInliers[j]) {
+            mCurrentFrame.mvpMapPoints[j] = vvpMapPointMatches[i][j];
+            sFound.insert(vvpMapPointMatches[i][j]);
+          } else {
+            mCurrentFrame.mvpMapPoints[j] = nullptr;
+          }
+        }
+
+        int nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+
+        if(nGood < 10) {
+          continue;
+        }
+
+        for (int io = 0; io < mCurrentFrame.mN; ++io) {
+          if (mCurrentFrame.mvbOutlier[io]) {
+            mCurrentFrame.mvpMapPoints[io] = nullptr;
+          }
+        }
+
+        // If few inliers, search by projection in a coarse window and optimize again
+        if (nGood < 50) {
+          int nadditional = matcher2.SearchByProjection(mCurrentFrame,
+                                                        vpCandidateKFs[i],
+                                                        sFound,
+                                                        10,
+                                                        100);
+
+          if (nadditional + nGood >= 50) {
+            nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+
+            // If many inliers but still not enough, search by projection again in a narrower window
+            // the camera has been already optimized with many points
+            if (nGood > 30 && nGood < 50) {
+              sFound.clear();
+              for (int ip = 0; ip < mCurrentFrame.mN; ++ip) {
+                if (mCurrentFrame.mvpMapPoints[ip]) {
+                  sFound.insert(mCurrentFrame.mvpMapPoints[ip]);
+                }
+              }
+              nadditional = matcher2.SearchByProjection(mCurrentFrame,
+                                                        vpCandidateKFs[i],
+                                                        sFound,
+                                                        3,
+                                                        64);
+
+              // Final optimization
+              if (nGood + nadditional >= 50) {
+                nGood = Optimizer::PoseOptimization(&mCurrentFrame);
+
+                for (int io = 0; io < mCurrentFrame.mN; ++io) { // TODO replace with std algo
+                  if (mCurrentFrame.mvbOutlier[io]) {
+                    mCurrentFrame.mvpMapPoints[io] = nullptr;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // If the pose is supported by enough inliers stop ransacs and continue
+        if (nGood >= 50) {
+          bMatch = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!bMatch) {
+    return false;
+  } else {
+    mnLastRelocFrameId = mCurrentFrame.mnId;
+    return true;
+  }
 }
 
+void Tracker::UpdateLocalMap() {
+  // This is for visualization
+  mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
+
+  // Update
+  UpdateLocalKeyFrames();
+  UpdateLocalPoints();
+}
+
+void Tracker::UpdateLocalPoints() {
+  mvpLocalMapPoints.clear();
+  // TODO can we reserve the sice of mvpLocalMapPoints?
+
+  for (std::vector<KeyFrame*>::const_iterator itKF = mvpLocalKeyFrames.begin(); 
+                                              itKF != mvpLocalKeyFrames.end(); 
+                                              ++itKF)
+  {
+    KeyFrame* pKF = *itKF;
+    const std::vector<MapPoint*> vpMPs = pKF->GetMapPointMatches();
+
+    for(std::vector<MapPoint*>::const_iterator itMP = vpMPs.begin();
+                                               itMP != vpMPs.end();
+                                               ++itMP)
+    {
+      MapPoint* pMP = *itMP;
+      if (!pMP || (pMP->mnTrackReferenceForFrame == mCurrentFrame.mnId)) {
+        continue;
+      }
+
+      if (!pMP->isBad()) {
+        mvpLocalMapPoints.push_back(pMP);
+        pMP->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+      }
+    }
+  }
+}
+
+void Tracker::UpdateLocalKeyFrames() {
+  // Each map point vote for the keyframes in which it has been observed
+  std::map<KeyFrame*,int> keyframeCounter;
+  for (int i = 0; i < mCurrentFrame.mN; ++i) {
+    if (mCurrentFrame.mvpMapPoints[i]) {
+      MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+      if (!pMP->isBad()) {
+        const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
+        for (std::map<KeyFrame*,size_t>::const_iterator it = observations.begin(); 
+                                                        it != observations.end(); 
+                                                        ++i) 
+        {
+          keyframeCounter[it->first]++;
+        }
+      } else {
+        mCurrentFrame.mvpMapPoints[i] = nullptr;
+      }
+    }
+  }
+
+  if (keyframeCounter.empty()) {
+    return;
+  }
+
+  int max = 0;
+  KeyFrame* pKFmax= nullptr;
+
+  mvpLocalKeyFrames.clear();
+  mvpLocalKeyFrames.reserve(3 * keyframeCounter.size());
+
+  // All keyframes that observe a map point are included in the local map. Also check which keyframe shares most points
+  for (std::map<KeyFrame*,int>::const_iterator it = keyframeCounter.begin();
+                                               it != keyframeCounter.end(); 
+                                               ++it)
+  {
+      KeyFrame* pKF = it->first;
+
+      if (pKF->isBad()) {
+        continue;
+      }
+
+      if (it->second > max) {
+        max = it->second;
+        pKFmax = pKF;
+      }
+
+      mvpLocalKeyFrames.push_back(it->first);
+      pKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+  }
+
+
+  // Include also some not-already-included keyframes that are neighbors to already-included keyframes
+  for (std::vector<KeyFrame*>::const_iterator itKF = mvpLocalKeyFrames.begin();
+                                              itKF != mvpLocalKeyFrames.end(); 
+                                              ++itKF)
+  {
+    // Limit the number of keyframes
+    if(mvpLocalKeyFrames.size() > 80) {
+      break;
+    }
+
+    KeyFrame* pKF = *itKF;
+
+    const std::vector<KeyFrame*> vNeighs = pKF->GetBestCovisibilityKeyFrames(10);
+
+    for (std::vector<KeyFrame*>::const_iterator itNeighKF = vNeighs.begin(); 
+                                                itNeighKF != vNeighs.end(); 
+                                                ++itNeighKF)
+    {
+      KeyFrame* pNeighKF = *itNeighKF;
+      if (!pNeighKF->isBad() 
+          && pNeighKF->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
+        mvpLocalKeyFrames.push_back(pNeighKF);
+        pNeighKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+        break;
+      }
+    }
+
+    const std::set<KeyFrame*> spChilds = pKF->GetChilds();
+    for (std::set<KeyFrame*>::const_iterator sit = spChilds.begin(); 
+                                             sit != spChilds.end(); 
+                                             ++sit)
+    {
+      KeyFrame* pChildKF = *sit;
+      if (!pChildKF->isBad() 
+          && pChildKF->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
+        mvpLocalKeyFrames.push_back(pChildKF);
+        pChildKF->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+        break;
+      }
+    }
+
+    KeyFrame* pParent = pKF->GetParent();
+    if (pParent
+        && pParent->mnTrackReferenceForFrame != mCurrentFrame.mnId) {
+      mvpLocalKeyFrames.push_back(pParent);
+      pParent->mnTrackReferenceForFrame = mCurrentFrame.mnId;
+      break;
+    }
+  }
+
+  if (pKFmax) {
+    mpReferenceKF = pKFmax;
+    mCurrentFrame.mpReferenceKF = mpReferenceKF;
+  }
+}
+
+bool Tracker::TrackLocalMap() {
+  // TODO
+}
 

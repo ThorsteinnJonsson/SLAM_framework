@@ -8,7 +8,7 @@ public:
   Optimizer();
   ~Optimizer();
 
-  void static PoseOptimization(Frame* pFrame) {}
+  int static PoseOptimization(Frame* pFrame) {}
 
 private:
 

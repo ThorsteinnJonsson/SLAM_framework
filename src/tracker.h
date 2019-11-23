@@ -109,7 +109,7 @@ protected:
   void UpdateLocalPoints();
   void UpdateLocalKeyFrames();
 
-  bool TrackLocalMap( );
+  bool TrackLocalMap(); 
   void SearchLocalPoints();
 
   bool NeedNewKeyFrame();
