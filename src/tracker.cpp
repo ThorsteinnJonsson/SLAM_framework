@@ -356,11 +356,11 @@ void Tracker::Track() {
 
     // If we have an initial estimation of the camera pose and matching. Track the local map.
     if (!mbOnlyTracking) {
-      if(bOK) {
+      if (bOK) {
         bOK = TrackLocalMap();
       }
     } else {
-      // TODO Disabled for noow since we don't wanna use only tracking
+      // TODO Disabled for now since we don't wanna use only tracking
         // // mbVO true means that there are few matches to MapPoints in the map. We cannot retrieve
         // // a local map and therefore we do not perform TrackLocalMap(). Once the system relocalizes
         // // the camera we will use the local map again.
@@ -952,6 +952,185 @@ void Tracker::UpdateLocalKeyFrames() {
 }
 
 bool Tracker::TrackLocalMap() {
-  // TODO
+  // We have an estimation of the camera pose and some map points tracked in the frame.
+  // We retrieve the local map and try to find matches to points in the local map.
+
+  UpdateLocalMap();
+  SearchLocalPoints();
+
+  // Optimize Pose
+  Optimizer::PoseOptimization(&mCurrentFrame);
+  mnMatchesInliers = 0;
+
+  // Update MapPoints Statistics
+  for (int i = 0; i < mCurrentFrame.mN; ++i) {
+    if (mCurrentFrame.mvpMapPoints[i]) {
+      if (!mCurrentFrame.mvbOutlier[i]) {
+        mCurrentFrame.mvpMapPoints[i]->IncreaseFound();
+        if (!mbOnlyTracking) {
+          if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0) {
+            ++mnMatchesInliers;
+          }
+        } else {
+          ++mnMatchesInliers;
+        }
+      } else if (mSensor==SENSOR_TYPE::STEREO) {
+        mCurrentFrame.mvpMapPoints[i] = nullptr;
+      }
+    }
+  }
+
+  // Decide if the tracking was succesful
+  // More restrictive if there was a relocalization recently
+  if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames 
+      && mnMatchesInliers < 50) {
+    return false;
+  }
+  if (mnMatchesInliers < 30) {
+    return false;
+  }
+  return true;
+}
+
+void Tracker::SearchLocalPoints() {
+  // Do not search map points already matched
+  for (std::vector<MapPoint*>::iterator vit = mCurrentFrame.mvpMapPoints.begin(); 
+                                        vit != mCurrentFrame.mvpMapPoints.end(); 
+                                        ++vit)
+  {
+    MapPoint* pMP = *vit;
+    if (pMP) {
+      if (pMP->isBad()) {
+        // *vit = nullptr;
+        pMP = nullptr;
+      } else {
+        pMP->IncreaseVisible();
+        pMP->mnLastFrameSeen = mCurrentFrame.mnId;
+        pMP->mbTrackInView = false;
+      }
+    }
+  }
+
+  // Project points in frame and check its visibility
+  int nToMatch = 0;
+  for (std::vector<MapPoint*>::iterator vit = mvpLocalMapPoints.begin(); 
+                                        vit != mvpLocalMapPoints.end(); 
+                                        ++vit)
+  {
+    MapPoint* pMP = *vit;
+    if (pMP->mnLastFrameSeen == mCurrentFrame.mnId
+        || pMP->isBad()) {
+      continue;
+    }
+    // Project (this fills MapPoint variables for matching)
+    if (mCurrentFrame.isInFrustum(pMP, 0.5)) {
+      pMP->IncreaseVisible();
+      ++nToMatch;
+    }
+  }
+
+  if (nToMatch > 0) {
+    OrbMatcher matcher(0.8);
+    int th = 1; // TODO why int here but float in SearchByProjection()?
+    if (mSensor == SENSOR_TYPE::RGBD) {
+      th = 3;
+    }
+    // If the camera has been relocalised recently, perform a coarser search
+    if (mCurrentFrame.mnId < mnLastRelocFrameId+2) {
+      th = 5;
+    }
+    matcher.SearchByProjection(mCurrentFrame,
+                               mvpLocalMapPoints,
+                               th);
+  }
+}
+
+bool Tracker::NeedNewKeyFrame() {
+  if (mbOnlyTracking) {
+    return false;
+  }
+
+  // If Local Mapping is frozen by a loop closure do not insert keyframes
+  if (mpLocalMapper->isStopped() || mpLocalMapper->stopRequested()) {
+    return false;
+  }
+
+  const int nKFs = mpMap->KeyFramesInMap();
+
+  // Do not insert keyframes if not enough frames have passed from last relocalisation
+  if (mCurrentFrame.mnId < mnLastRelocFrameId + mMaxFrames && nKFs > mMaxFrames) {
+    return false;
+  }
+
+  // Tracked MapPoints in the reference keyframe
+  int nMinObs = 3;
+  if (nKFs <= 2) {
+    nMinObs = 2;
+  }
+  int nRefMatches = mpReferenceKF->TrackedMapPoints(nMinObs);
+
+  // Local Mapping accept keyframes?
+  bool bLocalMappingIdle = mpLocalMapper->AcceptKeyFrames();
+
+  // Check how many "close" points are being tracked and how many could be potentially created.
+  int nNonTrackedClose = 0;
+  int nTrackedClose = 0;
+  if (mSensor != SENSOR_TYPE::MONOCULAR) {
+    for (int i = 0; i < mCurrentFrame.mN; ++i) {
+      if (mCurrentFrame.mvDepth[i] > 0 && mCurrentFrame.mvDepth[i] < mThDepth) {
+        if (mCurrentFrame.mvpMapPoints[i] && !mCurrentFrame.mvbOutlier[i]) {
+          ++nTrackedClose;
+        } else {
+          ++nNonTrackedClose;
+        }
+      }
+    }
+  }
+
+  bool bNeedToInsertClose = ((nTrackedClose < 100) && (nNonTrackedClose > 70));
+
+  // Thresholds
+  float thRefRatio = 0.75f;
+  if (nKFs < 2) {
+    thRefRatio = 0.4f;
+  }
+
+  if (mSensor==SENSOR_TYPE::MONOCULAR) {
+    thRefRatio = 0.9f;
+  }
+
+  // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
+  const bool c1a = mCurrentFrame.mnId >= mnLastKeyFrameId + mMaxFrames;
+  // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
+  const bool c1b = (mCurrentFrame.mnId >= mnLastKeyFrameId + mMinFrames && bLocalMappingIdle);
+  //Condition 1c: tracking is weak
+  const bool c1c =  mSensor != SENSOR_TYPE::MONOCULAR && (mnMatchesInliers < 0.25*nRefMatches || bNeedToInsertClose);
+  // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
+  const bool c2 = ((mnMatchesInliers < nRefMatches * thRefRatio || bNeedToInsertClose) && mnMatchesInliers > 15);
+
+  if ((c1a||c1b||c1c) && c2) {
+    // If the mapping accepts keyframes, insert keyframe.
+    // Otherwise send a signal to interrupt BA
+    if (bLocalMappingIdle) {
+      return true;
+    } else {
+      mpLocalMapper->InterruptBA();
+      if (mSensor != SENSOR_TYPE::MONOCULAR) {
+        if (mpLocalMapper->KeyframesInQueue() < 3) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+  } else {
+    return false;
+  }
+}
+
+void Tracker::CreateNewKeyFrame() {
+  //TODO
 }
 

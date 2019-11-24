@@ -6,9 +6,14 @@ public:
   LocalMapper();
   ~LocalMapper();
 
-  void RequestReset() {} //temp
-  void InsertKeyFrame(KeyFrame* pKF) {} //temp
-private:
+  void RequestReset() {} //TODO implement
+  void InsertKeyFrame(KeyFrame* pKF) {} //TODO implement
+  bool isStopped() { return false; } //TODO implement
+  bool stopRequested() { return false; } //TODO implement
+  bool AcceptKeyFrames() { return false; } //TODO implement
+  void InterruptBA(); //TODO implement
+  int KeyframesInQueue() {return -1;} //TODO implement
+protected:
 
 };
 

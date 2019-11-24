@@ -17,13 +17,13 @@ public:
   ~OrbMatcher() {}
 
   // Computes the Hamming distance between two ORB descriptors
-  static int DescriptorDistance(const cv::Mat& a, const cv::Mat& b) {return -9999; } //TODO
-
+  static int DescriptorDistance(const cv::Mat& a, const cv::Mat& b);
+  
   // Search matches between Frame keypoints and projected MapPoints. Returns number of matches
   // Used to track the local map (Tracking)
   int SearchByProjection(Frame& F, 
                          const std::vector<MapPoint*>& vpMapPoints,
-                         const float th=3) {return -9999; } //TODO
+                         const float th=3);
 
   // Project MapPoints tracked in last frame into the current frame and search matches.
   // Used to track from previous frame (Tracking)
