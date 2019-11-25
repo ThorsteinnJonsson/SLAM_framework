@@ -31,7 +31,7 @@ MapPoint::MapPoint(const cv::Mat& Pos, KeyFrame* pRefKF, Map* pMap)
 
   // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
   std::unique_lock<std::mutex> lock(mpMap->mMutexPointCreation);
-  mnId=nNextId++;
+  mnId = nNextId++;
 }
 
 MapPoint::MapPoint(const cv::Mat& Pos, Map* pMap, Frame* pFrame, const int &idxF)
@@ -204,11 +204,14 @@ void MapPoint::Replace(MapPoint* pMP) {
     mpReplaced = pMP;
   }
 
-  for(std::map<KeyFrame*,size_t>::iterator mit=obs.begin(); mit!=obs.end(); mit++) {
+  for(std::map<KeyFrame*,size_t>::iterator mit=obs.begin(); 
+                                           mit!=obs.end(); 
+                                           ++mit) 
+  {
     // Replace measurement in keyframe
     KeyFrame* pKF = mit->first;
 
-    if(!pMP->IsInKeyFrame(pKF)) {
+    if (!pMP->IsInKeyFrame(pKF)) {
       pKF->ReplaceMapPointMatch(mit->second, pMP);
       pMP->AddObservation(pKF, mit->second);
     } else {

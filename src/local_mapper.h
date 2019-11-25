@@ -13,6 +13,8 @@ public:
   bool AcceptKeyFrames() { return false; } //TODO implement
   void InterruptBA(); //TODO implement
   int KeyframesInQueue() {return -1;} //TODO implement
+  bool SetNotStop(bool flag) {return false;} //TODO implement
+  
 protected:
 
 };

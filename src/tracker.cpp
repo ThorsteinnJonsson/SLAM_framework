@@ -1131,6 +1131,74 @@ bool Tracker::NeedNewKeyFrame() {
 }
 
 void Tracker::CreateNewKeyFrame() {
-  //TODO
+  
+  if (!mpLocalMapper->SetNotStop(true)) {
+    return;
+  }
+
+  KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+
+  mpReferenceKF = pKF;
+  mCurrentFrame.mpReferenceKF = pKF;
+
+  if (mSensor != SENSOR_TYPE::MONOCULAR) {
+    mCurrentFrame.UpdatePoseMatrices();
+
+    // We sort points by the measured depth by the stereo/RGBD sensor.
+    // We create all those MapPoints whose depth < mThDepth.
+    // If there are less than 100 close points we create the 100 closest.
+    std::vector<std::pair<float,int>> vDepthIdx;
+    vDepthIdx.reserve(mCurrentFrame.mN);
+    for (int i = 0; i < mCurrentFrame.mN; ++i) {
+      float z = mCurrentFrame.mvDepth[i];
+      if (z > 0) {
+        vDepthIdx.push_back(std::make_pair(z,i));
+      }
+    }
+
+    if (!vDepthIdx.empty()) {
+      std::sort(vDepthIdx.begin(), vDepthIdx.end());
+
+      int nPoints = 0;
+      for (size_t j = 0; j < vDepthIdx.size(); ++j) {
+        int i = vDepthIdx[j].second;
+
+        bool bCreateNew = false;
+
+        MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+        if (!pMP) {
+          bCreateNew = true;
+        } else if (pMP->Observations() < 1) {
+          bCreateNew = true;
+          mCurrentFrame.mvpMapPoints[i] = nullptr;
+        }
+
+        if (bCreateNew) {
+          cv::Mat x3D = mCurrentFrame.UnprojectStereo(i);
+          MapPoint* pNewMP = new MapPoint(x3D, pKF, mpMap);
+          pNewMP->AddObservation(pKF, i);
+          pKF->AddMapPoint(pNewMP, i);
+          pNewMP->ComputeDistinctiveDescriptors();
+          pNewMP->UpdateNormalAndDepth();
+          mpMap->AddMapPoint(pNewMP);
+
+          mCurrentFrame.mvpMapPoints[i] = pNewMP;
+          ++nPoints;
+        } else {
+          ++nPoints; // TODO why not outside if statement?
+        }
+
+        if (vDepthIdx[j].first > mThDepth && nPoints > 100) {
+          break;
+        }
+      }
+    }
+  }
+
+  mpLocalMapper->InsertKeyFrame(pKF);
+  mpLocalMapper->SetNotStop(false);
+
+  mnLastKeyFrameId = mCurrentFrame.mnId;
+  mpLastKeyFrame = pKF;
 }
 
