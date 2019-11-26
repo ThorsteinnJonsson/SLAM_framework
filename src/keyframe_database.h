@@ -1,9 +1,11 @@
 #ifndef SRC_KEYFRAME_DATABASE_H_
 #define SRC_KEYFRAME_DATABASE_H_
 
+#include "orb_vocabulary.h"
+
 class KeyframeDatabase {
 public:
-  KeyframeDatabase() {}
+  KeyframeDatabase(const OrbVocabulary& voc) {} // TODO
   ~KeyframeDatabase() {}
 
   void clear() {}

@@ -49,8 +49,8 @@ public:
   float GetMinDistanceInvariance();
   float GetMaxDistanceInvariance();
 
-  int MapPoint::PredictScale(const float currentDist, KeyFrame* pKF);
-  int MapPoint::PredictScale(const float currentDist, Frame* pF);
+  int PredictScale(const float currentDist, KeyFrame* pKF);
+  int PredictScale(const float currentDist, Frame* pF);
 
 private:
 

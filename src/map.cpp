@@ -39,7 +39,7 @@ void Map::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
   mvpReferenceMapPoints = vpMPs;
 }
 
-void Map::InformNewBigChange() {
+void Map::InformNewBigChange() { 
   std::unique_lock<std::mutex> lock(mMutexMap);
   ++mnBigChangeIdx;
 }

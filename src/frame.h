@@ -29,8 +29,8 @@ public:
   Frame(const cv::Mat& imLeft, 
         const cv::Mat& imRight, 
         const double& timeStamp, 
-        OrbExtractor* extractorLeft, 
-        OrbExtractor* extractorRight, 
+        ORBextractor* extractorLeft, 
+        ORBextractor* extractorRight, 
         OrbVocabulary* voc, 
         cv::Mat& K, 
         cv::Mat& distCoef, 
@@ -92,8 +92,8 @@ public:
   OrbVocabulary* mpORBvocabulary;
 
   // Feature extractor. The right is used only in the stereo case.
-  OrbExtractor* mpORBextractorLeft;
-  OrbExtractor* mpORBextractorRight;
+  ORBextractor* mpORBextractorLeft;
+  ORBextractor* mpORBextractorRight;
 
   // Frame timestamp.
   double mTimeStamp;

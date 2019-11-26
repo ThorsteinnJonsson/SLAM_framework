@@ -16,7 +16,7 @@
 #include "orb_extractor.h"
 // #include "Initializer.h"
 // #include "MapDrawer.h"
-#include "stereo_slam_system.h"
+#include "slam_system.h"
 
 #include <mutex>
 
@@ -24,12 +24,12 @@
 class Map;
 class LocalMapper;
 class LoopCloser;
-class StereoSlamSystem;
+class SlamSystem;
 
 
-class Tracker{
+class Tracker {
 public:
-  Tracker(StereoSlamSystem* pSys, 
+  Tracker(SlamSystem* pSys, 
           OrbVocabulary* pVoc, 
           Map* pMap,
           KeyframeDatabase* pKFDB, 
@@ -41,8 +41,8 @@ public:
   cv::Mat GrabImageStereo(const cv::Mat& imRectLeft,
                           const cv::Mat& imRectRight, 
                           const double timestamp);
-  // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp);
-  
+  // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double timestamp); // TODO
+  // cv::Mat GrabImageMonocular(const cv::Mat& im, const double timestamp); //TODO
 
   void SetLocalMapper(LocalMapper* local_mapper) { mpLocalMapper = local_mapper; }
   void SetLoopCloser(LoopCloser* loop_closer) { mpLoopClosing = loop_closer; }
@@ -51,6 +51,9 @@ public:
   // The focal lenght should be similar or scale prediction will fail when projecting points
   // TODO: Modify MapPoint::PredictScale to take into account focal lenght
   // void ChangeCalibration(const string &strSettingPath); // TODO doesn't seem to be used
+
+  // Use this function if you have deactivated local mapping and you only want to localize the camera.
+  void InformOnlyTracking(const bool &flag) { mbOnlyTracking = flag; }
 
   void Reset();
 
@@ -139,7 +142,7 @@ protected:
   std::vector<KeyFrame*> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
 
-  StereoSlamSystem* mpSystem;
+  SlamSystem* mpSystem;
 
   Map* mpMap;
 

@@ -31,23 +31,42 @@ find_package(Eigen3 REQUIRED)
 MESSAGE("Found OpenCV: ${OpenCV_FOUND}") 
 MESSAGE("Found Eigen: ${EIGEN3_FOUND}") 
 
+##################
+## Include Dirs ##
+##################
 # TODO Not the best way to do this, move to target_include... later 
 include_directories(${PROJECT_SOURCE_DIR}
                     ${PROJECT_SOURCE_DIR}/src
+                    ${PROJECT_SOURCE_DIR}/Thirdparty
                     ${EIGEN3_INCLUDE_DIR}
+                    
 )
 
 ###############
 ## Libraries ##
 ###############
 add_library(stereo_slam SHARED
-            src/stereo_slam_system.cpp
+            src/slam_system.cpp
             src/tracker.cpp
+            # src/local_mapper.cpp  //TODO
+            # src/loop_closer.cpp   //TODO 
+            src/orb_extractor.cpp
+            src/orb_matcher.cpp
+            # src/converter.cpp //TODO
+            src/map_point.cpp
+            src/keyframe.cpp
+            src/map.cpp
+            # src/optimizer.cpp //TODO
+            src/pnp_solver.cpp
+            src/frame.cpp
+            # src/keyframe_database.cpp // TOOD
 )
+
 target_include_directories(stereo_slam PUBLIC
                            ${PROJECT_SOURCE_DIR}/src
                            ${OpenCV_INCLUDE_DIRS}
 )
+
 target_link_libraries(stereo_slam
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}

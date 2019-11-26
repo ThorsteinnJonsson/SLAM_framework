@@ -17,11 +17,11 @@
 #include <mutex>
 
 
-Tracker::Tracker(StereoSlamSystem* pSys, 
+Tracker::Tracker(SlamSystem* pSys, 
                  OrbVocabulary* pVoc, 
                  Map* pMap,
                  KeyframeDatabase* pKFDB, 
-                 const std::string& strSettingPath, 
+                 const std::string& strSettingPath, // TODO
                  const int sensor)
       : mState(TrackingState::NO_IMAGES_YET)
       , mSensor(sensor)
@@ -259,7 +259,7 @@ void Tracker::Track() {
     }
   } else {
     // System is initialized. Track Frame.
-    bool bOK;
+    bool bOK = false;
 
     // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
     if (!mbOnlyTracking) {
@@ -280,7 +280,7 @@ void Tracker::Track() {
       } else {
         bOK = Relocalization();
       }
-    } else { // TODO maybe don't need to do this. Comment out for now
+    }  else { // TODO maybe don't need to do this. Comment out for now 
       // std::cout << "Localization-only Mode disabled for now\n";  
       //   // Localization Mode: Local Mapping is deactivated
 
@@ -729,7 +729,7 @@ bool Tracker::Relocalization() {
 
         std::set<MapPoint*> sFound;
 
-        for (int j = 0; j < vbInliers.size(); ++j) {
+        for (size_t j = 0; j < vbInliers.size(); ++j) {
           if (vbInliers[j]) {
             mCurrentFrame.mvpMapPoints[j] = vvpMapPointMatches[i][j];
             sFound.insert(vvpMapPointMatches[i][j]);

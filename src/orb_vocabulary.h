@@ -1,13 +1,9 @@
 #ifndef ORB_VOCAB_H_
 #define ORB_VOCAB_H_
 
-class OrbVocabulary{
-public:
-  OrbVocabulary();
-  ~OrbVocabulary();
+#include "Thirdparty/DBoW2/DBoW2/FORB.h"
+#include "Thirdparty/DBoW2/DBoW2/TemplatedVocabulary.h"
 
-private:
-
-};
+typedef DBoW2::TemplatedVocabulary<DBoW2::FORB::TDescriptor, DBoW2::FORB> OrbVocabulary;
 
 #endif // ORB_VOCAB_H_

@@ -231,12 +231,12 @@ MapPoint* MapPoint::GetReplaced() {
   return mpReplaced;
 }
 
-void MapPoint::IncreaseVisible(int n=1) {
+void MapPoint::IncreaseVisible(int n) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   mnVisible += n;
 }
 
-void MapPoint::IncreaseFound(int n=1) {
+void MapPoint::IncreaseFound(int n) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
   mnFound += n;
 }

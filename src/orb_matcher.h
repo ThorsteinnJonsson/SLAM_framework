@@ -30,7 +30,7 @@ public:
   int SearchByProjection(Frame& CurrentFrame, 
                          const Frame& LastFrame, 
                          const float th, 
-                         const bool bMono) {return -9999; } //TODO
+                         const bool bMono);
 
   // Project MapPoints seen in KeyFrame into the Frame and search matches.
   // Used in relocalisation (Tracking)
@@ -38,7 +38,7 @@ public:
                          KeyFrame* pKF, 
                          const std::set<MapPoint*>& sAlreadyFound, 
                          const float th, 
-                         const int ORBdist) {return -9999; } //TODO
+                         const int ORBdist);
 
   // Project MapPoints using a Similarity Transformation and search matches.
   // Used in loop detection (Loop Closing)
@@ -46,7 +46,7 @@ public:
                          cv::Mat Scw, 
                          const std::vector<MapPoint*>& vpPoints, 
                          std::vector<MapPoint*>& vpMatched, 
-                         int th) {return -9999; } //TODO
+                         int th);
 
   // Search matches between MapPoints in a KeyFrame and ORB in a Frame.
   // Brute force constrained to ORB that belong to the same vocabulary node (at a certain level)
@@ -54,6 +54,7 @@ public:
   int SearchByBoW(KeyFrame* pKF, 
                   Frame& F, 
                   std::vector<MapPoint*>& vpMapPointMatches);
+                  
   int SearchByBoW(KeyFrame* pKF1, 
                   KeyFrame* pKF2, 
                   std::vector<MapPoint*> &vpMatches12);
