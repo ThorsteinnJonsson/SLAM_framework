@@ -29,6 +29,8 @@ public:
   void SetLoopCloser(LoopCloser* pLoopCloser) {} // TODO
   void SetTracker(Tracker* pTracker) {} // TOOD
   
+  void RequestFinish() {} //TODO
+  bool isFinished() { return false; } //TODO
   
 protected:
 

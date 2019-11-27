@@ -29,6 +29,12 @@ public:
   void SetTracker(Tracker* pTracker) {}  // TODO
 
   void SetLocalMapper(LocalMapper* pLocalMapper) {} // TODO
+
+  bool isRunningGBA() { return false; } //TODO
+  bool isFinishedGBA() { return false; } //TODO
+
+  void RequestFinish() {} //TODO
+  bool isFinished() { return false; } //TODO
   
 private:
 

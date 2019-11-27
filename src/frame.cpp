@@ -50,9 +50,9 @@ Frame::Frame(const Frame& frame)
 
 Frame::Frame(const cv::Mat& imLeft, 
              const cv::Mat& imRight, 
-             const double& timeStamp, 
-             OrbExtractor* extractorLeft, 
-             OrbExtractor* extractorRight, 
+             const double timeStamp, 
+             ORBextractor* extractorLeft, 
+             ORBextractor* extractorRight, 
              OrbVocabulary* voc, 
              cv::Mat& K, 
              cv::Mat& distCoef, 
@@ -94,8 +94,8 @@ Frame::Frame(const cv::Mat& imLeft,
   UndistortKeyPoints();
   ComputeStereoMatches();
 
-  mvpMapPoints = std::vector<MapPoint*>(N,nullptr);    
-  mvbOutlier = std::vector<bool>(N,false); // vector of bools is bad
+  mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);    
+  mvbOutlier = std::vector<bool>(mN, false); // vector of bools is bad
 
   // This is done only for the first Frame (or after a change in the calibration)
   if(mbInitialComputations)  {
@@ -170,9 +170,9 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
 
   // 3D in camera coordinates
   const cv::Mat Pc = mRcw*P+mtcw;
-  const float& PcX = Pc.at<float>(0);
-  const float& PcY= Pc.at<float>(1);
-  const float& PcZ = Pc.at<float>(2);
+  const float PcX = Pc.at<float>(0);
+  const float PcY = Pc.at<float>(1);
+  const float PcZ = Pc.at<float>(2);
 
   // Check positive depth
   if( PcZ < 0.0f) {
@@ -224,7 +224,7 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
   return true;
 }
 
-bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
+bool Frame::PosInGrid(const cv::KeyPoint& kp, int posX, int posY) {
   posX = round( (kp.pt.x - mnMinX) * mfGridElementWidthInv);
   posY = round( (kp.pt.y - mnMinY) * mfGridElementHeightInv);
 
@@ -312,7 +312,7 @@ void Frame::ComputeStereoMatches() {
 
   for(int iR=0; iR < Nr; iR++) {
     const cv::KeyPoint& kp = mvKeysRight[iR];
-    const float& kpY = kp.pt.y;
+    const float kpY = kp.pt.y;
     const float r = 2.0f * mvScaleFactors[mvKeysRight[iR].octave];
     const int maxr = std::ceil(kpY + r);
     const int minr = std::floor(kpY - r);
@@ -331,11 +331,11 @@ void Frame::ComputeStereoMatches() {
   std::vector<std::pair<int,int>> vDistIdx;
   vDistIdx.reserve(mN);
 
-  for(int iL=0; iL < mN; iL++) {
+  for (int iL = 0; iL < mN; ++iL) {
     const cv::KeyPoint& kpL = mvKeys[iL];
-    const int& levelL = kpL.octave;
-    const float& vL = kpL.pt.y;
-    const float& uL = kpL.pt.x;
+    const int levelL = kpL.octave;
+    const float vL = kpL.pt.y;
+    const float uL = kpL.pt.x;
 
     const std::vector<size_t>& vCandidates = vRowIndices[vL];
 
@@ -502,11 +502,11 @@ void Frame::UndistortKeyPoints() {
 
   // Fill undistorted keypoint vector
   mvKeysUn.resize(mN);
-  for(int i=0; i < N; ++i) {
+  for (int i = 0; i < mN; ++i) {
     cv::KeyPoint kp = mvKeys[i];
     kp.pt.x = mat.at<float>(i,0);
     kp.pt.y = mat.at<float>(i,1);
-    mvKeysUn[i]=kp;
+    mvKeysUn[i] = kp;
   }
 }
 

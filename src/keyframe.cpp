@@ -223,18 +223,18 @@ void KeyFrame::UpdateConnections() {
 
   std::vector<std::pair<int,KeyFrame*>> vPairs;
   vPairs.reserve(KFcounter.size());
-  for (std::map<KeyFrame*,int>::iterator mit=KFcounter.begin(); 
-      mit != KFcounter.end(); 
-      mit++)
+  for (std::map<KeyFrame*,int>::iterator mit = KFcounter.begin(); 
+                                         mit != KFcounter.end(); 
+                                         ++mit)
   {
     KeyFrame* other_KF = mit->first;
     int other_KF_count = mit->second;
-    if(other_KF_count > nmax) {
+    if (other_KF_count > nmax) {
       nmax = other_KF_count;
-      pKFmax =other_KF
+      pKFmax = other_KF;
     }
-    if(other_KF_count >= th) {
-      vPairs.push_back(std::make_pair(other_KF_count, other_KF);
+    if (other_KF_count >= th) {
+      vPairs.push_back(std::make_pair(other_KF_count, other_KF));
       other_KF->AddConnection(this, other_KF_count);
     }
   }

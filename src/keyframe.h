@@ -11,6 +11,7 @@
 #include "keyframe_database.h"
 
 #include <mutex>
+#include <set>
 
 // Forward declarations
 class Map;

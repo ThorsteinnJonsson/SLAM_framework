@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 
-#include "slam.h"
+#include "slam_system.h"
 
 
 void LoadKittiImages(const std::string& kitti_path, 
@@ -55,7 +55,10 @@ int main(int argc, char **argv) {
 
 
   // Set up SLAM system
-  StereoSlam slam;
+  std::string vocab_filename = "vocabulary/ORBvoc.txt";
+  std::string config_file = "";
+  SENSOR_TYPE sensor = SENSOR_TYPE::STEREO;
+  SlamSystem slam_system(vocab_filename, config_file, sensor);
 
   // Main loop
   int num_frames = timestamps.size();
