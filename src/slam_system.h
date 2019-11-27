@@ -58,7 +58,7 @@ public:
   // Only for stereo and RGB-D. This method does not work for monocular.
   // Call first Shutdown()
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
-  void SaveTrajectoryKITTI(const string &filename);
+  void SaveTrajectoryKITTI(const string &filename) {} //TODO implement
 
   // TODO: Save/Load functions (not implemented in the original ORB-SLAM)
   // SaveMap(const string &filename);

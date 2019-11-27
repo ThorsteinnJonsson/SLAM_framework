@@ -140,6 +140,41 @@ void SlamSystem::DeactivateLocalizationMode() {
 }
 
 bool SlamSystem::MapChanged() {
-return false;//TODO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+  static int n = 0;
+  int curn = mpMap->GetLastBigChangeIdx();
+  if (n < curn) {
+    n = curn;
+    return true;
+  } else {
+    return false;
+  }
 }
+
+void SlamSystem::Shutdown() {
+  mpLocalMapper->RequestFinish();
+  mpLoopCloser->RequestFinish();
+
+  // Wait until all thread have effectively stopped
+  while (!mpLocalMapper->isFinished() || 
+         !mpLoopCloser->isFinished()  || 
+          mpLoopCloser->isRunningGBA()) {
+    usleep(5000);
+  }
+}
+
+int SlamSystem::GetTrackingState() {
+  std::unique_lock<std::mutex> lock(mMutexState);
+  return mTrackingState;
+}
+
+std::vector<MapPoint*> SlamSystem::GetTrackedMapPoints() {
+  std::unique_lock<std::mutex> lock(mMutexState);
+  return mTrackedMapPoints;
+}
+
+std::vector<cv::KeyPoint> SlamSystem::GetTrackedKeyPointsUn() {
+  std::unique_lock<std::mutex> lock(mMutexState);
+  return mTrackedKeyPointsUn;
+}
+
+
