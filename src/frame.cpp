@@ -5,6 +5,16 @@
 #include "converter.h"
 #include "orb_matcher.h"
 
+// Define static variables with initial values
+long unsigned int Frame::nNextId = 0;
+bool Frame::mbInitialComputations = true;
+float Frame::cx, Frame::cy; 
+float Frame::fx, Frame::fy;
+float Frame::invfx, Frame::invfy;
+float Frame::mnMinX, Frame::mnMinY; 
+float Frame::mnMaxX, Frame::mnMaxY;
+float Frame::mfGridElementWidthInv;
+float Frame::mfGridElementHeightInv;
 
 Frame::Frame(const Frame& frame)
       : mpORBvocabulary(frame.mpORBvocabulary)
@@ -69,7 +79,7 @@ Frame::Frame(const cv::Mat& imLeft,
     , mpReferenceKF(nullptr) 
 {
   // Frame ID
-  mnId=nNextId++;
+  mnId = nNextId++;
 
   // Scale Level Info
   mnScaleLevels = mpORBextractorLeft->GetLevels();
@@ -98,7 +108,7 @@ Frame::Frame(const cv::Mat& imLeft,
   mvbOutlier = std::vector<bool>(mN, false); // vector of bools is bad
 
   // This is done only for the first Frame (or after a change in the calibration)
-  if(mbInitialComputations)  {
+  if (mbInitialComputations)  {
     ComputeImageBounds(imLeft);
 
     mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
@@ -126,7 +136,7 @@ void Frame::AssignFeaturesToGrid() {
       mGrid[i][j].reserve(nReserve);
     }
   }
-  for(int i=0; i < mN; ++i) {
+  for (int i=0; i < mN; ++i) {
     const cv::KeyPoint& kp = mvKeysUn[i];
     int nGridPosX, nGridPosY;
     if(PosInGrid(kp, nGridPosX, nGridPosY)) {
@@ -224,7 +234,7 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
   return true;
 }
 
-bool Frame::PosInGrid(const cv::KeyPoint& kp, int posX, int posY) {
+bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
   posX = round( (kp.pt.x - mnMinX) * mfGridElementWidthInv);
   posY = round( (kp.pt.y - mnMinY) * mfGridElementHeightInv);
 

@@ -1,6 +1,9 @@
 #include "keyframe.h"
 #include "converter.h"
 
+// Define static variables with initial values
+long unsigned int KeyFrame::nNextId = 0;
+
 KeyFrame::KeyFrame(Frame& F, 
                    Map* pMap, 
                    KeyframeDatabase* pKFDB) 

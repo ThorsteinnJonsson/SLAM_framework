@@ -9,8 +9,8 @@
 
 class LocalMapper {
 public:
-  LocalMapper(Map* pMap, const float bMonocular); // TODO why is this float???
-  ~LocalMapper();
+  LocalMapper(Map* pMap, const float bMonocular) {} // TODO why is this float???
+  ~LocalMapper() {}
 
   void Run() { while(true){} } // TODO
 
@@ -22,7 +22,7 @@ public:
   bool isStopped() { return false; } //TODO implement
   bool stopRequested() { return false; } //TODO implement
   bool AcceptKeyFrames() { return false; } //TODO implement
-  void InterruptBA(); //TODO implement
+  void InterruptBA() {} //TODO implement
   int KeyframesInQueue() {return -1;} //TODO implement
   bool SetNotStop(bool flag) {return false;} //TODO implement
 

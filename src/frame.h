@@ -2,8 +2,8 @@
 #define SRC_FRAME_H
 
 #include "map_point.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "DBoW2/BowVector.h"
+#include "DBoW2/FeatureVector.h"
 #include "orb_vocabulary.h"
 #include "keyframe.h"
 #include "orb_extractor.h"
@@ -67,8 +67,8 @@ public:
 
   // Compute the cell of a keypoint (return false if outside the grid)
   bool PosInGrid(const cv::KeyPoint& kp, 
-                 int posX, 
-                 int posY);
+                 int& posX, 
+                 int& posY);
 
   std::vector<size_t> GetFeaturesInArea(const float x, 
                                         const float y, 

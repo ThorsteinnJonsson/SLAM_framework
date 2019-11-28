@@ -27,39 +27,54 @@ else()
 endif()
 
 find_package(OpenCV QUIET)
+# find_package(OpenCV 3.0 QUIET)
+# if(NOT OpenCV_FOUND)
+#    find_package(OpenCV 2.4.3 QUIET)
+#    if(NOT OpenCV_FOUND)
+#       message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
+#    endif()
+# endif()
 find_package(Eigen3 REQUIRED)
 MESSAGE("Found OpenCV: ${OpenCV_FOUND}") 
 MESSAGE("Found Eigen: ${EIGEN3_FOUND}") 
 
-##################
-## Include Dirs ##
-##################
+##########################################
+## Library config                       ##
+##########################################
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build/lib) #TODO change to build/lib
+
+##########################################
+## Third party libraries                ##
+##########################################
+add_subdirectory(third_party)
+
+##########################################
+## Include Dirs                         ##
+##########################################
 # TODO Not the best way to do this, move to target_include... later 
 include_directories(${PROJECT_SOURCE_DIR}
                     ${PROJECT_SOURCE_DIR}/src
-                    ${PROJECT_SOURCE_DIR}/Thirdparty
                     ${EIGEN3_INCLUDE_DIR}
-                    
 )
 
-###############
-## Libraries ##
-###############
+##########################################
+## Libraries                            ##
+##########################################
 add_library(stereo_slam SHARED
             src/slam_system.cpp
             src/tracker.cpp
-            # src/local_mapper.cpp  //TODO
-            # src/loop_closer.cpp   //TODO 
+            # src/local_mapper.cpp
+            # src/loop_closer.cpp 
             src/orb_extractor.cpp
             src/orb_matcher.cpp
-            # src/converter.cpp //TODO
+            # src/converter.cpp
             src/map_point.cpp
             src/keyframe.cpp
             src/map.cpp
-            # src/optimizer.cpp //TODO
+            # src/optimizer.cpp
             src/pnp_solver.cpp
             src/frame.cpp
-            # src/keyframe_database.cpp // TOOD
+            # src/keyframe_database.cpp
 )
 
 target_include_directories(stereo_slam PUBLIC
@@ -67,15 +82,17 @@ target_include_directories(stereo_slam PUBLIC
                            ${OpenCV_INCLUDE_DIRS}
 )
 
-target_link_libraries(stereo_slam
+target_link_libraries(stereo_slam PUBLIC
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
+                      DBoW2
+                     #  g20
 )
 
 
-#################
-## Executables ##
-#################
+##########################################
+## Executables                          ##
+##########################################
 add_executable(main_exe main.cpp)
 target_include_directories(main_exe PUBLIC 
                            ${OpenCV_INCLUDE_DIRS}

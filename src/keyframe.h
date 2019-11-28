@@ -4,8 +4,8 @@
 
 #include "map_point.h"
 #include "frame.h"
-#include "Thirdparty/DBoW2/DBoW2/BowVector.h"
-#include "Thirdparty/DBoW2/DBoW2/FeatureVector.h"
+#include "DBoW2/BowVector.h"
+#include "DBoW2/FeatureVector.h"
 #include "orb_vocabulary.h"
 #include "orb_extractor.h"
 #include "keyframe_database.h"
