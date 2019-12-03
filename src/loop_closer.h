@@ -10,7 +10,7 @@
 
 #include <thread>
 #include <mutex>
-#include "third_party/g2o/g2o/types/types_seven_dof_expmap.h"
+#include "g2o/types/types_seven_dof_expmap.h"
 
 // Forward declarations
 class Tracker;

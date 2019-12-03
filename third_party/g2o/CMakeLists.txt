@@ -166,6 +166,7 @@ add_library(g2o SHARED
 
 # Set up the top-level include directories
 target_include_directories(g2o PUBLIC
+                           ${CMAKE_CURRENT_SOURCE_DIR}
                            ${g2o_SOURCE_DIR}/core
                            ${g2o_SOURCE_DIR}/types
                            ${g2o_SOURCE_DIR}/stuff 

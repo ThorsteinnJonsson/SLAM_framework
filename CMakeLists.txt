@@ -69,7 +69,7 @@ add_library(stereo_slam SHARED
             # src/optimizer.cpp
             src/pnp_solver.cpp
             src/frame.cpp
-            # src/keyframe_database.cpp
+            src/keyframe_database.cpp
 )
 
 target_include_directories(stereo_slam PUBLIC

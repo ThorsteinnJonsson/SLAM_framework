@@ -273,8 +273,8 @@ std::set<KeyFrame*> KeyFrame::GetConnectedKeyFrames() {
   std::unique_lock<std::mutex> lock(mMutexConnections);
   std::set<KeyFrame*> s;
   for(std::map<KeyFrame*,int>::iterator mit = mConnectedKeyFrameWeights.begin();
-      mit != mConnectedKeyFrameWeights.end();
-      mit++) {
+                                        mit != mConnectedKeyFrameWeights.end();
+                                        mit++) {
     s.insert(mit->first);
   }
   return s;
