@@ -59,7 +59,7 @@ add_library(stereo_slam SHARED
             src/slam_system.cpp
             src/tracker.cpp
             # src/local_mapper.cpp
-            # src/loop_closer.cpp 
+            src/loop_closer.cpp 
             src/orb_extractor.cpp
             src/orb_matcher.cpp
             # src/converter.cpp
@@ -70,6 +70,7 @@ add_library(stereo_slam SHARED
             src/pnp_solver.cpp
             src/frame.cpp
             src/keyframe_database.cpp
+            src/sim3solver.cpp
 )
 
 target_include_directories(stereo_slam PUBLIC

@@ -31,7 +31,6 @@ public:
 
   void clear();
 
-
   std::vector<KeyFrame*> mvpKeyFrameOrigins;
 
   std::mutex mMutexMapUpdate;
