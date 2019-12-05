@@ -193,7 +193,7 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
 
 bool LoopCloser::isRunningGBA() {
   std::unique_lock<std::mutex> lock(mMutexGBA);
-  return mbRunningGBA
+  return mbRunningGBA;
 }
 
 bool LoopCloser::isFinishedGBA() {
@@ -334,9 +334,221 @@ bool LoopCloser::DetectLoop() {
 }
 
 bool LoopCloser::ComputeSim3() {
-  //TODO
+  // For each consistent loop candidate we try to compute a Sim3
+  const int nInitialCandidates = mvpEnoughConsistentCandidates.size();
+
+  // We compute first ORB matches for each candidate
+  // If enough matches are found, we setup a Sim3Solver
+  OrbMatcher matcher(0.75, true);
+
+  std::vector<Sim3Solver*> vpSim3Solvers;
+  vpSim3Solvers.resize(nInitialCandidates);
+
+  std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
+  vvpMapPointMatches.resize(nInitialCandidates);
+
+  std::vector<bool> vbDiscarded; //TODO vector of bool
+  vbDiscarded.resize(nInitialCandidates);
+
+  int nCandidates = 0; //candidates with enough matches
+
+  for (int i = 0; i < nInitialCandidates; ++i) {
+    KeyFrame* pKF = mvpEnoughConsistentCandidates[i];
+
+    // Avoid that local mapping erase it while it is being processed in this thread
+    pKF->SetNotErase();
+
+    if (pKF->isBad()) {
+      vbDiscarded[i] = true;
+      continue;
+    }
+
+    int nmatches = matcher.SearchByBoW(mpCurrentKF,
+                                       pKF,
+                                       vvpMapPointMatches[i]);
+
+    if (nmatches < 20) {
+      vbDiscarded[i] = true;
+      continue;
+    } else {
+      Sim3Solver* pSolver = new Sim3Solver(mpCurrentKF,
+                                           pKF,
+                                           vvpMapPointMatches[i],
+                                           mbFixScale);
+      pSolver->SetRansacParameters(0.99, 20, 300);
+      vpSim3Solvers[i] = pSolver;
+    }
+    ++nCandidates;
+  }
+
+  // Perform alternatively RANSAC iterations for each candidate
+  // until one is succesful or all fail
+  bool bMatch = false;
+  while (nCandidates > 0 && !bMatch) {
+    for (int i = 0; i < nInitialCandidates; ++i) {
+      if (vbDiscarded[i]) {
+        continue;
+      }
+
+      KeyFrame* pKF = mvpEnoughConsistentCandidates[i];
+
+      // Perform 5 Ransac Iterations
+      std::vector<bool> vbInliers; //TODO vector of bool
+      int nInliers;
+      bool bNoMore;
+      Sim3Solver* pSolver = vpSim3Solvers[i];
+      cv::Mat Scm  = pSolver->iterate(5,
+                                      bNoMore,
+                                      vbInliers,
+                                      nInliers);
+
+      // If Ransac reachs max. iterations discard keyframe
+      if (bNoMore) {
+        vbDiscarded[i] = true;
+        --nCandidates;
+      }
+
+      // If RANSAC returns a Sim3, perform a guided matching and optimize with all correspondences
+      if(!Scm.empty()) {
+        std::vector<MapPoint*> vpMapPointMatches(vvpMapPointMatches[i].size(), nullptr);
+        for (size_t j = 0; j < vbInliers.size(); ++j) {
+          if (vbInliers[j]) {
+            vpMapPointMatches[j] = vvpMapPointMatches[i][j];
+          }
+        }
+
+        cv::Mat R = pSolver->GetEstimatedRotation();
+        cv::Mat t = pSolver->GetEstimatedTranslation();
+        const float s = pSolver->GetEstimatedScale();
+        matcher.SearchBySim3(mpCurrentKF,
+                             pKF,
+                             vpMapPointMatches,
+                             s,
+                             R,
+                             t,
+                             7.5);
+
+        g2o::Sim3 gScm(Converter::toMatrix3d(R),
+                       Converter::toVector3d(t),
+                       s);
+        const int nInliers = Optimizer::OptimizeSim3(mpCurrentKF, 
+                                                     pKF, 
+                                                     vpMapPointMatches, 
+                                                     gScm, 
+                                                     10, 
+                                                     mbFixScale);
+
+        // If optimization is succesful stop ransacs and continue
+        if (nInliers >= 20) {
+          bMatch = true;
+          mpMatchedKF = pKF;
+          g2o::Sim3 gSmw(Converter::toMatrix3d(pKF->GetRotation()),
+                         Converter::toVector3d(pKF->GetTranslation()),
+                         1.0);
+          mg2oScw = gScm * gSmw;
+          mScw = Converter::toCvMat(mg2oScw);
+
+          mvpCurrentMatchedPoints = vpMapPointMatches;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!bMatch) {
+    for (int i = 0; i < nInitialCandidates; ++i){
+      mvpEnoughConsistentCandidates[i]->SetErase();
+    }
+    mpCurrentKF->SetErase();
+    return false;
+  }
+
+  // Retrieve MapPoints seen in Loop Keyframe and neighbors
+  std::vector<KeyFrame*> vpLoopConnectedKFs = mpMatchedKF->GetVectorCovisibleKeyFrames();
+  vpLoopConnectedKFs.push_back(mpMatchedKF);
+  mvpLoopMapPoints.clear();
+  for (std::vector<KeyFrame*>::iterator vit = vpLoopConnectedKFs.begin(); 
+                                        vit != vpLoopConnectedKFs.end(); 
+                                        ++vit)
+  {
+    KeyFrame* pKF = *vit;
+    std::vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
+    for (size_t i = 0; i < vpMapPoints.size(); ++i) {
+      MapPoint* pMP = vpMapPoints[i];
+      if (pMP) {
+        if (!pMP->isBad() && pMP->mnLoopPointForKF != mpCurrentKF->mnId) {
+          mvpLoopMapPoints.push_back(pMP);
+          pMP->mnLoopPointForKF = mpCurrentKF->mnId;
+        }
+      }
+    }
+  }
+
+  // Find more matches projecting with the computed Sim3
+  matcher.SearchByProjection(mpCurrentKF, 
+                             mScw, 
+                             mvpLoopMapPoints, 
+                             mvpCurrentMatchedPoints,
+                             10);
+
+  // If enough matches accept Loop
+  int nTotalMatches = 0;
+  for (size_t i = 0; i < mvpCurrentMatchedPoints.size(); ++i) {
+    if (mvpCurrentMatchedPoints[i]) {
+      ++nTotalMatches;
+    }
+  }
+
+  if (nTotalMatches >= 40) {
+    for (int i = 0; i < nInitialCandidates; ++i) {
+      if (mvpEnoughConsistentCandidates[i] != mpMatchedKF) {
+        mvpEnoughConsistentCandidates[i]->SetErase();
+      }
+    }
+    return true;
+  } else {
+    for (int i = 0; i < nInitialCandidates; ++i) {
+      mvpEnoughConsistentCandidates[i]->SetErase();
+    }
+    mpCurrentKF->SetErase();
+    return false;
+  }
 }
 
+void LoopCloser::SearchAndFuse(const KeyFrameAndPose& CorrectedPosesMap) {
+  
+  OrbMatcher matcher(0.8);
 
+  for (KeyFrameAndPose::const_iterator mit = CorrectedPosesMap.begin(); 
+                                       mit != CorrectedPosesMap.end();
+                                       ++mit)
+  {
+    KeyFrame* pKF = mit->first;
+
+    g2o::Sim3 g2oScw = mit->second;
+    cv::Mat cvScw = Converter::toCvMat(g2oScw);
+
+    std::vector<MapPoint*> vpReplacePoints(mvpLoopMapPoints.size(),nullptr);
+    matcher.Fuse(pKF,
+                 cvScw,
+                 mvpLoopMapPoints,
+                 4,
+                 vpReplacePoints);
+
+    // Get Map Mutex
+    std::unique_lock<std::mutex> lock(mpMap->mMutexMapUpdate);
+    const int nLP = mvpLoopMapPoints.size();
+    for (int i = 0; i < nLP; ++i) {
+      MapPoint* pRep = vpReplacePoints[i];
+      if (pRep) {
+        pRep->Replace(mvpLoopMapPoints[i]);
+      }
+    }
+  }
+}
+
+void LoopCloser::CorrectLoop() {
+  
+}
 
 

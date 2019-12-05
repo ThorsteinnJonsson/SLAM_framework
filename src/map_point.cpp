@@ -186,7 +186,7 @@ bool MapPoint::isBad() {
 }
 
 void MapPoint::Replace(MapPoint* pMP) {
-  if(pMP->mnId==this->mnId) {
+  if (pMP->mnId == this->mnId) {
     return;
   }
 
@@ -204,8 +204,8 @@ void MapPoint::Replace(MapPoint* pMP) {
     mpReplaced = pMP;
   }
 
-  for(std::map<KeyFrame*,size_t>::iterator mit=obs.begin(); 
-                                           mit!=obs.end(); 
+  for(std::map<KeyFrame*,size_t>::iterator mit = obs.begin(); 
+                                           mit != obs.end(); 
                                            ++mit) 
   {
     // Replace measurement in keyframe
