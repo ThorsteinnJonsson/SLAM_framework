@@ -62,7 +62,7 @@ add_library(stereo_slam SHARED
             src/loop_closer.cpp 
             src/orb_extractor.cpp
             src/orb_matcher.cpp
-            # src/converter.cpp
+            src/converter.cpp
             src/map_point.cpp
             src/keyframe.cpp
             src/map.cpp

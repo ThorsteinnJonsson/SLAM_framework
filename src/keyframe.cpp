@@ -189,10 +189,9 @@ void KeyFrame::UpdateConnections() {
 
   //For all map points in keyframe check in which other keyframes are they seen
   //Increase counter for those keyframes
-  for(std::vector<MapPoint*>::iterator vit = vpMP.begin(); 
-      vit != vpMP.end(); 
-      vit++) 
-  {
+  for (std::vector<MapPoint*>::iterator vit = vpMP.begin(); 
+                                        vit != vpMP.end(); 
+                                        ++vit) {
     MapPoint* pMP = *vit;
 
     if(!pMP || pMP->isBad()) {
@@ -201,10 +200,9 @@ void KeyFrame::UpdateConnections() {
 
     std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
 
-    for(std::map<KeyFrame*,size_t>::iterator mit = observations.begin();
-        mit != observations.end(); 
-        mit++)
-    {
+    for (std::map<KeyFrame*,size_t>::iterator mit = observations.begin();
+                                              mit != observations.end(); 
+                                              mit++) {
       if ( mit->first->mnId == mnId ) {
         continue;
       }
@@ -214,7 +212,7 @@ void KeyFrame::UpdateConnections() {
 
   // This should not happen
   assert(KFcounter.empty() == false);
-  if(KFcounter.empty()) {
+  if (KFcounter.empty()) {
     return;
   }
 

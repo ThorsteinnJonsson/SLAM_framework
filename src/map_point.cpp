@@ -108,14 +108,14 @@ int MapPoint::Observations() {
 
 void MapPoint::AddObservation(KeyFrame* pKF, size_t idx) {
   std::unique_lock<std::mutex> lock(mMutexFeatures);
-  if(mObservations.count(pKF)) {
+  if (mObservations.count(pKF)) {
     return;
   }
-  mObservations[pKF]=idx;
-  if(pKF->mvuRight[idx] >= 0) {
-    nObs+=2;
+  mObservations[pKF] = idx;
+  if (pKF->mvuRight[idx] >= 0) {
+    nObs += 2;
   } else {
-    nObs++;
+    ++nObs;
   }
 }
 
@@ -206,8 +206,7 @@ void MapPoint::Replace(MapPoint* pMP) {
 
   for(std::map<KeyFrame*,size_t>::iterator mit = obs.begin(); 
                                            mit != obs.end(); 
-                                           ++mit) 
-  {
+                                           ++mit) {
     // Replace measurement in keyframe
     KeyFrame* pKF = mit->first;
 
@@ -251,6 +250,7 @@ void MapPoint::ComputeDistinctiveDescriptors() {
   std::vector<cv::Mat> vDescriptors;
   
   std::map<KeyFrame*, size_t> observations;
+
   {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
     if (mbBad) {
@@ -265,8 +265,8 @@ void MapPoint::ComputeDistinctiveDescriptors() {
 
   vDescriptors.reserve(observations.size());
   for (std::map<KeyFrame*, size_t>::iterator mit = observations.begin(); 
-        mit != observations.end(); 
-        mit++) 
+                                             mit != observations.end(); 
+                                             ++mit) 
   {
     KeyFrame* pKF = mit->first;
     if (!pKF->isBad()) {
