@@ -119,12 +119,15 @@ cv::Mat KeyFrame::GetTranslation() {
 }
 
 void KeyFrame::ComputeBoW() {
-    if(mBowVec.empty() || mFeatVec.empty()) {
-        std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
-        // Feature vector associates features with nodes in the 4th level (from leaves up)
-        // We assume the vocabulary tree has 6 levels, change the 4 otherwise
-        mpORBvocabulary->transform(vCurrentDesc,mBowVec,mFeatVec,4);
-    }
+  if (mBowVec.empty() || mFeatVec.empty()) {
+    std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
+    // Feature vector associates features with nodes in the 4th level (from leaves up)
+    // We assume the vocabulary tree has 6 levels, change the 4 otherwise
+    mpORBvocabulary->transform(vCurrentDesc,
+                               mBowVec,
+                               mFeatVec,
+                               4);
+  }
 }
 
 void KeyFrame::AddConnection(KeyFrame* pKF, const int weight) {
@@ -614,4 +617,30 @@ bool KeyFrame::isBad() {
   return mbBad;
 }
 
+float KeyFrame::ComputeSceneMedianDepth(const int q) {
+  std::vector<MapPoint*> vpMapPoints;
+  cv::Mat Tcw_;
+  {
+    std::unique_lock<std::mutex> lock(mMutexFeatures);
+    std::unique_lock<std::mutex> lock2(mMutexPose);
+    vpMapPoints = mvpMapPoints;
+    Tcw_ = Tcw.clone();
+  }
+
+  std::vector<float> vDepths;
+  vDepths.reserve(N);
+  cv::Mat Rcw2 = Tcw_.row(2).colRange(0,3);
+  Rcw2 = Rcw2.t();
+  float zcw = Tcw_.at<float>(2,3);
+  for (int i = 0; i < N; ++i) {
+    if (mvpMapPoints[i]) {
+      MapPoint* pMP = mvpMapPoints[i];
+      cv::Mat x3Dw = pMP->GetWorldPos();
+      float z = Rcw2.dot(x3Dw)+zcw;
+      vDepths.push_back(z);
+    }
+  }
+  std::sort(vDepths.begin(),vDepths.end());
+  return vDepths[(vDepths.size()-1)/q];
+}
 

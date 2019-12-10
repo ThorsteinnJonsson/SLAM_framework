@@ -85,7 +85,7 @@ public:
   bool isBad();
 
   // Compute Scene Depth (q=2 median). Used in monocular.
-  // float ComputeSceneMedianDepth(const int q); // TODO probably not necessary  
+  float ComputeSceneMedianDepth(const int q); // TODO probably not necessary for only stereo
 
   static bool weightComp(int a, int b) { return a > b; } // TODO just use lambda
 
@@ -128,7 +128,7 @@ public:
   long unsigned int mnBAGlobalForKF;
 
   // Calibration parameters
-  const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth;
+  const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth; // TODO seems exessive to copy for every keyframe
 
   // Number of KeyPoints
   const int N;

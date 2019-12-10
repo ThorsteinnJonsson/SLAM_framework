@@ -1116,7 +1116,7 @@ bool Tracker::NeedNewKeyFrame() {
     } else {
       mpLocalMapper->InterruptBA();
       if (mSensor != SENSOR_TYPE::MONOCULAR) {
-        if (mpLocalMapper->KeyframesInQueue() < 3) {
+        if (mpLocalMapper->NumKeyframesInQueue() < 3) {
           return true;
         } else {
           return false;
@@ -1201,4 +1201,3 @@ void Tracker::CreateNewKeyFrame() {
   mnLastKeyFrameId = mCurrentFrame.mnId;
   mpLastKeyFrame = pKF;
 }
-

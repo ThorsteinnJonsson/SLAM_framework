@@ -13,7 +13,7 @@
 
 class OrbMatcher{
 public:
-  OrbMatcher(float nnratio=0.6, bool checkOri=true);
+  OrbMatcher(float nnratio=0.6f, bool checkOri=true);
   ~OrbMatcher() {}
 
   // Computes the Hamming distance between two ORB descriptors
