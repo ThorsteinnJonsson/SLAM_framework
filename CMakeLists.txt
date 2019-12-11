@@ -66,7 +66,7 @@ add_library(stereo_slam SHARED
             src/map_point.cpp
             src/keyframe.cpp
             src/map.cpp
-            # src/optimizer.cpp
+            src/optimizer.cpp
             src/pnp_solver.cpp
             src/frame.cpp
             src/keyframe_database.cpp
