@@ -59,10 +59,12 @@ int main(int argc, char **argv) {
   std::string config_file = "";
   SENSOR_TYPE sensor = SENSOR_TYPE::STEREO;
   SlamSystem slam_system(vocab_filename, config_file, sensor);
+  
+  // For tracking statistics
+  std::vector<double> tracked_times(timestamps.size(), -1.0);
 
   // Main loop
-  int num_frames = timestamps.size();
-  for (int frame_id = 0; frame_id < num_frames; ++frame_id) {
+  for (size_t frame_id = 0; frame_id < timestamps.size(); ++frame_id) {
 
     cv::Mat l_image = cv::imread(left_image_paths[frame_id], CV_LOAD_IMAGE_UNCHANGED);
     cv::Mat r_image = cv::imread(right_image_paths[frame_id], CV_LOAD_IMAGE_UNCHANGED);
@@ -75,13 +77,33 @@ int main(int argc, char **argv) {
     }
 
     // Do SLAM stuff
-    // TODO
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
+    
+    slam_system.TrackStereo(l_image,r_image,timestamp);
 
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
+    double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();
+    tracked_times[frame_id] = ttrack;
+
+    // Wait to load the next frame
+    double T = 0;
+    if (frame_id < timestamps.size()-1) {
+      T = tracked_times[frame_id+1] - timestamp;
+    } else if ( frame_id > 0) {
+      T = timestamp - tracked_times[frame_id-1];
+    }
+
+    if (ttrack < T) {
+      usleep((T-ttrack) * 1e6);
+    }
   }
 
+  slam_system.Shutdown();
 
   std::cout << "Done\n";
+
+  // TODO print post-processing stuff
 
 
 }
