@@ -58,7 +58,7 @@ add_subdirectory(third_party)
 add_library(stereo_slam SHARED
             src/slam_system.cpp
             src/tracker.cpp
-            # src/local_mapper.cpp
+            src/local_mapper.cpp
             src/loop_closer.cpp 
             src/orb_extractor.cpp
             src/orb_matcher.cpp

@@ -510,15 +510,198 @@ void LocalMapper::CreateNewMapPoints() { //TODO make this function neater
 
       mpMap->AddMapPoint(pMP);
       mlpRecentAddedMapPoints.push_back(pMP);
-
-      nnew++;
+      ++nnew;
     }
   }
 }
 
 void LocalMapper::SearchInNeighbors() {
-  //TODO
+  // Retrieve neighbor keyframes
+  // int nn = 10;
+  // if(mbMonocular)
+  //     nn=20;
+  const int nn = mbMonocular? 20 : 10;
+  const std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
+  std::vector<KeyFrame*> vpTargetKFs;
+  for (vector<KeyFrame*>::const_iterator vit = vpNeighKFs.begin(); 
+                                         vit != vpNeighKFs.end(); 
+                                         ++vit) {
+    KeyFrame* pKFi = *vit;
+    if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId) {
+      continue;
+    }
+    vpTargetKFs.push_back(pKFi);
+    pKFi->mnFuseTargetForKF = mpCurrentKeyFrame->mnId;
+
+    // Extend to some second neighbors
+    const std::vector<KeyFrame*> vpSecondNeighKFs = pKFi->GetBestCovisibilityKeyFrames(5);
+    for(vector<KeyFrame*>::const_iterator vit2 = vpSecondNeighKFs.begin();
+                                          vit2 != vpSecondNeighKFs.end(); 
+                                          ++vit2) {
+      KeyFrame* pKFi2 = *vit2;
+      if (pKFi2->isBad() || 
+          pKFi2->mnFuseTargetForKF == mpCurrentKeyFrame->mnId || 
+          pKFi2->mnId == mpCurrentKeyFrame->mnId) {
+        continue;
+      }
+      vpTargetKFs.push_back(pKFi2);
+    }
+  }
+
+  // Search matches by projection from current KF in target KFs
+  OrbMatcher matcher;
+  std::vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+  for (vector<KeyFrame*>::iterator vit = vpTargetKFs.begin(); 
+                                   vit != vpTargetKFs.end(); 
+                                   ++vit) {
+    KeyFrame* pKFi = *vit;
+    matcher.Fuse(pKFi, vpMapPointMatches);
+  }
+
+  // Search matches by projection from target KFs in current KF
+  std::vector<MapPoint*> vpFuseCandidates;
+  vpFuseCandidates.reserve(vpTargetKFs.size() * vpMapPointMatches.size());
+
+  for (std::vector<KeyFrame*>::iterator vitKF = vpTargetKFs.begin(); 
+                                        vitKF != vpTargetKFs.end(); 
+                                        ++vitKF) {
+    KeyFrame* pKFi = *vitKF;
+
+    std::vector<MapPoint*> vpMapPointsKFi = pKFi->GetMapPointMatches();
+
+    for (std::vector<MapPoint*>::iterator vitMP = vpMapPointsKFi.begin();
+                                          vitMP != vpMapPointsKFi.end(); 
+                                          ++vitMP) {
+      MapPoint* pMP = *vitMP;
+      if(!pMP ||
+          pMP->isBad() ||
+          pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId ) {
+          continue;
+      }
+      pMP->mnFuseCandidateForKF = mpCurrentKeyFrame->mnId;
+      vpFuseCandidates.push_back(pMP);
+    }
+  }
+  matcher.Fuse(mpCurrentKeyFrame, vpFuseCandidates);
+
+  // Update points
+  vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
+  for (size_t i = 0; i < vpMapPointMatches.size(); ++i) {
+    MapPoint* pMP = vpMapPointMatches[i];
+    if (pMP && !pMP->isBad()) {
+      pMP->ComputeDistinctiveDescriptors();
+      pMP->UpdateNormalAndDepth();
+    }
+  }
+
+  // Update connections in covisibility graph
+  mpCurrentKeyFrame->UpdateConnections();
 }
 
+void LocalMapper::KeyFrameCulling() {
+  // Check redundant keyframes (only local keyframes)
+  // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
+  // in at least other 3 keyframes (in the same or finer scale)
+  // We only consider close stereo points
+  std::vector<KeyFrame*> vpLocalKeyFrames = mpCurrentKeyFrame->GetVectorCovisibleKeyFrames();
 
+  for (std::vector<KeyFrame*>::iterator vit = vpLocalKeyFrames.begin(); 
+                                        vit != vpLocalKeyFrames.end(); 
+                                        ++vit) {
+    KeyFrame* pKF = *vit;
+    if (pKF->mnId == 0) {
+      continue;
+    }
+    const std::vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
 
+    int nObs = 3;
+    const int thObs = nObs;
+    int nRedundantObservations = 0;
+    int nMPs = 0;
+    for (size_t i = 0; i < vpMapPoints.size(); ++i) {
+      MapPoint* pMP = vpMapPoints[i];
+      if(pMP && !pMP->isBad()) {
+        if (!mbMonocular) {
+          if (pKF->mvDepth[i] > pKF->mThDepth || 
+              pKF->mvDepth[i] < 0) {
+            continue;
+          }
+        }
+
+        ++nMPs;
+        if (pMP->Observations() > thObs) {
+          const int scaleLevel = pKF->mvKeysUn[i].octave;
+          const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
+          int nObs = 0; // TODO why redefine???
+          for (std::map<KeyFrame*,size_t>::const_iterator mit = observations.begin(); 
+                                                          mit != observations.end(); 
+                                                          ++mit) {
+            KeyFrame* pKFi = mit->first;
+            if (pKFi==pKF) {
+              continue;
+            }
+            const int scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
+
+            if(scaleLeveli <= scaleLevel + 1) {
+              nObs++;
+              if (nObs >= thObs) {
+                break;
+              }
+            }
+          }
+          if (nObs >= thObs) {
+            ++nRedundantObservations;
+          }
+        }
+      }
+    }  
+
+    if (nRedundantObservations > 0.9f * nMPs) {
+      pKF->SetBadFlag();
+    }
+  }
+}
+
+cv::Mat LocalMapper::ComputeF12(KeyFrame*& pKF1, KeyFrame*& pKF2) {
+  cv::Mat R1w = pKF1->GetRotation();
+  cv::Mat t1w = pKF1->GetTranslation();
+  cv::Mat R2w = pKF2->GetRotation();
+  cv::Mat t2w = pKF2->GetTranslation();
+
+  cv::Mat R12 = R1w*R2w.t();
+  cv::Mat t12 = -R1w*R2w.t()*t2w+t1w;
+
+  cv::Mat t12x = SkewSymmetricMatrix(t12);
+
+  const cv::Mat& K1 = pKF1->mK;
+  const cv::Mat& K2 = pKF2->mK;
+
+  return K1.t().inv() * t12x * R12 * K2.inv();
+}
+
+cv::Mat LocalMapper::SkewSymmetricMatrix(const cv::Mat& v) {
+  return (cv::Mat_<float>(3,3) <<               0, -v.at<float>(2),  v.at<float>(1),
+                                   v.at<float>(2),               0, -v.at<float>(0),
+                                  -v.at<float>(1),  v.at<float>(0),              0);  
+}
+
+void LocalMapper::ResetIfRequested() {
+  std::unique_lock<std::mutex> lock(mMutexReset);
+  if (mbResetRequested) {
+    mlNewKeyFrames.clear();
+    mlpRecentAddedMapPoints.clear();
+    mbResetRequested = false;
+  }  
+}
+
+bool LocalMapper::CheckFinish() {
+  std::unique_lock<std::mutex> lock(mMutexFinish);
+  return mbFinishRequested;
+}
+
+void LocalMapper::SetFinish() {
+  std::unique_lock<std::mutex> lock(mMutexFinish);
+  mbFinished = true;    
+  std::unique_lock<std::mutex> lock2(mMutexStop);
+  mbStopped = true;
+}
