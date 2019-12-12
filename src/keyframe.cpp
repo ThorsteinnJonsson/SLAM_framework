@@ -60,7 +60,7 @@ KeyFrame::KeyFrame(Frame& F,
       , mHalfBaseline(F.mb/2)
       , mpMap(pMap) 
 {
-  mnId = ++nNextId;
+  mnId = nNextId++;
 
   mGrid.resize(mnGridCols);
   for(int i=0; i < mnGridCols; ++i) {
@@ -213,8 +213,8 @@ void KeyFrame::UpdateConnections() {
     }
   }
 
-  // This should not happen
-  assert(KFcounter.empty() == false);
+  // This should not happen // TODO misleading comment?? I added the assertion
+  // assert(KFcounter.empty() == false);
   if (KFcounter.empty()) {
     return;
   }

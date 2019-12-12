@@ -3,6 +3,8 @@
 #include "orb_matcher.h"
 #include "optimizer.h"
 
+// #pragma GCC optimize ("O0") //TODO remove
+
 LocalMapper::LocalMapper(Map* pMap, const float bMonocular)
     : mbMonocular(bMonocular)
     , mbResetRequested(false)
@@ -32,7 +34,8 @@ void LocalMapper::Run() {
     SetAcceptKeyFrames(false);
 
     // Check if there are keyframes in the queue
-    if (CheckNewKeyFrames()) {
+    const bool has_new_kfs = CheckNewKeyFrames();
+    if (has_new_kfs) {
       // BoW conversion and insertion in Map
       ProcessNewKeyFrame();
 
@@ -192,7 +195,7 @@ int LocalMapper::NumKeyframesInQueue() {
 
 bool LocalMapper::CheckNewKeyFrames() {
   unique_lock<mutex> lock(mMutexNewKFs);
-  return(!mlNewKeyFrames.empty());
+  return (!mlNewKeyFrames.empty());
 }
 
 void LocalMapper::ProcessNewKeyFrame() {

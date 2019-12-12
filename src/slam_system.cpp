@@ -1,6 +1,9 @@
 #include "slam_system.h"
 #include <unistd.h> // usleep
 
+// #pragma GCC optimize ("O0") //TODO remove
+
+
 SlamSystem::SlamSystem(const std::string& strVocFile, 
                        const std::string& strSettingsFile, 
                        const SENSOR_TYPE sensor) 

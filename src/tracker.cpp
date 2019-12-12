@@ -16,6 +16,7 @@
 
 #include <mutex>
 
+// #pragma GCC optimize ("O0") //TODO remove
 
 Tracker::Tracker(SlamSystem* pSys, 
                  OrbVocabulary* pVoc, 
@@ -854,7 +855,7 @@ void Tracker::UpdateLocalKeyFrames() {
         const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
         for (std::map<KeyFrame*,size_t>::const_iterator it = observations.begin(); 
                                                         it != observations.end(); 
-                                                        ++i) 
+                                                        ++it) 
         {
           keyframeCounter[it->first]++;
         }
