@@ -1,3 +1,5 @@
 /build
 /dataset
 /vocabulary/ORBvoc.txt
+/tmp
+/results

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
+#include <fstream>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -43,9 +44,18 @@ void LoadKittiImages(const std::string& kitti_path,
     }
 }
 
+// void WriteResultsToFile(const std::vector<std::array<float,3>>& positions) {
+//   std::ofstream myfile;
+//   myfile.open("tmp/positions.txt");
+//   for (const auto& pos : positions) {
+//     myfile << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
+//   }
+//   myfile.close();
+// }
+
 int main(int argc, char **argv) {
   // Input TODO: change to actual input 
-  std::string kitti_path = "/home/steini/Dev/stereo_slam/dataset/01";
+  std::string kitti_path = "/home/steini/Dev/stereo_slam/dataset/03";
 
   // Get paths for images
   std::vector<std::string> left_image_paths;
@@ -62,9 +72,11 @@ int main(int argc, char **argv) {
   
   // For tracking statistics
   std::vector<double> tracked_times(timestamps.size(), -1.0);
+  std::vector<std::array<float,3>> positions;
 
   // Main loop
   for (size_t frame_id = 0; frame_id < timestamps.size(); ++frame_id) {
+  // for (size_t frame_id = 0; frame_id < 100; ++frame_id) {
 
     cv::Mat l_image = cv::imread(left_image_paths[frame_id], CV_LOAD_IMAGE_UNCHANGED);
     cv::Mat r_image = cv::imread(right_image_paths[frame_id], CV_LOAD_IMAGE_UNCHANGED);
@@ -79,8 +91,12 @@ int main(int argc, char **argv) {
     // Do SLAM stuff
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     
-    slam_system.TrackStereo(l_image,r_image,timestamp);
+    cv::Mat pose = slam_system.TrackStereo(l_image,r_image,timestamp);
     std::cout << "Finished SLAM on frame " << frame_id << std::endl;
+    // printf(" - Pos: %.2f, %.2f, %.2f\n", pose.at<float>(0,3), pose.at<float>(1,3), pose.at<float>(2,3));
+    positions.push_back({pose.at<float>(0,3),
+                         pose.at<float>(1,3),
+                         pose.at<float>(2,3)});
 
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
@@ -103,8 +119,9 @@ int main(int argc, char **argv) {
   slam_system.Shutdown();
 
   std::cout << "Done\n";
-
+  
   // TODO print post-processing stuff
-
+  // WriteResultsToFile(positions);
+  slam_system.SaveTrajectoryKITTI("tmp/positions.txt");
 
 }
