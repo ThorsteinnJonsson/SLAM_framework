@@ -14,12 +14,15 @@ def get_translation(filename):
 
 if __name__ == "__main__":
 
+  sequence = "05"
+  # slam_translation = get_translation("results/" + sequence + ".txt")
   slam_translation = get_translation("tmp/positions.txt")
-  gt_translation = get_translation("dataset/ground_truth_poses/poses/01.txt")
+  gt_translation = get_translation("dataset/ground_truth_poses/poses/" + sequence + ".txt")
 
   mpl.rcParams['legend.fontsize'] = 10
   fig = plt.figure()
-  # plt.plot(slam_translation[:,0], slam_translation[:,2], label="SLAM")
+  plt.plot(slam_translation[:,0], slam_translation[:,2], label="SLAM")
   plt.plot(gt_translation[:,0], gt_translation[:,2], label="GT")
+  plt.axis('equal')
   plt.legend()
   plt.show()

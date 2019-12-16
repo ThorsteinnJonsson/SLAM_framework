@@ -11,37 +11,40 @@
 
 #include "slam_system.h"
 
+// #pragma GCC optimize ("O0") //TODO remove
+
 
 void LoadKittiImages(const std::string& kitti_path, 
                      std::vector<std::string>& left_image_paths,
                      std::vector<std::string>& right_image_paths, 
                      std::vector<double>& timestamps) {
-    std::string time_file = kitti_path + "/times.txt";
-    std::ifstream time_stream;
-    time_stream.open(time_file);
-    while(!time_stream.eof()) {
-        std::string s;
-        getline(time_stream,s);
-        if(!s.empty()) {
-            double t = std::stod(s);
-            timestamps.push_back(t);
-        }
+  // TODO check if file exists
+  std::string time_file = kitti_path + "/times.txt";
+  std::ifstream time_stream;
+  time_stream.open(time_file);
+  while (time_stream.good()) {
+    std::string s;
+    getline(time_stream,s);
+    if (!s.empty()) {
+      double t = std::stod(s);
+      timestamps.push_back(t);
     }
-    time_stream.close();
+  }
+  time_stream.close();
 
-    std::string left_folder = kitti_path + "/image_0/";
-    std::string right_folder = kitti_path + "/image_1/";
+  std::string left_folder = kitti_path + "/image_2/";
+  std::string right_folder = kitti_path + "/image_3/";
 
-    const int num_files = timestamps.size();
-    left_image_paths.reserve(num_files);
-    right_image_paths.reserve(num_files);
+  const int num_files = timestamps.size();
+  left_image_paths.reserve(num_files);
+  right_image_paths.reserve(num_files);
 
-    for(int i = 0; i < num_files; ++i) {
-        std::stringstream ss;
-        ss << std::setfill('0') << std::setw(6) << i;
-        left_image_paths.push_back(left_folder + ss.str() + ".png");
-        right_image_paths.push_back(right_folder + ss.str() + ".png");
-    }
+  for(int i = 0; i < num_files; ++i) {
+      std::stringstream ss;
+      ss << std::setfill('0') << std::setw(6) << i;
+      left_image_paths.push_back(left_folder + ss.str() + ".png");
+      right_image_paths.push_back(right_folder + ss.str() + ".png");
+  }
 }
 
 // void WriteResultsToFile(const std::vector<std::array<float,3>>& positions) {
@@ -55,14 +58,17 @@ void LoadKittiImages(const std::string& kitti_path,
 
 int main(int argc, char **argv) {
   // Input TODO: change to actual input 
-  std::string kitti_path = "/home/steini/Dev/stereo_slam/dataset/03";
+  std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
 
   // Get paths for images
   std::vector<std::string> left_image_paths;
   std::vector<std::string> right_image_paths;
   std::vector<double> timestamps;
   LoadKittiImages(kitti_path, left_image_paths, right_image_paths, timestamps);
-
+  if (left_image_paths.empty()) {
+    std::cerr << "Could not load images\n";
+    return -1;
+  }
 
   // Set up SLAM system
   std::string vocab_filename = "vocabulary/ORBvoc.txt";
@@ -108,7 +114,7 @@ int main(int argc, char **argv) {
     if (frame_id < timestamps.size()-1) {
       T = tracked_times[frame_id+1] - timestamp;
     } else if ( frame_id > 0) {
-      T = timestamp - tracked_times[frame_id-1];
+      T = timestamp - tracked_times[frame_id-1];  
     }
 
     if (ttrack < T) {
