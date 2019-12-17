@@ -27,12 +27,12 @@ LoopCloser::LoopCloser(Map* pMap,
 
 }
 
-void LoopCloser::SetTracker(Tracker* pTracker) {
+void LoopCloser::SetTracker(const std::shared_ptr<Tracker>& pTracker) {
   mpTracker = pTracker;
 }
 
-void LoopCloser::SetLocalMapper(LocalMapper* pLocalMapper) {
-  mpLocalMapper = pLocalMapper;
+void LoopCloser::SetLocalMapper(const std::shared_ptr<LocalMapper>& pLocalMapper) { 
+  mpLocalMapper = pLocalMapper; 
 }
 
 void LoopCloser::Run() {

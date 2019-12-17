@@ -19,8 +19,8 @@ public:
   LocalMapper(Map* pMap, const float bMonocular); // TODO why is this float???
   ~LocalMapper() {}
 
-  void SetLoopCloser(LoopCloser* pLoopCloser);
-  void SetTracker(Tracker* pTracker);
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser);
+  void SetTracker(const std::shared_ptr<Tracker>& pTracker);
 
   void Run();
 
@@ -73,8 +73,8 @@ protected:
 
   Map* mpMap;
 
-  LoopCloser* mpLoopCloser;
-  Tracker* mpTracker;
+  std::shared_ptr<LoopCloser> mpLoopCloser;
+  std::shared_ptr<Tracker> mpTracker;
 
   std::list<KeyFrame*> mlNewKeyFrames;
 

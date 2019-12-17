@@ -29,8 +29,8 @@ public:
   LoopCloser(Map* pMap, KeyframeDatabase* pDB, OrbVocabulary* pVoc, const bool bFixScale);
   ~LoopCloser() {}
 
-  void SetTracker(Tracker* pTracker);
-  void SetLocalMapper(LocalMapper* pLocalMapper);
+  void SetTracker(const std::shared_ptr<Tracker>& pTracker);
+  void SetLocalMapper(const std::shared_ptr<LocalMapper>& pLocalMapper);
 
   void Run();
 
@@ -71,12 +71,12 @@ protected:
   std::mutex mMutexFinish;
 
   Map* mpMap;
-  Tracker* mpTracker;
+  std::shared_ptr<Tracker> mpTracker;
 
   KeyframeDatabase* mpKeyFrameDB;
   OrbVocabulary* mpORBVocabulary;
 
-  LocalMapper *mpLocalMapper;
+  std::shared_ptr<LocalMapper> mpLocalMapper;
 
   std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 

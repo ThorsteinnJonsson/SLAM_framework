@@ -44,8 +44,8 @@ public:
   // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double timestamp); // TODO
   // cv::Mat GrabImageMonocular(const cv::Mat& im, const double timestamp); //TODO
 
-  void SetLocalMapper(LocalMapper* local_mapper) { mpLocalMapper = local_mapper; }
-  void SetLoopCloser(LoopCloser* loop_closer) { mpLoopClosing = loop_closer; }
+  void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { mpLocalMapper = local_mapper; }
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { mpLoopClosing = loop_closer; }
 
   // Load new settings
   // The focal lenght should be similar or scale prediction will fail when projecting points
@@ -127,8 +127,8 @@ protected:
   bool mbVO;
 
   // Other Thread Pointers (TODO probably not the best way to do this)
-  LocalMapper* mpLocalMapper;
-  LoopCloser* mpLoopClosing;
+  std::shared_ptr<LocalMapper> mpLocalMapper;
+  std::shared_ptr<LoopCloser> mpLoopClosing;
 
   ORBextractor* mpORBextractorLeft;
   ORBextractor* mpORBextractorRight;

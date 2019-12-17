@@ -4,6 +4,7 @@
 
 #include <thread>
 #include <mutex>
+#include <memory>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -87,14 +88,14 @@ private:
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints and
   // performs relocalization if tracking fails.
-  Tracker* mpTracker;
+  std::shared_ptr<Tracker> mpTracker;
 
   // Local Mapper. It manages the local map and performs local bundle adjustment.
-  LocalMapper* mpLocalMapper;
+  std::shared_ptr<LocalMapper> mpLocalMapper;
 
   // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
   // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-  LoopCloser* mpLoopCloser;
+  std::shared_ptr<LoopCloser> mpLoopCloser;
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.

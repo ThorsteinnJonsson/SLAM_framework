@@ -47,15 +47,6 @@ void LoadKittiImages(const std::string& kitti_path,
   }
 }
 
-// void WriteResultsToFile(const std::vector<std::array<float,3>>& positions) {
-//   std::ofstream myfile;
-//   myfile.open("tmp/positions.txt");
-//   for (const auto& pos : positions) {
-//     myfile << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-//   }
-//   myfile.close();
-// }
-
 int main(int argc, char **argv) {
   // Input TODO: change to actual input 
   std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
@@ -127,7 +118,6 @@ int main(int argc, char **argv) {
   std::cout << "Done\n";
   
   // TODO print post-processing stuff
-  // WriteResultsToFile(positions);
   slam_system.SaveTrajectoryKITTI("tmp/positions.txt");
 
 }

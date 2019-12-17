@@ -19,11 +19,11 @@ LocalMapper::LocalMapper(Map* pMap, const float bMonocular)
 
 }
 
-void LocalMapper::SetLoopCloser(LoopCloser* pLoopCloser) {
+void LocalMapper::SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser) {
   mpLoopCloser = pLoopCloser;
 }
 
-void LocalMapper::SetTracker(Tracker* pTracker) {
+void LocalMapper::SetTracker(const std::shared_ptr<Tracker>& pTracker) {
   mpTracker = pTracker;
 }
 

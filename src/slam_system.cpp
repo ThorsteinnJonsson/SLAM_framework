@@ -44,23 +44,23 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
 
   //Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
-  mpTracker = new Tracker(this, 
-                          mpVocabulary, 
-                          mpMap, 
-                          mpKeyFrameDatabase, 
-                          strSettingsFile, 
-                          mSensor);
+  mpTracker = std::make_shared<Tracker>(this, 
+                                        mpVocabulary, 
+                                        mpMap, 
+                                        mpKeyFrameDatabase, 
+                                        strSettingsFile, 
+                                        mSensor);
 
   //Initialize the Local Mapping thread and launch
-  mpLocalMapper = new LocalMapper(mpMap, 
-                                  mSensor==SENSOR_TYPE::MONOCULAR);
+  mpLocalMapper = std::make_shared<LocalMapper>(mpMap, 
+                                                mSensor==SENSOR_TYPE::MONOCULAR);
   mptLocalMapping = new thread(&LocalMapper::Run, mpLocalMapper);
 
   //Initialize the Loop Closing thread and launch
-  mpLoopCloser = new LoopCloser(mpMap, 
-                                mpKeyFrameDatabase, 
-                                mpVocabulary, 
-                                mSensor != SENSOR_TYPE::MONOCULAR);
+  mpLoopCloser = std::make_shared<LoopCloser>(mpMap, 
+                                              mpKeyFrameDatabase, 
+                                              mpVocabulary, 
+                                              mSensor != SENSOR_TYPE::MONOCULAR);
   mptLoopClosing = new thread(&LoopCloser::Run, mpLoopCloser);
 
   //Set pointers between threads
