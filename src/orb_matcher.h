@@ -23,7 +23,7 @@ public:
   // Used to track the local map (Tracking)
   int SearchByProjection(Frame& F, 
                          const std::vector<MapPoint*>& vpMapPoints,
-                         const float th=3);
+                         const int th=3);
 
   // Project MapPoints tracked in last frame into the current frame and search matches.
   // Used to track from previous frame (Tracking)

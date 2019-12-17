@@ -29,9 +29,9 @@ enum SENSOR_TYPE {
 
 class SlamSystem {
 public:
-  SlamSystem(const std::string& strVocFile, 
-             const std::string& strSettingsFile, 
-             const SENSOR_TYPE sensor);
+  explicit SlamSystem(const std::string& strVocFile, 
+                      const std::string& strSettingsFile, 
+                      const SENSOR_TYPE sensor);
   ~SlamSystem();
 
   cv::Mat TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, const double timestamp);
@@ -39,7 +39,7 @@ public:
   // cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp); // TODO implement later
 
   // Reset the system (clear map)
-  void Reset();
+  void FlagReset();
 
   // This stops local mapping thread (map building) and performs only camera tracking.
   void ActivateLocalizationMode();
@@ -59,7 +59,7 @@ public:
   // Only for stereo and RGB-D. This method does not work for monocular.
   // Call first Shutdown()
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
-  void SaveTrajectoryKITTI(const string& filename);
+  void SaveTrajectoryKITTI(const string& filename) const;
 
   // TODO: Save/Load functions (not implemented in the original ORB-SLAM)
   // SaveMap(const string &filename);
@@ -99,12 +99,12 @@ private:
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
-  std::thread* mptLocalMapping;
-  std::thread* mptLoopClosing;
+  std::unique_ptr<std::thread> mptLocalMapping;
+  std::unique_ptr<std::thread> mptLoopClosing;
 
   // Reset flag
   std::mutex mMutexReset;
-  bool mbReset;
+  bool reset_flag_;
 
   // Change mode flags
   std::mutex mMutexMode;

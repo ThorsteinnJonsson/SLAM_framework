@@ -1,14 +1,12 @@
 #include "slam_system.h"
 #include <unistd.h> // usleep
 
-// #pragma GCC optimize ("O0") //TODO remove
-
 
 SlamSystem::SlamSystem(const std::string& strVocFile, 
                        const std::string& strSettingsFile, 
                        const SENSOR_TYPE sensor) 
         : mSensor(sensor) 
-        , mbReset(false)
+        , reset_flag_(false)
         , mbActivateLocalizationMode(false)
         , mbDeactivateLocalizationMode(false) {
     
@@ -54,23 +52,21 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
   //Initialize the Local Mapping thread and launch
   mpLocalMapper = std::make_shared<LocalMapper>(mpMap, 
                                                 mSensor==SENSOR_TYPE::MONOCULAR);
-  mptLocalMapping = new thread(&LocalMapper::Run, mpLocalMapper);
+  mptLocalMapping.reset(new thread(&LocalMapper::Run, mpLocalMapper));
 
   //Initialize the Loop Closing thread and launch
   mpLoopCloser = std::make_shared<LoopCloser>(mpMap, 
                                               mpKeyFrameDatabase, 
                                               mpVocabulary, 
                                               mSensor != SENSOR_TYPE::MONOCULAR);
-  mptLoopClosing = new thread(&LoopCloser::Run, mpLoopCloser);
+  mptLoopClosing.reset(new thread(&LoopCloser::Run, mpLoopCloser));
 
   //Set pointers between threads
   mpTracker->SetLocalMapper(mpLocalMapper);
   mpTracker->SetLoopCloser(mpLoopCloser);
 
-  mpLocalMapper->SetTracker(mpTracker);
   mpLocalMapper->SetLoopCloser(mpLoopCloser);
 
-  mpLoopCloser->SetTracker(mpTracker);
   mpLoopCloser->SetLocalMapper(mpLocalMapper);
 
 }
@@ -111,9 +107,9 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
   // Check reset
   {
     std::unique_lock<std::mutex> lock(mMutexReset);
-    if (mbReset) {
+    if (reset_flag_) {
       mpTracker->Reset();
-      mbReset = false;
+      reset_flag_ = false;
     }
   }
 
@@ -127,9 +123,9 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
 }
 
 
-void SlamSystem::Reset() {
+void SlamSystem::FlagReset() {
   std::unique_lock<std::mutex> lock(mMutexReset);
-  mbReset = true;  
+  reset_flag_ = true;  
 }
 
 void SlamSystem::ActivateLocalizationMode() {
@@ -163,6 +159,8 @@ void SlamSystem::Shutdown() {
           mpLoopCloser->isRunningGBA()) {
     usleep(5000);
   }
+  mptLocalMapping->join();
+  mptLoopClosing->join();
 }
 
 int SlamSystem::GetTrackingState() {
@@ -180,7 +178,7 @@ std::vector<cv::KeyPoint> SlamSystem::GetTrackedKeyPointsUn() {
   return mTrackedKeyPointsUn;
 }
 
-void SlamSystem::SaveTrajectoryKITTI(const string& filename) {
+void SlamSystem::SaveTrajectoryKITTI(const string& filename) const {
   std::cout << std::endl << "Saving camera trajectory to " << filename << " ..." << std::endl;
   if (mSensor==MONOCULAR) {
     std::cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular.\n";

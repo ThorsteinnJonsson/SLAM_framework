@@ -5,8 +5,6 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
-// #include"Viewer.h"
-// #include"FrameDrawer.h"
 #include"map.h"
 #include"local_mapper.h"
 #include"loop_closer.h"
@@ -15,7 +13,6 @@
 #include "keyframe_database.h"
 #include "orb_extractor.h"
 // #include "Initializer.h"
-// #include "MapDrawer.h"
 #include "slam_system.h"
 
 #include <mutex>
@@ -47,11 +44,6 @@ public:
   void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { mpLocalMapper = local_mapper; }
   void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { mpLoopClosing = loop_closer; }
 
-  // Load new settings
-  // The focal lenght should be similar or scale prediction will fail when projecting points
-  // TODO: Modify MapPoint::PredictScale to take into account focal lenght
-  // void ChangeCalibration(const string &strSettingPath); // TODO doesn't seem to be used
-
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool &flag) { mbOnlyTracking = flag; }
 
@@ -77,7 +69,7 @@ public:
   Frame mCurrentFrame;
   cv::Mat mImGray;
 
-  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular???
+  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular??? add later
   // std::vector<int> mvIniLastMatches;
   // std::vector<int> mvIniMatches;
   // std::vector<cv::Point2f> mvbPrevMatched;
@@ -126,7 +118,7 @@ protected:
   // The system will try to do relocalization to recover "zero-drift" localization to the map.
   bool mbVO;
 
-  // Other Thread Pointers (TODO probably not the best way to do this)
+  // Other Thread Pointers
   std::shared_ptr<LocalMapper> mpLocalMapper;
   std::shared_ptr<LoopCloser> mpLoopClosing;
 
@@ -178,7 +170,8 @@ protected:
   //Color order (true RGB, false BGR, ignored if grayscale)
   bool mbRGB;
 
-  std::list<MapPoint*> mlpTemporalPoints; // TODO do we ever use this
+private:
+  const int num_required_matches_ = 15;
 };
 
 

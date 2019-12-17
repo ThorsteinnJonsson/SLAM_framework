@@ -27,10 +27,6 @@ LoopCloser::LoopCloser(Map* pMap,
 
 }
 
-void LoopCloser::SetTracker(const std::shared_ptr<Tracker>& pTracker) {
-  mpTracker = pTracker;
-}
-
 void LoopCloser::SetLocalMapper(const std::shared_ptr<LocalMapper>& pLocalMapper) { 
   mpLocalMapper = pLocalMapper; 
 }
@@ -326,11 +322,7 @@ bool LoopCloser::DetectLoop() {
     return false;
   } else {
     return true;
-  }
-  
-  // TODO does this ever get reached??
-  mpCurrentKF->SetErase();
-  return false;
+  } 
 }
 
 bool LoopCloser::ComputeSim3() {

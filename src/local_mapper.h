@@ -16,11 +16,10 @@ class Map;
 
 class LocalMapper {
 public:
-  LocalMapper(Map* pMap, const float bMonocular); // TODO why is this float???
+  explicit LocalMapper(Map* pMap, const bool bMonocular);
   ~LocalMapper() {}
 
   void SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser);
-  void SetTracker(const std::shared_ptr<Tracker>& pTracker);
 
   void Run();
 
@@ -55,9 +54,9 @@ protected:
 
   void KeyFrameCulling();
 
-  cv::Mat ComputeF12(KeyFrame* &pKF1, KeyFrame* &pKF2); // TODO why reference to a pointer????
+  cv::Mat ComputeF12(KeyFrame* pKF1, KeyFrame* pKF2) const;
 
-  cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
+  cv::Mat SkewSymmetricMatrix(const cv::Mat &v) const;
 
   bool mbMonocular;
 

@@ -16,8 +16,6 @@
 
 #include <mutex>
 
-// #pragma GCC optimize ("O0") //TODO remove
-
 Tracker::Tracker(SlamSystem* pSys, 
                  OrbVocabulary* pVoc, 
                  Map* pMap,
@@ -396,16 +394,6 @@ void Tracker::Track() {
         }
       }
 
-      // Delete temporal MapPoints
-      for (std::list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(); 
-                                          lit != mlpTemporalPoints.end(); 
-                                          lit++) 
-      {
-        MapPoint* pMP = *lit;
-        delete pMP;
-      }
-      mlpTemporalPoints.clear();
-
       // Check if we need to insert a new keyframe
       if (NeedNewKeyFrame()) {
         CreateNewKeyFrame();
@@ -426,7 +414,7 @@ void Tracker::Track() {
     if (mState == TrackingState::LOST) {
       if (mpMap->KeyFramesInMap() <= 5) {
         std::cout << "Track lost soon after initialisation, resetting..." << std::endl;
-        mpSystem->Reset(); // TODO maybe rename to FlagReset or something?
+        mpSystem->FlagReset();
         return;
       }
     }
@@ -476,8 +464,7 @@ bool Tracker::TrackReferenceKeyFrame() {
   std::vector<MapPoint*> vpMapPointMatches;
 
   int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
-
-  if (nmatches < 15) {
+  if (nmatches < num_required_matches_) {
     return false;
   }
 
@@ -498,14 +485,14 @@ bool Tracker::TrackReferenceKeyFrame() {
         mCurrentFrame.mvbOutlier[i] = false;
         pMP->mbTrackInView = false;
         pMP->mnLastFrameSeen = mCurrentFrame.mnId;
-        --nmatches;
+        --nmatches; // TODO never seem to use  this again
       } else if (mCurrentFrame.mvpMapPoints[i]->Observations() > 0) {
         nmatchesMap++;
       }
     }
   }
 
-  return (nmatchesMap >= 10); // TODO change to parameter
+  return (nmatchesMap >= 10);
 }
 
 void Tracker::UpdateLastFrame() {
@@ -556,14 +543,11 @@ void Tracker::UpdateLastFrame() {
       MapPoint* pNewMP = new MapPoint(x3D,
                                       mpMap,
                                       &mLastFrame,
-                                      i); // TODO Probably not the best practice
+                                      i);
 
       mLastFrame.mvpMapPoints[i] = pNewMP;
-      mlpTemporalPoints.push_back(pNewMP);
-      ++nPoints;  
-    } else {
-      ++nPoints; // TODO Is this needed? Can be outside of if-statement
-    }
+    } 
+    ++nPoints;
 
     if (vDepthIdx[j].first > mThDepth && nPoints > 100) {
       break;
@@ -659,7 +643,7 @@ bool Tracker::Relocalization() {
   // If enough matches are found we setup a PnP solver
   OrbMatcher matcher(0.75, true);
 
-  std::vector<PnPsolver*> vpPnPsolvers;
+  std::vector<std::unique_ptr<PnPsolver>> vpPnPsolvers;
   vpPnPsolvers.resize(nKFs);
 
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
@@ -682,14 +666,15 @@ bool Tracker::Relocalization() {
         vbDiscarded[i] = true;
         continue;
       } else {
-        PnPsolver* pSolver = new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]); // TODO new rip
+        std::unique_ptr<PnPsolver> pSolver;
+        pSolver.reset(new PnPsolver(mCurrentFrame,vvpMapPointMatches[i]));
         pSolver->SetRansacParameters(0.99,
                                      10,
                                      300,
                                      4,
                                      0.5,
                                      5.991);
-        vpPnPsolvers[i] = pSolver;
+        vpPnPsolvers[i] = std::move(pSolver);
         ++nCandidates;
       }
     }
@@ -711,12 +696,11 @@ bool Tracker::Relocalization() {
       int nInliers;
       bool bNoMore;
 
-      PnPsolver* pSolver = vpPnPsolvers[i];
       constexpr int num_iter = 5;
-      cv::Mat Tcw = pSolver->iterate(num_iter,
-                                     bNoMore,
-                                     vbInliers,
-                                     nInliers);
+      cv::Mat Tcw = vpPnPsolvers[i]->iterate(num_iter,
+                                             bNoMore,
+                                             vbInliers,
+                                             nInliers);
 
       // If Ransac reachs max iterations discard keyframe
       if (bNoMore) {
@@ -781,7 +765,7 @@ bool Tracker::Relocalization() {
               if (nGood + nadditional >= 50) {
                 nGood = Optimizer::PoseOptimization(&mCurrentFrame);
 
-                for (int io = 0; io < mCurrentFrame.mN; ++io) { // TODO replace with std algo
+                for (int io = 0; io < mCurrentFrame.mN; ++io) {
                   if (mCurrentFrame.mvbOutlier[io]) {
                     mCurrentFrame.mvpMapPoints[io] = nullptr;
                   }
@@ -819,7 +803,6 @@ void Tracker::UpdateLocalMap() {
 
 void Tracker::UpdateLocalPoints() {
   mvpLocalMapPoints.clear();
-  // TODO can we reserve the sice of mvpLocalMapPoints?
 
   for (std::vector<KeyFrame*>::const_iterator itKF = mvpLocalKeyFrames.begin(); 
                                               itKF != mvpLocalKeyFrames.end(); 
@@ -1032,7 +1015,7 @@ void Tracker::SearchLocalPoints() {
 
   if (nToMatch > 0) {
     OrbMatcher matcher(0.8);
-    int th = 1; // TODO why int here but float in SearchByProjection()?
+    int th = 1;
     if (mSensor == SENSOR_TYPE::RGBD) {
       th = 3;
     }
@@ -1184,10 +1167,8 @@ void Tracker::CreateNewKeyFrame() {
           mpMap->AddMapPoint(pNewMP);
 
           mCurrentFrame.mvpMapPoints[i] = pNewMP;
-          ++nPoints;
-        } else {
-          ++nPoints; // TODO why not outside if statement?
         }
+        ++nPoints;
 
         if (vDepthIdx[j].first > mThDepth && nPoints > 100) {
           break;

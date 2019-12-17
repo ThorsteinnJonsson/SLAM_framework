@@ -10,11 +10,11 @@ OrbMatcher::OrbMatcher(float nnratio, bool checkOri): mfNNratio(nnratio), mbChec
 {
 }
 
-int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoints, const float th)
+int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoints, const int th)
 {
     int nmatches=0;
 
-    const bool bFactor = th!=1.0;
+    const bool bFactor = (th != 1);
 
     for(size_t iMP=0; iMP<vpMapPoints.size(); iMP++)
     {

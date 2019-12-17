@@ -3,9 +3,7 @@
 #include "orb_matcher.h"
 #include "optimizer.h"
 
-// #pragma GCC optimize ("O0") //TODO remove
-
-LocalMapper::LocalMapper(Map* pMap, const float bMonocular)
+LocalMapper::LocalMapper(Map* pMap, const bool bMonocular)
     : mbMonocular(bMonocular)
     , mbResetRequested(false)
     , mbFinishRequested(false)
@@ -21,10 +19,6 @@ LocalMapper::LocalMapper(Map* pMap, const float bMonocular)
 
 void LocalMapper::SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser) {
   mpLoopCloser = pLoopCloser;
-}
-
-void LocalMapper::SetTracker(const std::shared_ptr<Tracker>& pTracker) {
-  mpTracker = pTracker;
 }
 
 void LocalMapper::Run() {
@@ -238,14 +232,7 @@ void LocalMapper::MapPointCulling() {
   // const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
   const int nCurrentKFid = static_cast<int>(mpCurrentKeyFrame->mnId);
 
-  // int nThObs;
-  // if (mbMonocular) {
-  //   nThObs = 2;
-  // } else { 
-  //   nThObs = 3;
-  // }
-  // const int cnThObs = nThObs;
-  const int cnThObs = mbMonocular? 2 : 3; // TODO maybe this works instead??
+  const int cnThObs = mbMonocular? 2 : 3;
 
   while (lit != mlpRecentAddedMapPoints.end()){
     MapPoint* pMP = *lit;
@@ -266,12 +253,8 @@ void LocalMapper::MapPointCulling() {
   }
 }
 
-void LocalMapper::CreateNewMapPoints() { //TODO make this function neater
+void LocalMapper::CreateNewMapPoints() {
   // Retrieve neighbor keyframes in covisibility graph
-  // int nn = 10;
-  // if (mbMonocular) {
-  //   nn=20;
-  // }
   const int nn = mbMonocular ? 20 : 10;
   const std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
@@ -356,15 +339,15 @@ void LocalMapper::CreateNewMapPoints() { //TODO make this function neater
 
       const cv::KeyPoint& kp2 = pKF2->mvKeysUn[idx2];
       const float kp2_ur = pKF2->mvuRight[idx2];
-      bool bStereo2 = kp2_ur >= 0;
+      bool bStereo2 = (kp2_ur >= 0);
 
       // Check parallax between rays
-      cv::Mat xn1 = (cv::Mat_<float>(3,1) << (kp1.pt.x-cx1)*invfx1, 
-                                             (kp1.pt.y-cy1)*invfy1, 
-                                              1.0); // TODO the fuck is this syntax??
-      cv::Mat xn2 = (cv::Mat_<float>(3,1) << (kp2.pt.x-cx2)*invfx2, 
-                                             (kp2.pt.y-cy2)*invfy2, 
-                                              1.0);
+      cv::Mat xn1 = cv::Mat(3,1, CV_32F, {(kp1.pt.x-cx1)*invfx1, 
+                                          (kp1.pt.y-cy1)*invfy1, 
+                                           1.0});
+      cv::Mat xn2 = cv::Mat(3,1, CV_32F, {(kp2.pt.x-cx2)*invfx2, 
+                                          (kp2.pt.y-cy2)*invfy2, 
+                                           1.0});
       cv::Mat ray1 = Rwc1 * xn1;
       cv::Mat ray2 = Rwc2 * xn2;
       const float cosParallaxRays = ray1.dot(ray2) / (cv::norm(ray1)*cv::norm(ray2));
@@ -617,8 +600,7 @@ void LocalMapper::KeyFrameCulling() {
     }
     const std::vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
 
-    int nObs = 3;
-    const int thObs = nObs;
+    const int thObs = 3;
     int nRedundantObservations = 0;
     int nMPs = 0;
     for (size_t i = 0; i < vpMapPoints.size(); ++i) {
@@ -635,7 +617,7 @@ void LocalMapper::KeyFrameCulling() {
         if (pMP->Observations() > thObs) {
           const int scaleLevel = pKF->mvKeysUn[i].octave;
           const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
-          int nObs = 0; // TODO why redefine???
+          int nObs = 0;
           for (std::map<KeyFrame*,size_t>::const_iterator mit = observations.begin(); 
                                                           mit != observations.end(); 
                                                           ++mit) {
@@ -665,16 +647,16 @@ void LocalMapper::KeyFrameCulling() {
   }
 }
 
-cv::Mat LocalMapper::ComputeF12(KeyFrame*& pKF1, KeyFrame*& pKF2) {
-  cv::Mat R1w = pKF1->GetRotation();
-  cv::Mat t1w = pKF1->GetTranslation();
-  cv::Mat R2w = pKF2->GetRotation();
-  cv::Mat t2w = pKF2->GetTranslation();
+cv::Mat LocalMapper::ComputeF12(KeyFrame* pKF1, KeyFrame* pKF2) const {
+  const cv::Mat R1w = pKF1->GetRotation();
+  const cv::Mat t1w = pKF1->GetTranslation();
+  const cv::Mat R2w = pKF2->GetRotation();
+  const cv::Mat t2w = pKF2->GetTranslation();
 
-  cv::Mat R12 = R1w*R2w.t();
-  cv::Mat t12 = -R1w*R2w.t()*t2w+t1w;
+  const cv::Mat R12 = R1w*R2w.t();
+  const cv::Mat t12 = -R1w*R2w.t()*t2w + t1w;
 
-  cv::Mat t12x = SkewSymmetricMatrix(t12);
+  const cv::Mat t12x = SkewSymmetricMatrix(t12);
 
   const cv::Mat& K1 = pKF1->mK;
   const cv::Mat& K2 = pKF2->mK;
@@ -682,9 +664,9 @@ cv::Mat LocalMapper::ComputeF12(KeyFrame*& pKF1, KeyFrame*& pKF2) {
   return K1.t().inv() * t12x * R12 * K2.inv();
 }
 
-cv::Mat LocalMapper::SkewSymmetricMatrix(const cv::Mat& v) {
-  return (cv::Mat_<float>(3,3) <<               0, -v.at<float>(2),  v.at<float>(1),
-                                   v.at<float>(2),               0, -v.at<float>(0),
+cv::Mat LocalMapper::SkewSymmetricMatrix(const cv::Mat& v) const {
+  return (cv::Mat_<float>(3,3) <<              0,  -v.at<float>(2),  v.at<float>(1),
+                                   v.at<float>(2),              0,  -v.at<float>(0),
                                   -v.at<float>(1),  v.at<float>(0),              0);  
 }
 
