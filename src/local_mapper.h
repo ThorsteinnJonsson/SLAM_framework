@@ -16,7 +16,8 @@ class Map;
 
 class LocalMapper {
 public:
-  explicit LocalMapper(Map* pMap, const bool bMonocular);
+  explicit LocalMapper(const std::shared_ptr<Map>& pMap, 
+                       const bool bMonocular);
   ~LocalMapper() {}
 
   void SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser);
@@ -70,7 +71,7 @@ protected:
   bool mbFinished;
   std::mutex mMutexFinish;
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   std::shared_ptr<LoopCloser> mpLoopCloser;
   std::shared_ptr<Tracker> mpTracker;

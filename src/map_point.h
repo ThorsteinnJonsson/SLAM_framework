@@ -10,8 +10,13 @@
 
 class MapPoint{
 public:
-  MapPoint(const cv::Mat& Pos, KeyFrame* pRefKF, Map* pMap);
-  MapPoint(const cv::Mat& Pos, Map* pMap, Frame* pFrame, const int &idxF);
+  MapPoint(const cv::Mat& Pos, 
+           KeyFrame* pRefKF, 
+           const std::shared_ptr<Map>& pMap);
+  MapPoint(const cv::Mat& Pos, 
+           const std::shared_ptr<Map>& pMap, 
+           Frame* pFrame, 
+           const int& idxF);
   ~MapPoint() {}
 
   void SetWorldPos(const cv::Mat& Pos);
@@ -112,7 +117,7 @@ protected:
   float mfMinDistance;
   float mfMaxDistance;
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   std::mutex mMutexPos;
   std::mutex mMutexFeatures;

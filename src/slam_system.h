@@ -57,7 +57,7 @@ public:
 
   // Save camera trajectory in the KITTI dataset format.
   // Only for stereo and RGB-D. This method does not work for monocular.
-  // Call first Shutdown()
+  // Call Shutdown() before calling this function.
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
   void SaveTrajectoryKITTI(const string& filename) const;
 
@@ -67,55 +67,54 @@ public:
 
   // Information from most recent processed frame
   // You can call this right after TrackMonocular (or stereo or RGBD)
-  int GetTrackingState();
-  std::vector<MapPoint*> GetTrackedMapPoints();
-  std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
-
+  int GetTrackingState() const;
+  std::vector<MapPoint*> GetTrackedMapPoints() const;
+  std::vector<cv::KeyPoint> GetTrackedKeyPointsUn() const;
 
 private:
   // Input sensor
-  SENSOR_TYPE mSensor;
+  SENSOR_TYPE sensor_type_;
 
   // ORB vocabulary used for place recognition and feature matching.
-  OrbVocabulary* mpVocabulary;
+  std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
   // KeyFrame database for place recognition (relocalization and loop detection).
-  KeyframeDatabase* mpKeyFrameDatabase;
+  std::shared_ptr<KeyframeDatabase> keyframe_database_;
 
   // Map structure that stores the pointers to all KeyFrames and MapPoints.
-  Map* mpMap;
+  std::shared_ptr<Map> map_;
 
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints and
   // performs relocalization if tracking fails.
-  std::shared_ptr<Tracker> mpTracker;
+  std::shared_ptr<Tracker> tracker_;
 
   // Local Mapper. It manages the local map and performs local bundle adjustment.
-  std::shared_ptr<LocalMapper> mpLocalMapper;
+  std::shared_ptr<LocalMapper> local_mapper_;
 
   // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
   // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-  std::shared_ptr<LoopCloser> mpLoopCloser;
+  std::shared_ptr<LoopCloser> loop_closer_;
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
-  std::unique_ptr<std::thread> mptLocalMapping;
-  std::unique_ptr<std::thread> mptLoopClosing;
+  std::unique_ptr<std::thread> local_mapping_thread_;
+  std::unique_ptr<std::thread> loop_closing_thread_;
 
   // Reset flag
-  std::mutex mMutexReset;
+  mutable std::mutex mMutexReset;
   bool reset_flag_;
 
   // Change mode flags
-  std::mutex mMutexMode;
-  bool mbActivateLocalizationMode;
-  bool mbDeactivateLocalizationMode;
+  mutable std::mutex mode_mutex_;
+  bool activate_localization_mode_;
+  bool deactivate_localization_mode_;
 
   // Tracking state
-  int mTrackingState;
-  std::vector<MapPoint*> mTrackedMapPoints;
-  std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
-  std::mutex mMutexState;  
+  int tracking_state_;
+  std::vector<MapPoint*> tracked_map_points_;
+  std::vector<cv::KeyPoint> tracked_keypoints_un_;
+  mutable std::mutex state_mutex_;  
  
 };
 

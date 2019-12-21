@@ -15,11 +15,14 @@
 #include<mutex>
 
 
-void Optimizer::GlobalBundleAdjustemnt(Map* pMap, int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
-{
-    std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
-    std::vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
-    BundleAdjustment(vpKFs, vpMP, nIterations, pbStopFlag, nLoopKF, bRobust);
+void Optimizer::GlobalBundleAdjustemnt(const std::shared_ptr<Map>& pMap, 
+                                       int nIterations, 
+                                       bool* pbStopFlag, 
+                                       const unsigned long nLoopKF, 
+                                       const bool bRobust) {
+  std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
+  std::vector<MapPoint*> vpMP = pMap->GetAllMapPoints();
+  BundleAdjustment(vpKFs, vpMP, nIterations, pbStopFlag, nLoopKF, bRobust);
 }
 
 
@@ -427,7 +430,9 @@ int Optimizer::PoseOptimization(Frame *pFrame)
     return nInitialCorrespondences-nBad;
 }
 
-void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap) {    
+void Optimizer::LocalBundleAdjustment(KeyFrame* pKF, 
+                                      bool* pbStopFlag, 
+                                      const std::shared_ptr<Map>& pMap) {    
   // Local KeyFrames: First Breath Search from Current Keyframe
   list<KeyFrame*> lLocalKeyFrames;
 
@@ -755,7 +760,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap
 }
 
 
-void Optimizer::OptimizeEssentialGraph(Map* pMap, 
+void Optimizer::OptimizeEssentialGraph(const std::shared_ptr<Map>& pMap, 
                                        KeyFrame* pLoopKF, 
                                        KeyFrame* pCurKF,
                                        const LoopCloser::KeyFrameAndPose& NonCorrectedSim3,

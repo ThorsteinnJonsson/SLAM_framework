@@ -10,7 +10,9 @@
 
 #include <opencv2/opencv.hpp>
 
-#define FRAME_GRID_ROWS 48
+#include <memory>
+
+#define FRAME_GRID_ROWS 48 // TODO not good to use macros
 #define FRAME_GRID_COLS 64
 
 // Forward declarations
@@ -31,7 +33,7 @@ public:
         const double timeStamp, 
         ORBextractor* extractorLeft, 
         ORBextractor* extractorRight, 
-        OrbVocabulary* voc, 
+        const std::shared_ptr<OrbVocabulary>& voc, 
         cv::Mat& K, 
         cv::Mat& distCoef, 
         const float bf, 
@@ -89,7 +91,7 @@ public:
 
 public:
   // Vocabulary used for relocalization.
-  OrbVocabulary* mpORBvocabulary;
+  std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
 
   // Feature extractor. The right is used only in the stereo case.
   ORBextractor* mpORBextractorLeft;

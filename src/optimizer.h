@@ -19,7 +19,7 @@ public:
                                const unsigned long nLoopKF=0,
                                const bool bRobust=true);
 
-  static void GlobalBundleAdjustemnt(Map* pMap, 
+  static void GlobalBundleAdjustemnt(const std::shared_ptr<Map>& pMap, 
                                      int nIterations=5, 
                                      bool *pbStopFlag=nullptr,
                                      const unsigned long nLoopKF=0, 
@@ -27,13 +27,13 @@ public:
 
   static void LocalBundleAdjustment(KeyFrame* pKF, 
                                     bool* pbStopFlag, 
-                                    Map* pMap);
+                                    const std::shared_ptr<Map>& pMap);
 
   static int PoseOptimization(Frame* pFrame);
 
   
   // if bFixScale is true, 6DoF optimization (stereo,rgbd), 7DoF otherwise (mono)
-  static void OptimizeEssentialGraph(Map* pMap, 
+  static void OptimizeEssentialGraph(const std::shared_ptr<Map>& pMap, 
                                      KeyFrame* pLoopKF, 
                                      KeyFrame* pCurKF,
                                      const LoopCloser::KeyFrameAndPose& NonCorrectedSim3,

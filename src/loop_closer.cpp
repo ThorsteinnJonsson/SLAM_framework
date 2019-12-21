@@ -5,9 +5,9 @@
 #include "optimizer.h"
 #include "orb_matcher.h"
 
-LoopCloser::LoopCloser(Map* pMap,
-                       KeyframeDatabase* pDB,
-                       OrbVocabulary* pVoc,
+LoopCloser::LoopCloser(const std::shared_ptr<Map>& pMap,
+                       const std::shared_ptr<KeyframeDatabase>& pDB,
+                       const std::shared_ptr<OrbVocabulary>& pVoc,
                        const bool bFixScale) 
       : mbResetRequested(false)
       , mbFinishRequested(false)

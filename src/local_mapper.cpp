@@ -3,7 +3,8 @@
 #include "orb_matcher.h"
 #include "optimizer.h"
 
-LocalMapper::LocalMapper(Map* pMap, const bool bMonocular)
+LocalMapper::LocalMapper(const std::shared_ptr<Map>& pMap, 
+                         const bool bMonocular)
     : mbMonocular(bMonocular)
     , mbResetRequested(false)
     , mbFinishRequested(false)

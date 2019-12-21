@@ -26,7 +26,10 @@ public:
                    Eigen::aligned_allocator<std::pair<const KeyFrame*, g2o::Sim3>>> KeyFrameAndPose;
 
 public:
-  explicit LoopCloser(Map* pMap, KeyframeDatabase* pDB, OrbVocabulary* pVoc, const bool bFixScale);
+  explicit LoopCloser(const std::shared_ptr<Map>& pMap, 
+                      const std::shared_ptr<KeyframeDatabase>& pDB, 
+                      const std::shared_ptr<OrbVocabulary>& pVoc, 
+                      const bool bFixScale);
   ~LoopCloser() {}
 
   void SetLocalMapper(const std::shared_ptr<LocalMapper>& pLocalMapper);
@@ -69,11 +72,11 @@ protected:
   bool mbFinished;
   std::mutex mMutexFinish;
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
   std::shared_ptr<Tracker> mpTracker;
 
-  KeyframeDatabase* mpKeyFrameDB;
-  OrbVocabulary* mpORBVocabulary;
+  const std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
+  const std::shared_ptr<OrbVocabulary> mpORBVocabulary;
 
   std::shared_ptr<LocalMapper> mpLocalMapper;
 

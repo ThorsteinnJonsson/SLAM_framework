@@ -1,6 +1,8 @@
 #include "tracker.h"
 
 #include <unistd.h> // usleep
+#include <iostream>
+#include <mutex>s
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -8,18 +10,14 @@
 #include "orb_matcher.h"
 #include "converter.h"
 #include "map.h"
-
 #include "optimizer.h"
 #include "pnp_solver.h"
 
-#include <iostream>
-
-#include <mutex>
 
 Tracker::Tracker(SlamSystem* pSys, 
-                 OrbVocabulary* pVoc, 
-                 Map* pMap,
-                 KeyframeDatabase* pKFDB, 
+                 const std::shared_ptr<OrbVocabulary>& pVoc, 
+                 const std::shared_ptr<Map>& pMap,
+                 const std::shared_ptr<KeyframeDatabase>& pKFDB, 
                  const std::string& strSettingPath, // TODO
                  const int sensor)
       : mState(TrackingState::NO_IMAGES_YET)
@@ -30,9 +28,8 @@ Tracker::Tracker(SlamSystem* pSys,
       , mpKeyFrameDB(pKFDB)
       , mpSystem(pSys)
       , mpMap(pMap)
-      , mnLastRelocFrameId(0)
-{
-      // Load camera parameters from settings file
+      , mnLastRelocFrameId(0) {
+  // Load camera parameters from settings file
   // cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
   // float fx = fSettings["Camera.fx"];
   // float fy = fSettings["Camera.fy"];
@@ -197,9 +194,7 @@ void Tracker::StereoInitialization() {
     mCurrentFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
 
     // Create KeyFrame
-    KeyFrame* pKFini = new KeyFrame(mCurrentFrame,
-                                    mpMap,
-                                    mpKeyFrameDB);
+    KeyFrame* pKFini = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
     // Insert KeyFrame in the map
     mpMap->AddKeyFrame(pKFini);
@@ -630,8 +625,7 @@ bool Tracker::Relocalization() {
 
   // Relocalization is performed when tracking is lost
   // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
-  std::vector<KeyFrame*> vpCandidateKFs = 
-                mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
+  std::vector<KeyFrame*> vpCandidateKFs = mpKeyFrameDB->DetectRelocalizationCandidates(&mCurrentFrame);
 
   if (vpCandidateKFs.empty()) {
     return false;
@@ -1120,7 +1114,7 @@ void Tracker::CreateNewKeyFrame() {
     return;
   }
 
-  KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpMap,mpKeyFrameDB);
+  KeyFrame* pKF = new KeyFrame(mCurrentFrame, mpMap, mpKeyFrameDB);
 
   mpReferenceKF = pKF;
   mCurrentFrame.mpReferenceKF = pKF;

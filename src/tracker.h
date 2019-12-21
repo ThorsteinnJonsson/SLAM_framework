@@ -16,6 +16,7 @@
 #include "slam_system.h"
 
 #include <mutex>
+#include <memory>
 
 // Forward declerations
 class Map;
@@ -23,13 +24,12 @@ class LocalMapper;
 class LoopCloser;
 class SlamSystem;
 
-
 class Tracker {
 public:
   Tracker(SlamSystem* pSys, 
-          OrbVocabulary* pVoc, 
-          Map* pMap,
-          KeyframeDatabase* pKFDB, 
+          const std::shared_ptr<OrbVocabulary>& pVoc, 
+          const std::shared_ptr<Map>& pMap,
+          const std::shared_ptr<KeyframeDatabase>& pKFDB, 
           const std::string& strSettingPath, 
           const int sensor);
   ~Tracker() {}
@@ -50,7 +50,6 @@ public:
   void Reset();
 
 public:
-  // Tracking states
   enum TrackingState {
     SYSTEM_NOT_READY=-1,
     NO_IMAGES_YET=0,
@@ -58,7 +57,6 @@ public:
     OK=2,
     LOST=3
   };
-
   TrackingState mState;
   TrackingState mLastProcessedState;
 
@@ -126,8 +124,8 @@ protected:
   ORBextractor* mpORBextractorRight;
   ORBextractor* mpIniORBextractor;
 
-  OrbVocabulary* mpORBVocabulary;
-  KeyframeDatabase* mpKeyFrameDB;
+  const std::shared_ptr<OrbVocabulary> mpORBVocabulary;
+  std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
 
   //Local Map
   KeyFrame* mpReferenceKF;
@@ -136,7 +134,7 @@ protected:
 
   SlamSystem* mpSystem;
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   // Calibration matrix
   cv::Mat mK;

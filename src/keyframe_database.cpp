@@ -2,9 +2,9 @@
 
 #include "DBoW2/BowVector.h"
 
-KeyframeDatabase::KeyframeDatabase (const OrbVocabulary& voc) 
-      : mpVoc(&voc) {
-  mvInvertedFile.resize(voc.size());
+KeyframeDatabase::KeyframeDatabase (const std::shared_ptr<OrbVocabulary>& voc) 
+      : mpVoc(voc) {
+  mvInvertedFile.resize(voc->size());
 }
 
 void KeyframeDatabase::add(KeyFrame* pKF) {
