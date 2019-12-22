@@ -90,9 +90,17 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& pVoc,
   int fIniThFAST = 20;
   int fMinThFAST = 7;
 
-  mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+  mpORBextractorLeft = std::make_shared<ORBextractor>(nFeatures,
+                                                      fScaleFactor,
+                                                      nLevels,
+                                                      fIniThFAST,
+                                                      fMinThFAST);
   if (sensor == SENSOR_TYPE::STEREO) {
-    mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);  
+    mpORBextractorRight = std::make_shared<ORBextractor>(nFeatures,
+                                                         fScaleFactor,
+                                                         nLevels,
+                                                         fIniThFAST,
+                                                         fMinThFAST);  
   }
 
   // mThDepth = mbf * static_cast<float>(fSettings["ThDepth"]) / fx;
@@ -146,7 +154,85 @@ cv::Mat Tracker::GrabImageStereo(const cv::Mat& imRectLeft,
                          mbf,
                          mThDepth);
   Track();
-  return current_frame_.mTcw.clone();;
+  return current_frame_.mTcw.clone();
+}
+
+cv::Mat Tracker::GrabImageRGBD(const cv::Mat& imRGB,
+                               const cv::Mat& imD, 
+                               const double timestamp) {
+  mImGray = imRGB;
+  cv::Mat imDepth = imD;
+
+  if (mImGray.channels() == 3) {
+    if(mbRGB) {
+      cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+    } else {
+      cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+    }
+  } else if (mImGray.channels() == 4) {
+    if(mbRGB) {
+      cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+    } else {
+      cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+    }
+  }
+
+  if ((std::fabs(mDepthMapFactor-1.0f) > 1e-5) || imDepth.type()!=CV_32F) {
+    imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
+  }
+
+  current_frame_ = Frame(mImGray,
+                         imDepth,
+                         timestamp,
+                         mpORBextractorLeft,
+                         mpORBVocabulary,
+                         mK,
+                         mDistCoef,
+                         mbf,
+                         mThDepth);
+  Track();
+  return current_frame_.mTcw.clone();                      
+}
+
+cv::Mat Tracker::GrabImageMonocular(const cv::Mat& im, 
+                                    const double timestamp) {
+  mImGray = im;
+
+  if (mImGray.channels() == 3) {
+    if(mbRGB) {
+      cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+    } else {
+      cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+    }
+  } else if(mImGray.channels() == 4) {
+    if(mbRGB) {
+      cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+    } else {
+      cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+    }
+  }
+
+  if (state_ == NOT_INITIALIZED || state_ == NO_IMAGES_YET) {
+    current_frame_ = Frame(mImGray,
+                           timestamp,
+                           mpIniORBextractor,
+                           mpORBVocabulary,
+                           mK,
+                           mDistCoef,
+                           mbf,
+                           mThDepth);
+  } else {
+    current_frame_ = Frame(mImGray,
+                           timestamp,
+                           mpORBextractorLeft,
+                           mpORBVocabulary,
+                           mK,
+                           mDistCoef,
+                           mbf,
+                           mThDepth);
+  }
+  Track();
+  return current_frame_.mTcw.clone();
 }
 
 bool Tracker::NeedSystemReset() const {
@@ -167,10 +253,7 @@ void Tracker::Reset() {
   Frame::nNextId = 0;
   state_ = TrackingState::NO_IMAGES_YET;
 
-  // if(mpInitializer) { // only for mono
-  //   delete mpInitializer;
-  //   mpInitializer = static_cast<Initializer*>(NULL);
-  // }
+  mpInitializer.reset(nullptr);
 
   mlRelativeFramePoses.clear();
   mlpReferences.clear();
@@ -228,6 +311,170 @@ void Tracker::StereoInitialization() {
   }
 }
 
+void Tracker::MonocularInitialization() {
+
+  if (!mpInitializer) {
+    // Set Reference Frame
+    if (current_frame_.mvKeys.size() > 100) {
+      mInitialFrame = Frame(current_frame_);
+      mLastFrame = Frame(current_frame_);
+
+      mvbPrevMatched.resize(current_frame_.mvKeysUn.size());
+      for (size_t i = 0; i < current_frame_.mvKeysUn.size(); ++i) {
+        mvbPrevMatched[i]=current_frame_.mvKeysUn[i].pt;
+      }
+
+      mpInitializer.reset(new Initializer(current_frame_, 1.0, 200));
+
+      std::fill(mvIniMatches.begin(), mvIniMatches.end(), -1);
+      return;
+    }
+  } else {
+    // Try to initialize
+    if (current_frame_.mvKeys.size() <= 100u) {
+      mpInitializer.reset(nullptr);
+      std::fill(mvIniMatches.begin(),mvIniMatches.end(),-1);
+      return;
+    }
+
+    // Find correspondences
+    OrbMatcher matcher(0.9, true);
+    int nmatches = matcher.SearchForInitialization(mInitialFrame,
+                                                   current_frame_,
+                                                   mvbPrevMatched,
+                                                   mvIniMatches,
+                                                   100);
+
+    // Check if there are enough correspondences
+    if (nmatches < 100) {
+      mpInitializer.reset(nullptr);
+      return;
+    }
+
+    cv::Mat Rcw; // Current Camera Rotation
+    cv::Mat tcw; // Current Camera Translation
+    std::vector<bool> vbTriangulated; // Triangulated Correspondences (mvIniMatches) // TODO boolvector
+
+    if (mpInitializer->Initialize(current_frame_, 
+                                  mvIniMatches,
+                                  Rcw,
+                                  tcw,
+                                  mvIniP3D,
+                                  vbTriangulated)) {
+      for (size_t i = 0; i < mvIniMatches.size(); ++i) {
+        if (mvIniMatches[i] >= 0 && !vbTriangulated[i]) {
+          mvIniMatches[i] = -1;
+          --nmatches;
+        }
+      }
+
+      // Set Frame Poses
+      mInitialFrame.SetPose(cv::Mat::eye(4,4,CV_32F));
+      cv::Mat Tcw = cv::Mat::eye(4,4,CV_32F);
+      Rcw.copyTo(Tcw.rowRange(0,3).colRange(0,3));
+      tcw.copyTo(Tcw.rowRange(0,3).col(3));
+      current_frame_.SetPose(Tcw);
+
+      CreateInitialMapMonocular();
+    }
+  }
+}
+
+void Tracker::CreateInitialMapMonocular() {
+  // Create KeyFrames
+  KeyFrame* pKFini = new KeyFrame(mInitialFrame,mpMap,mpKeyFrameDB);
+  KeyFrame* pKFcur = new KeyFrame(current_frame_,mpMap,mpKeyFrameDB);
+
+  pKFini->ComputeBoW();
+  pKFcur->ComputeBoW();
+
+  // Insert KFs in the map
+  mpMap->AddKeyFrame(pKFini);
+  mpMap->AddKeyFrame(pKFcur);
+
+  // Create MapPoints and asscoiate to keyframes
+  for (size_t i=0; i<mvIniMatches.size();++i) {
+    if(mvIniMatches[i] < 0) {
+      continue;
+    }
+
+    //Create MapPoint.
+    cv::Mat worldPos(mvIniP3D[i]);
+
+    MapPoint* pMP = new MapPoint(worldPos,pKFcur,mpMap);
+
+    pKFini->AddMapPoint(pMP,i);
+    pKFcur->AddMapPoint(pMP,mvIniMatches[i]);
+
+    pMP->AddObservation(pKFini,i);
+    pMP->AddObservation(pKFcur,mvIniMatches[i]);
+
+    pMP->ComputeDistinctiveDescriptors();
+    pMP->UpdateNormalAndDepth();
+
+    //Fill Current Frame structure
+    current_frame_.mvpMapPoints[mvIniMatches[i]] = pMP;
+    current_frame_.mvbOutlier[mvIniMatches[i]] = false;
+
+    //Add to Map
+    mpMap->AddMapPoint(pMP);
+  }
+
+  // Update Connections
+  pKFini->UpdateConnections();
+  pKFcur->UpdateConnections();
+
+  // Bundle Adjustment
+  std::cout << "New Map created with " << mpMap->MapPointsInMap() << " points\n";
+
+  Optimizer::GlobalBundleAdjustemnt(mpMap,20);
+
+  // Set median depth to 1
+  float medianDepth = pKFini->ComputeSceneMedianDepth(2);
+  float invMedianDepth = 1.0f / medianDepth;
+
+  if(medianDepth < 0 || pKFcur->TrackedMapPoints(1) < 100) {
+    std::cout << "Wrong initialization, reseting...\n";
+    Reset();
+    return;
+  }
+
+  // Scale initial baseline
+  cv::Mat Tc2w = pKFcur->GetPose();
+  Tc2w.col(3).rowRange(0,3) = Tc2w.col(3).rowRange(0,3) * invMedianDepth;
+  pKFcur->SetPose(Tc2w);
+
+  // Scale points
+  std::vector<MapPoint*> vpAllMapPoints = pKFini->GetMapPointMatches();
+  for (size_t iMP = 0; iMP < vpAllMapPoints.size(); ++iMP) {
+    if (vpAllMapPoints[iMP]) {
+      MapPoint* pMP = vpAllMapPoints[iMP];
+      pMP->SetWorldPos(pMP->GetWorldPos() * invMedianDepth);
+    }
+  }
+
+  mpLocalMapper->InsertKeyFrame(pKFini);
+  mpLocalMapper->InsertKeyFrame(pKFcur);
+
+  current_frame_.SetPose(pKFcur->GetPose());
+  mnLastKeyFrameId = current_frame_.mnId;
+  mpLastKeyFrame = pKFcur;
+
+  mvpLocalKeyFrames.push_back(pKFcur);
+  mvpLocalKeyFrames.push_back(pKFini);
+  mvpLocalMapPoints = mpMap->GetAllMapPoints();
+  mpReferenceKF = pKFcur;
+  current_frame_.mpReferenceKF = pKFcur;
+
+  mLastFrame = Frame(current_frame_);
+
+  mpMap->SetReferenceMapPoints(mvpLocalMapPoints);
+
+  mpMap->mvpKeyFrameOrigins.push_back(pKFini);
+
+  state_ = TrackingState::OK;
+}
+
 void Tracker::Track() {
 
   if (state_ == TrackingState::NO_IMAGES_YET) {
@@ -239,7 +486,11 @@ void Tracker::Track() {
   std::unique_lock<std::mutex> lock(mpMap->mMutexMapUpdate);
 
   if (state_ == TrackingState::NOT_INITIALIZED) {
-    StereoInitialization();
+    if(sensor_type_ == SENSOR_TYPE::STEREO || sensor_type_ == SENSOR_TYPE::RGBD) {
+      StereoInitialization();
+    } else {
+      MonocularInitialization();
+    }
     if (state_ != OK) {
       return;
     }

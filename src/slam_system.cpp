@@ -116,6 +116,91 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
   return Tcw;
 }
 
+cv::Mat SlamSystem::TrackRGBD(const cv::Mat& im, 
+                              const cv::Mat& depthmap, 
+                              const double timestamp) {
+  if(sensor_type_!=RGBD) {
+    std::cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD.\n";
+    exit(-1);
+  }    
+
+  // Check mode change
+  {
+    std::unique_lock<std::mutex> lock(mode_mutex_);
+    if (activate_localization_mode_) {
+      local_mapper_->RequestStop();
+
+      // Wait until Local Mapping has effectively stopped
+      while (!local_mapper_->isStopped()) {
+        usleep(1000);
+      }
+
+      tracker_->InformOnlyTracking(true);
+      activate_localization_mode_ = false;
+    }
+
+    if(deactivate_localization_mode_) {
+      tracker_->InformOnlyTracking(false);
+      local_mapper_->Release();
+      deactivate_localization_mode_ = false;
+    }
+  }
+
+  if (tracker_->NeedSystemReset()) {
+    tracker_->Reset();
+  }
+
+  cv::Mat Tcw = tracker_->GrabImageRGBD(im, depthmap, timestamp);
+
+  std::unique_lock<std::mutex> lock2(state_mutex_);
+  tracking_state_ = tracker_->GetState();
+  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_keypoints_un_ = tracker_->GetCurrentFrame().mvKeysUn;
+  return Tcw;
+}
+
+cv::Mat SlamSystem::TrackMonocular(const cv::Mat& im, 
+                                   const double timestamp) {
+  if (sensor_type_!=MONOCULAR) {
+    std::cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular.\n";
+    exit(-1);
+  }
+
+  // Check mode change
+  {
+    std::unique_lock<std::mutex> lock(mode_mutex_);
+    if (activate_localization_mode_) {
+      local_mapper_->RequestStop();
+
+      // Wait until Local Mapping has effectively stopped
+      while (!local_mapper_->isStopped()) {
+        usleep(1000);
+      }
+
+      tracker_->InformOnlyTracking(true);
+      activate_localization_mode_ = false;
+    }
+
+    if(deactivate_localization_mode_) {
+      tracker_->InformOnlyTracking(false);
+      local_mapper_->Release();
+      deactivate_localization_mode_ = false;
+    }
+  }
+
+  if (tracker_->NeedSystemReset()) {
+    tracker_->Reset();
+  }
+
+  cv::Mat Tcw = tracker_->GrabImageMonocular(im, timestamp);
+
+  std::unique_lock<std::mutex> lock2(state_mutex_);
+  tracking_state_ = tracker_->GetState();
+  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_keypoints_un_ = tracker_->GetCurrentFrame().mvKeysUn;
+  return Tcw;
+}
+
 void SlamSystem::ActivateLocalizationMode() {
   std::unique_lock<std::mutex> lock(mode_mutex_);
   activate_localization_mode_ = true;

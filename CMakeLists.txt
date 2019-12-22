@@ -75,6 +75,7 @@ add_library(stereo_slam SHARED
             src/frame.cpp
             src/keyframe_database.cpp
             src/sim3solver.cpp
+            src/initializer.cpp
 )
 
 target_include_directories(stereo_slam PUBLIC

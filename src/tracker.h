@@ -14,7 +14,7 @@
 #include "orb_vocabulary.h"
 #include "keyframe_database.h"
 #include "orb_extractor.h"
-// #include "Initializer.h"
+#include "initializer.h"
 
 #include <mutex>
 #include <memory>
@@ -38,8 +38,11 @@ public:
   cv::Mat GrabImageStereo(const cv::Mat& imRectLeft,
                           const cv::Mat& imRectRight, 
                           const double timestamp);
-  // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double timestamp); // TODO
-  // cv::Mat GrabImageMonocular(const cv::Mat& im, const double timestamp); //TODO
+  cv::Mat GrabImageRGBD(const cv::Mat& imRGB,
+                        const cv::Mat& imD, 
+                        const double timestamp);
+  cv::Mat GrabImageMonocular(const cv::Mat& im, 
+                             const double timestamp);
 
   void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { 
     mpLocalMapper = local_mapper; 
@@ -86,16 +89,20 @@ public:
   const std::list<KeyFrame*>& GetReferenceKeyframes() {return mlpReferences;}
   const std::list<double>& GetFrameTimes() {return mlFrameTimes;}
 
-  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular??? add later
-  // std::vector<int> mvIniLastMatches;
-  // std::vector<int> mvIniMatches;
-  // std::vector<cv::Point2f> mvbPrevMatched;
-  // std::vector<cv::Point3f> mvIniP3D;
-  // Frame mInitialFrame;
+  // Initialization Variables (Monocular)
+  std::vector<int> mvIniLastMatches; // TODO Should probably be private
+  std::vector<int> mvIniMatches;
+  std::vector<cv::Point2f> mvbPrevMatched;
+  std::vector<cv::Point3f> mvIniP3D;
+  Frame mInitialFrame;
 
 protected:
   // Map initialization for stereo and RGB-D
   void StereoInitialization();
+
+  // Map initialization for monocular
+  void MonocularInitialization();
+  void CreateInitialMapMonocular();
 
   // Main tracking function. It is independent of the input sensor.
   void Track();
@@ -129,12 +136,15 @@ protected:
   std::shared_ptr<LocalMapper> mpLocalMapper;
   std::shared_ptr<LoopCloser> mpLoopClosing;
 
-  ORBextractor* mpORBextractorLeft; // TODO shared pointer
-  ORBextractor* mpORBextractorRight;
-  ORBextractor* mpIniORBextractor;
+  std::shared_ptr<ORBextractor> mpORBextractorLeft;
+  std::shared_ptr<ORBextractor> mpORBextractorRight;
+  std::shared_ptr<ORBextractor> mpIniORBextractor;
 
   const std::shared_ptr<OrbVocabulary> mpORBVocabulary;
   std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
+
+  // Initalization (only for monocular)
+  std::unique_ptr<Initializer> mpInitializer = nullptr; // TODO unique_ptr?
 
   //Local Map
   KeyFrame* mpReferenceKF;

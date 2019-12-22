@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <mutex>
+
 #include "g2o/types/types_seven_dof_expmap.h"
 
 // Forward declarations

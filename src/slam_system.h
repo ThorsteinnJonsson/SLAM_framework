@@ -36,9 +36,14 @@ public:
                       const SENSOR_TYPE sensor);
   ~SlamSystem();
 
-  cv::Mat TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, const double timestamp);
-  // cv::Mat TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, const double timestamp); // TODO implement later
-  // cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp); // TODO implement later
+  cv::Mat TrackStereo(const cv::Mat& imLeft, 
+                      const cv::Mat& imRight,
+                      const double timestamp);
+  cv::Mat TrackRGBD(const cv::Mat& im, 
+                    const cv::Mat& depthmap, 
+                    const double timestamp);
+  cv::Mat TrackMonocular(const cv::Mat& im, 
+                         const double timestamp);
 
   // This stops local mapping thread (map building) and performs only camera tracking.
   void ActivateLocalizationMode();
