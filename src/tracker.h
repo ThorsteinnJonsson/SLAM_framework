@@ -41,8 +41,13 @@ public:
   // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double timestamp); // TODO
   // cv::Mat GrabImageMonocular(const cv::Mat& im, const double timestamp); //TODO
 
-  void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { mpLocalMapper = local_mapper; }
-  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { mpLoopClosing = loop_closer; }
+  void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { 
+    mpLocalMapper = local_mapper; 
+  }
+
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { 
+    mpLoopClosing = loop_closer; 
+  }
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool flag) { mbOnlyTracking = flag; }
@@ -51,30 +56,16 @@ public:
 
   void Reset();
 
-public:
-  // enum TrackingState {
-  //   SYSTEM_NOT_READY=-1,
-  //   NO_IMAGES_YET=0,
-  //   NOT_INITIALIZED=1,
-  //   OK=2,
-  //   LOST=3
-  // };
-  TrackingState mState;
-  TrackingState mLastProcessedState;
 
-  // Input sensor
-  SENSOR_TYPE mSensor;
+private: 
+  TrackingState state_;
+  TrackingState last_processed_state_;
 
-  // Current Frame
-  Frame mCurrentFrame;
+  SENSOR_TYPE sensor_type_;
+
+  Frame current_frame_;
+
   cv::Mat mImGray;
-
-  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular??? add later
-  // std::vector<int> mvIniLastMatches;
-  // std::vector<int> mvIniMatches;
-  // std::vector<cv::Point2f> mvbPrevMatched;
-  // std::vector<cv::Point3f> mvIniP3D;
-  // Frame mInitialFrame;
 
   // Lists used to recover the full camera trajectory at the end of the execution.
   // Basically we store the reference keyframe for each frame and its relative transformation
@@ -86,6 +77,22 @@ public:
   // True if local mapping is deactivated and we are performing only localization
   bool mbOnlyTracking;
 
+public:
+  TrackingState GetState() const { return state_; }
+
+  const Frame& GetCurrentFrame() const { return current_frame_; }
+  
+  const std::list<cv::Mat>& GetRelativeFramePoses() {return mlRelativeFramePoses;}
+  const std::list<KeyFrame*>& GetReferenceKeyframes() {return mlpReferences;}
+  const std::list<double>& GetFrameTimes() {return mlFrameTimes;}
+
+  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular??? add later
+  // std::vector<int> mvIniLastMatches;
+  // std::vector<int> mvIniMatches;
+  // std::vector<cv::Point2f> mvbPrevMatched;
+  // std::vector<cv::Point3f> mvIniP3D;
+  // Frame mInitialFrame;
+
 protected:
   // Map initialization for stereo and RGB-D
   void StereoInitialization();
@@ -93,7 +100,7 @@ protected:
   // Main tracking function. It is independent of the input sensor.
   void Track();
 
-  void CheckReplacedInLastFrame();
+  void ReplaceInLastFrame();
   bool TrackReferenceKeyFrame();
   void UpdateLastFrame();
   bool TrackWithMotionModel();
@@ -122,7 +129,7 @@ protected:
   std::shared_ptr<LocalMapper> mpLocalMapper;
   std::shared_ptr<LoopCloser> mpLoopClosing;
 
-  ORBextractor* mpORBextractorLeft;
+  ORBextractor* mpORBextractorLeft; // TODO shared pointer
   ORBextractor* mpORBextractorRight;
   ORBextractor* mpIniORBextractor;
 

@@ -110,9 +110,9 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
   cv::Mat Tcw = tracker_->GrabImageStereo(imLeft, imRight, timestamp);
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
-  tracking_state_ = tracker_->mState;
-  tracked_map_points_ = tracker_->mCurrentFrame.mvpMapPoints;
-  tracked_keypoints_un_ = tracker_->mCurrentFrame.mvKeysUn;
+  tracking_state_ = tracker_->GetState();
+  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_keypoints_un_ = tracker_->GetCurrentFrame().mvKeysUn;
   return Tcw;
 }
 
@@ -191,11 +191,11 @@ void SlamSystem::SaveTrajectoryKITTI(const string& filename) const {
 
   // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
   // which is true when tracking failed (lbL).
-  std::list<KeyFrame*>::iterator lRit = tracker_->mlpReferences.begin();
-  std::list<double>::iterator lT = tracker_->mlFrameTimes.begin();
-  for (std::list<cv::Mat>::iterator lit = tracker_->mlRelativeFramePoses.begin();
-                                    lit != tracker_->mlRelativeFramePoses.end();
-                                    ++lit, ++lRit, ++lT) {
+  auto lRit = tracker_->GetReferenceKeyframes().begin();
+  auto lT = tracker_->GetFrameTimes().begin();
+  for (auto lit = tracker_->GetRelativeFramePoses().begin();
+            lit != tracker_->GetRelativeFramePoses().end();
+            ++lit, ++lRit, ++lT) {
     KeyFrame* pKF = *lRit;
 
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
