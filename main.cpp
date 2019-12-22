@@ -49,7 +49,7 @@ void LoadKittiImages(const std::string& kitti_path,
 
 int main(int argc, char **argv) {
   // Input TODO: change to actual input 
-  std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/00";
+  std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
 
   // Get paths for images
   std::vector<std::string> left_image_paths;

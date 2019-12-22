@@ -38,9 +38,6 @@ public:
   // cv::Mat TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, const double timestamp); // TODO implement later
   // cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp); // TODO implement later
 
-  // Reset the system (clear map)
-  void FlagReset();
-
   // This stops local mapping thread (map building) and performs only camera tracking.
   void ActivateLocalizationMode();
   // This resumes local mapping thread and performs SLAM again.
@@ -100,10 +97,6 @@ private:
   // The Tracking thread "lives" in the main execution thread that creates the System object.
   std::unique_ptr<std::thread> local_mapping_thread_;
   std::unique_ptr<std::thread> loop_closing_thread_;
-
-  // Reset flag
-  mutable std::mutex mMutexReset;
-  bool reset_flag_;
 
   // Change mode flags
   mutable std::mutex mode_mutex_;

@@ -2,7 +2,7 @@
 
 #include <unistd.h> // usleep
 #include <iostream>
-#include <mutex>s
+#include <mutex>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
@@ -14,8 +14,7 @@
 #include "pnp_solver.h"
 
 
-Tracker::Tracker(SlamSystem* pSys, 
-                 const std::shared_ptr<OrbVocabulary>& pVoc, 
+Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& pVoc, 
                  const std::shared_ptr<Map>& pMap,
                  const std::shared_ptr<KeyframeDatabase>& pKFDB, 
                  const std::string& strSettingPath, // TODO
@@ -26,7 +25,6 @@ Tracker::Tracker(SlamSystem* pSys,
       , mbVO(false)
       , mpORBVocabulary(pVoc)
       , mpKeyFrameDB(pKFDB)
-      , mpSystem(pSys)
       , mpMap(pMap)
       , mnLastRelocFrameId(0) {
   // Load camera parameters from settings file
@@ -151,25 +149,18 @@ cv::Mat Tracker::GrabImageStereo(const cv::Mat& imRectLeft,
   return mCurrentFrame.mTcw.clone();;
 }
 
-void Tracker::Reset() {
-  std::cout << "System Reseting" << std::endl;
-  // if(mpViewer) {
-  //   mpViewer->RequestStop();
-  //   while (!mpViewer->isStopped()) {
-  //     usleep(3000);
-  //   }
-  // }
-  
-  // Reset local mapper
-  mpLocalMapper->RequestReset();
+bool Tracker::NeedSystemReset() const {
+  return system_reset_needed_;
+}
 
-  // Reset loop closing
+void Tracker::Reset() {
+  std::cout << "System resetting...\n";
+  
+  mpLocalMapper->RequestReset();
   mpLoopClosing->RequestReset();
 
-  // Clear BoW database
   mpKeyFrameDB->clear();
 
-  // Clear map
   mpMap->clear();
 
   KeyFrame::nNextId = 0;
@@ -185,6 +176,7 @@ void Tracker::Reset() {
   mlpReferences.clear();
   mlFrameTimes.clear();
   mlbLost.clear();
+  system_reset_needed_ = false;
 }
 
 
@@ -408,8 +400,8 @@ void Tracker::Track() {
     // Reset if the camera gets lost soon after initialization
     if (mState == TrackingState::LOST) {
       if (mpMap->KeyFramesInMap() <= 5) {
-        std::cout << "Track lost soon after initialisation, resetting..." << std::endl;
-        mpSystem->FlagReset();
+        std::cout << "Track lost soon after initialisation, resetting...\n";
+        system_reset_needed_ = true;
         return;
       }
     }
@@ -1177,3 +1169,4 @@ void Tracker::CreateNewKeyFrame() {
   mnLastKeyFrameId = mCurrentFrame.mnId;
   mpLastKeyFrame = pKF;
 }
+

@@ -7,7 +7,6 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
                        const std::string& strSettingsFile, 
                        const SENSOR_TYPE sensor) 
         : sensor_type_(sensor) 
-        , reset_flag_(false)
         , activate_localization_mode_(false)
         , deactivate_localization_mode_(false) {
     
@@ -43,12 +42,11 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
 
   //Initialize the Tracking thread
   //(it will live in the main thread of execution, the one that called this constructor)
-  tracker_ = std::make_shared<Tracker>(this, 
-                                        orb_vocabulary_, 
-                                        map_, 
-                                        keyframe_database_, 
-                                        strSettingsFile, 
-                                        sensor_type_);
+  tracker_ = std::make_shared<Tracker>(orb_vocabulary_, 
+                                       map_, 
+                                       keyframe_database_, 
+                                       strSettingsFile, 
+                                       sensor_type_);
 
   //Initialize the Local Mapping thread and launch
   local_mapper_ = std::make_shared<LocalMapper>(map_, 
@@ -105,13 +103,8 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
     }
   }
 
-  // Check reset
-  {
-    std::unique_lock<std::mutex> lock(mMutexReset);
-    if (reset_flag_) {
-      tracker_->Reset();
-      reset_flag_ = false;
-    }
+  if (tracker_->NeedSystemReset()) {
+    tracker_->Reset();
   }
 
   cv::Mat Tcw = tracker_->GrabImageStereo(imLeft, imRight, timestamp);
@@ -121,12 +114,6 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
   tracked_map_points_ = tracker_->mCurrentFrame.mvpMapPoints;
   tracked_keypoints_un_ = tracker_->mCurrentFrame.mvKeysUn;
   return Tcw;
-}
-
-
-void SlamSystem::FlagReset() {
-  std::unique_lock<std::mutex> lock(mMutexReset);
-  reset_flag_ = true;  
 }
 
 void SlamSystem::ActivateLocalizationMode() {

@@ -26,8 +26,7 @@ class SlamSystem;
 
 class Tracker {
 public:
-  Tracker(SlamSystem* pSys, 
-          const std::shared_ptr<OrbVocabulary>& pVoc, 
+  Tracker(const std::shared_ptr<OrbVocabulary>& pVoc, 
           const std::shared_ptr<Map>& pMap,
           const std::shared_ptr<KeyframeDatabase>& pKFDB, 
           const std::string& strSettingPath, 
@@ -46,6 +45,8 @@ public:
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
   void InformOnlyTracking(const bool &flag) { mbOnlyTracking = flag; }
+
+  bool NeedSystemReset() const;
 
   void Reset();
 
@@ -132,8 +133,6 @@ protected:
   std::vector<KeyFrame*> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
 
-  SlamSystem* mpSystem;
-
   std::shared_ptr<Map> mpMap;
 
   // Calibration matrix
@@ -170,6 +169,7 @@ protected:
 
 private:
   const int num_required_matches_ = 15;
+  bool system_reset_needed_ = false;
 };
 
 
