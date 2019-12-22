@@ -151,7 +151,7 @@ void SlamSystem::Shutdown() {
   loop_closing_thread_->join();
 }
 
-int SlamSystem::GetTrackingState() const { //TODO change to enum in tracker.h
+TrackingState SlamSystem::GetTrackingState() const {
   std::unique_lock<std::mutex> lock(state_mutex_);
   return tracking_state_;
 }

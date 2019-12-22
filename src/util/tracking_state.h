@@ -1,0 +1,12 @@
+#ifndef UTIL_TRACKING_STATE_
+#define UTIL_TRACKING_STATE_
+
+enum TrackingState {
+  SYSTEM_NOT_READY=-1,
+  NO_IMAGES_YET=0,
+  NOT_INITIALIZED=1,
+  OK=2,
+  LOST=3
+};
+
+#endif // UTIL_TRACKING_STATE_

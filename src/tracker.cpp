@@ -18,7 +18,7 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& pVoc,
                  const std::shared_ptr<Map>& pMap,
                  const std::shared_ptr<KeyframeDatabase>& pKFDB, 
                  const std::string& strSettingPath, // TODO
-                 const int sensor)
+                 const SENSOR_TYPE sensor)
       : mState(TrackingState::NO_IMAGES_YET)
       , mSensor(sensor)
       , mbOnlyTracking(false)

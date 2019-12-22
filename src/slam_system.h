@@ -9,6 +9,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
 #include "map.h"
 #include "tracker.h"
 #include "local_mapper.h"
@@ -21,11 +23,11 @@ class Tracker;
 class LocalMapper;
 class LoopCloser;
 
-enum SENSOR_TYPE {
-  STEREO = 0,
-  RGBD = 1,
-  MONOCULAR = 2
-};
+// enum SENSOR_TYPE {
+//   STEREO = 0,
+//   RGBD = 1,
+//   MONOCULAR = 2
+// };
 
 class SlamSystem {
 public:
@@ -64,7 +66,7 @@ public:
 
   // Information from most recent processed frame
   // You can call this right after TrackMonocular (or stereo or RGBD)
-  int GetTrackingState() const;
+  TrackingState GetTrackingState() const;
   std::vector<MapPoint*> GetTrackedMapPoints() const;
   std::vector<cv::KeyPoint> GetTrackedKeyPointsUn() const;
 
@@ -104,7 +106,7 @@ private:
   bool deactivate_localization_mode_;
 
   // Tracking state
-  int tracking_state_;
+  TrackingState tracking_state_;
   std::vector<MapPoint*> tracked_map_points_;
   std::vector<cv::KeyPoint> tracked_keypoints_un_;
   mutable std::mutex state_mutex_;  

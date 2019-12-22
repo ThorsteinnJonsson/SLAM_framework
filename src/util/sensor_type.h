@@ -1,0 +1,10 @@
+#ifndef UTIL_SENSOR_TYPE_
+#define UTIL_SENSOR_TYPE_
+
+enum SENSOR_TYPE {
+  STEREO = 0,
+  RGBD = 1,
+  MONOCULAR = 2
+};
+
+#endif // UTIL_SENSOR_TYPE_

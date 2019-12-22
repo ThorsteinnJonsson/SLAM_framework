@@ -5,6 +5,8 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
 #include"map.h"
 #include"local_mapper.h"
 #include"loop_closer.h"
@@ -13,7 +15,6 @@
 #include "keyframe_database.h"
 #include "orb_extractor.h"
 // #include "Initializer.h"
-#include "slam_system.h"
 
 #include <mutex>
 #include <memory>
@@ -30,7 +31,7 @@ public:
           const std::shared_ptr<Map>& pMap,
           const std::shared_ptr<KeyframeDatabase>& pKFDB, 
           const std::string& strSettingPath, 
-          const int sensor);
+          const SENSOR_TYPE sensor);
   ~Tracker() {}
 
   // Preprocess the input and call Track(). Extract features and performs stereo matching.
@@ -44,25 +45,25 @@ public:
   void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { mpLoopClosing = loop_closer; }
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
-  void InformOnlyTracking(const bool &flag) { mbOnlyTracking = flag; }
+  void InformOnlyTracking(const bool flag) { mbOnlyTracking = flag; }
 
   bool NeedSystemReset() const;
 
   void Reset();
 
 public:
-  enum TrackingState {
-    SYSTEM_NOT_READY=-1,
-    NO_IMAGES_YET=0,
-    NOT_INITIALIZED=1,
-    OK=2,
-    LOST=3
-  };
+  // enum TrackingState {
+  //   SYSTEM_NOT_READY=-1,
+  //   NO_IMAGES_YET=0,
+  //   NOT_INITIALIZED=1,
+  //   OK=2,
+  //   LOST=3
+  // };
   TrackingState mState;
   TrackingState mLastProcessedState;
 
   // Input sensor
-  int mSensor;
+  SENSOR_TYPE mSensor;
 
   // Current Frame
   Frame mCurrentFrame;
