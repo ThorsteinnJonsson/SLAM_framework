@@ -1,11 +1,11 @@
 #ifndef SRC_LOOP_CLOSER_H_
 #define SRC_LOOP_CLOSER_H_
 
-#include "keyframe.h"
-#include "local_mapper.h"
 #include "map.h"
-#include "orb_vocabulary.h"
+#include "data/keyframe.h"
 #include "tracker.h"
+#include "local_mapper.h"
+#include "orb_vocabulary.h"
 #include "keyframe_database.h"
 
 #include <thread>
@@ -27,13 +27,13 @@ public:
                    Eigen::aligned_allocator<std::pair<const KeyFrame*, g2o::Sim3>>> KeyFrameAndPose;
 
 public:
-  explicit LoopCloser(const std::shared_ptr<Map>& pMap, 
-                      const std::shared_ptr<KeyframeDatabase>& pDB, 
-                      const std::shared_ptr<OrbVocabulary>& pVoc, 
-                      const bool bFixScale);
+  explicit LoopCloser(const std::shared_ptr<Map>& map, 
+                      const std::shared_ptr<KeyframeDatabase>& keyframe_db, 
+                      const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
+                      const bool fix_scale);
   ~LoopCloser() {}
 
-  void SetLocalMapper(const std::shared_ptr<LocalMapper>& pLocalMapper);
+  void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper);
 
   void Run();
 
@@ -59,7 +59,7 @@ protected:
 
   bool ComputeSim3();
 
-  void SearchAndFuse(const KeyFrameAndPose& CorrectedPosesMap);
+  void SearchAndFuse(const KeyFrameAndPose& corrected_poses_map);
 
   void CorrectLoop();
 
@@ -73,20 +73,18 @@ protected:
   bool mbFinished;
   std::mutex mMutexFinish;
 
-  std::shared_ptr<Map> mpMap;
-  std::shared_ptr<Tracker> mpTracker;
+  std::shared_ptr<Map> map_;
+  std::shared_ptr<LocalMapper> local_mapper_;
 
-  const std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
-  const std::shared_ptr<OrbVocabulary> mpORBVocabulary;
-
-  std::shared_ptr<LocalMapper> mpLocalMapper;
+  const std::shared_ptr<KeyframeDatabase> keyframe_db_;
+  const std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
   std::list<KeyFrame*> mlpLoopKeyFrameQueue;
 
   std::mutex mMutexLoopQueue;
 
   // Loop detector parameters
-  const float mnCovisibilityConsistencyTh;
+  const float covisibility_consistency_threshold;
 
   // Loop detector variables
   KeyFrame* mpCurrentKF;
@@ -106,7 +104,7 @@ protected:
   bool mbFinishedGBA;
   bool mbStopGBA;
   std::mutex mMutexGBA;
-  std::thread* mpThreadGBA;
+  std::unique_ptr<std::thread> global_bundle_adjustment_thread;
 
   // Fix scale in the stereo/RGB-D case
   bool mbFixScale;

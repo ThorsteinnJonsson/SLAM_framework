@@ -1,30 +1,28 @@
 #ifndef SRC_LOCAL_MAPPER_H_
 #define SRC_LOCAL_MAPPER_H_
 
-#include "keyframe.h"
+#include "data/keyframe.h"
 #include "map.h"
 #include "loop_closer.h"
-#include "tracker.h"
 #include "keyframe_database.h"
 
 #include <mutex>
 
 // Forward declarations
 class LoopCloser;
-class Tracker;
 class Map;
 
 class LocalMapper {
 public:
-  explicit LocalMapper(const std::shared_ptr<Map>& pMap, 
-                       const bool bMonocular);
+  explicit LocalMapper(const std::shared_ptr<Map>& map, 
+                       const bool is_monocular);
   ~LocalMapper() {}
 
-  void SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser);
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer);
 
   void Run();
 
-  void InsertKeyFrame(KeyFrame* pKF);
+  void InsertKeyFrame(KeyFrame* keyframe);
 
   void RequestStop();
   void RequestReset();
@@ -34,11 +32,11 @@ public:
   bool stopRequested();
   
   bool AcceptKeyFrames();
-  void SetAcceptKeyFrames(bool flag);
+  void SetAcceptKeyFrames(const bool flag);
   
   void InterruptBA();
   
-  bool SetNotStop(bool flag);
+  bool SetNotStop(const bool flag);
   
   void RequestFinish();
   bool isFinished();
@@ -59,7 +57,7 @@ protected:
 
   cv::Mat SkewSymmetricMatrix(const cv::Mat &v) const;
 
-  bool mbMonocular;
+  bool is_monocular_;
 
   void ResetIfRequested();
   bool mbResetRequested;
@@ -71,10 +69,9 @@ protected:
   bool mbFinished;
   std::mutex mMutexFinish;
 
-  std::shared_ptr<Map> mpMap;
+  std::shared_ptr<Map> map_;
 
-  std::shared_ptr<LoopCloser> mpLoopCloser;
-  std::shared_ptr<Tracker> mpTracker;
+  std::shared_ptr<LoopCloser> loop_closer_;
 
   std::list<KeyFrame*> mlNewKeyFrames;
 

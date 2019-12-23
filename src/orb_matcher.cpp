@@ -128,7 +128,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 {
     const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
-    vpMapPointMatches = vector<MapPoint*>(F.mN,static_cast<MapPoint*>(NULL));
+    vpMapPointMatches = vector<MapPoint*>(F.mN,static_cast<MapPoint*>(nullptr));
 
     const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
 
@@ -246,7 +246,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                 continue;
             for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
             {
-                vpMapPointMatches[rotHist[i][j]]=static_cast<MapPoint*>(NULL);
+                vpMapPointMatches[rotHist[i][j]]=static_cast<MapPoint*>(nullptr);
                 nmatches--;
             }
         }
@@ -392,7 +392,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
 
     // Set of MapPoints already found in the KeyFrame
     set<MapPoint*> spAlreadyFound(vpMatched.begin(), vpMatched.end());
-    spAlreadyFound.erase(static_cast<MapPoint*>(NULL));
+    spAlreadyFound.erase(static_cast<MapPoint*>(nullptr));
 
     int nmatches=0;
 
@@ -502,7 +502,7 @@ int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     const vector<MapPoint*> vpMapPoints2 = pKF2->GetMapPointMatches();
     const cv::Mat &Descriptors2 = pKF2->mDescriptors;
 
-    vpMatches12 = vector<MapPoint*>(vpMapPoints1.size(),static_cast<MapPoint*>(NULL));
+    vpMatches12 = vector<MapPoint*>(vpMapPoints1.size(),static_cast<MapPoint*>(nullptr));
     vector<bool> vbMatched2(vpMapPoints2.size(),false);
 
     vector<int> rotHist[HISTO_LENGTH];
@@ -616,7 +616,7 @@ int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
                 continue;
             for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
             {
-                vpMatches12[rotHist[i][j]]=static_cast<MapPoint*>(NULL);
+                vpMatches12[rotHist[i][j]]=static_cast<MapPoint*>(nullptr);
                 nmatches--;
             }
         }
@@ -1435,7 +1435,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
             {
                 for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
                 {
-                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=static_cast<MapPoint*>(NULL);
+                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=static_cast<MapPoint*>(nullptr);
                     nmatches--;
                 }
             }
@@ -1564,7 +1564,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
             {
                 for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
                 {
-                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=NULL;
+                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=nullptr;
                     nmatches--;
                 }
             }

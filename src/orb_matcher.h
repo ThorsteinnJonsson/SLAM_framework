@@ -6,9 +6,9 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
-#include "map_point.h"
-#include "keyframe.h"
-#include "frame.h"
+#include "data/map_point.h"
+#include "data/keyframe.h"
+#include "data/frame.h"
 
 
 class OrbMatcher{

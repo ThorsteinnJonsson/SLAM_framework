@@ -7,8 +7,8 @@
 #include <mutex>
 #include <memory>
 
-#include "keyframe.h"
-#include "frame.h"
+#include "data/keyframe.h"
+#include "data/frame.h"
 #include "orb_vocabulary.h"
 
 

@@ -1,11 +1,11 @@
 #ifndef SRC_FRAME_H
 #define SRC_FRAME_H
 
-#include "map_point.h"
+#include "data/map_point.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
 #include "orb_vocabulary.h"
-#include "keyframe.h"
+#include "data/keyframe.h"
 #include "orb_extractor.h"
 
 #include <opencv2/opencv.hpp>

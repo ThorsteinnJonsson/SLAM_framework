@@ -1,6 +1,6 @@
 #include "optimizer.h"
 
-#include "converter.h"
+#include "util/converter.h"
 
 #include "g2o/core/block_solver.h"
 #include "g2o/core/optimization_algorithm_levenberg.h"
@@ -26,8 +26,12 @@ void Optimizer::GlobalBundleAdjustemnt(const std::shared_ptr<Map>& pMap,
 }
 
 
-void Optimizer::BundleAdjustment(const vector<KeyFrame *> &vpKFs, const vector<MapPoint *> &vpMP,
-                                 int nIterations, bool* pbStopFlag, const unsigned long nLoopKF, const bool bRobust)
+void Optimizer::BundleAdjustment(const vector<KeyFrame*> &vpKFs, 
+                                 const vector<MapPoint*> &vpMP,
+                                 int nIterations, 
+                                 bool* pbStopFlag, 
+                                 const unsigned long nLoopKF, 
+                                 const bool bRobust)
 {
     vector<bool> vbNotIncludedMP;
     vbNotIncludedMP.resize(vpMP.size());
@@ -1178,11 +1182,11 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         if(e12->chi2()>th2 || e21->chi2()>th2)
         {
             size_t idx = vnIndexEdge[i];
-            vpMatches1[idx]=static_cast<MapPoint*>(NULL);
+            vpMatches1[idx]=static_cast<MapPoint*>(nullptr);
             optimizer.removeEdge(e12);
             optimizer.removeEdge(e21);
-            vpEdges12[i]=static_cast<g2o::EdgeSim3ProjectXYZ*>(NULL);
-            vpEdges21[i]=static_cast<g2o::EdgeInverseSim3ProjectXYZ*>(NULL);
+            vpEdges12[i]=static_cast<g2o::EdgeSim3ProjectXYZ*>(nullptr);
+            vpEdges21[i]=static_cast<g2o::EdgeInverseSim3ProjectXYZ*>(nullptr);
             nBad++;
         }
     }
@@ -1212,7 +1216,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
         if(e12->chi2()>th2 || e21->chi2()>th2)
         {
             size_t idx = vnIndexEdge[i];
-            vpMatches1[idx]=static_cast<MapPoint*>(NULL);
+            vpMatches1[idx]=static_cast<MapPoint*>(nullptr);
         }
         else
             nIn++;

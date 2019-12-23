@@ -434,7 +434,7 @@ template<class TDescriptor, class F>
 TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
   (int k, int L, WeightingType weighting, ScoringType scoring)
   : m_k(k), m_L(L), m_weighting(weighting), m_scoring(scoring),
-  m_scoring_object(NULL)
+  m_scoring_object(nullptr)
 {
   createScoringObject();
 }
@@ -443,7 +443,7 @@ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
 
 template<class TDescriptor, class F>
 TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
-  (const std::string &filename): m_scoring_object(NULL)
+  (const std::string &filename): m_scoring_object(nullptr)
 {
   load(filename);
 }
@@ -452,7 +452,7 @@ TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
 
 template<class TDescriptor, class F>
 TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary
-  (const char *filename): m_scoring_object(NULL)
+  (const char *filename): m_scoring_object(nullptr)
 {
   load(filename);
 }
@@ -463,7 +463,7 @@ template<class TDescriptor, class F>
 void TemplatedVocabulary<TDescriptor,F>::createScoringObject()
 {
   delete m_scoring_object;
-  m_scoring_object = NULL;
+  m_scoring_object = nullptr;
   
   switch(m_scoring)
   {
@@ -516,7 +516,7 @@ void TemplatedVocabulary<TDescriptor,F>::setWeightingType(WeightingType type)
 template<class TDescriptor, class F>
 TemplatedVocabulary<TDescriptor,F>::TemplatedVocabulary(
   const TemplatedVocabulary<TDescriptor, F> &voc)
-  : m_scoring_object(NULL)
+  : m_scoring_object(nullptr)
 {
   *this = voc;
 }

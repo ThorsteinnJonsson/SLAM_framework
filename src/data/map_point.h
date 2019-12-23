@@ -1,8 +1,8 @@
 #ifndef SRC_MAPPOINT_H_
 #define SRC_MAPPOINT_H_
 
-#include "keyframe.h"
-#include "frame.h"
+#include "data/keyframe.h"
+#include "data/frame.h"
 #include "map.h"
 
 #include<opencv2/core/core.hpp>

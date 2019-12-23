@@ -3,8 +3,8 @@
 #include <unistd.h> // usleep
 
 
-SlamSystem::SlamSystem(const std::string& strVocFile, 
-                       const std::string& strSettingsFile, 
+SlamSystem::SlamSystem(const std::string& vocabulary_path, 
+                       const std::string& settings_path, 
                        const SENSOR_TYPE sensor) 
         : sensor_type_(sensor) 
         , activate_localization_mode_(false)
@@ -26,10 +26,10 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
   std::cout << "\n" << "Loading ORB Vocabulary. This could take a while..." << "\n";
 
   orb_vocabulary_ = std::make_shared<OrbVocabulary>();
-  bool load_sucessful = orb_vocabulary_->loadFromTextFile(strVocFile);
+  bool load_sucessful = orb_vocabulary_->loadFromTextFile(vocabulary_path);
   if (!load_sucessful) {
       std::cerr << "Wrong path to vocabulary. " << "\n";
-      std::cerr << "Failed to open: " << strVocFile << "\n";
+      std::cerr << "Failed to open: " << vocabulary_path << "\n";
       exit(-1);
   }
   std::cout << "Vocabulary loaded!" << "\n" << "\n";
@@ -45,7 +45,7 @@ SlamSystem::SlamSystem(const std::string& strVocFile,
   tracker_ = std::make_shared<Tracker>(orb_vocabulary_, 
                                        map_, 
                                        keyframe_database_, 
-                                       strSettingsFile, 
+                                       settings_path, 
                                        sensor_type_);
 
   //Initialize the Local Mapping thread and launch
@@ -209,17 +209,6 @@ void SlamSystem::ActivateLocalizationMode() {
 void SlamSystem::DeactivateLocalizationMode() {
   std::unique_lock<std::mutex> lock(mode_mutex_);
   deactivate_localization_mode_ = true;
-}
-
-bool SlamSystem::MapChanged() {
-  static int n = 0;
-  const int curn = map_->GetLastBigChangeIdx();
-  if (n < curn) {
-    n = curn;
-    return true;
-  } else {
-    return false;
-  }
 }
 
 void SlamSystem::Shutdown() {

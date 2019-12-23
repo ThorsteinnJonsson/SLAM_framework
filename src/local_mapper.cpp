@@ -3,13 +3,13 @@
 #include "orb_matcher.h"
 #include "optimizer.h"
 
-LocalMapper::LocalMapper(const std::shared_ptr<Map>& pMap, 
-                         const bool bMonocular)
-    : mbMonocular(bMonocular)
+LocalMapper::LocalMapper(const std::shared_ptr<Map>& map, 
+                         const bool is_monocular)
+    : is_monocular_(is_monocular)
     , mbResetRequested(false)
     , mbFinishRequested(false)
     , mbFinished(true)
-    , mpMap(pMap)
+    , map_(map)
     , mbAbortBA(false)
     , mbStopped(false)
     , mbStopRequested(false)
@@ -18,8 +18,8 @@ LocalMapper::LocalMapper(const std::shared_ptr<Map>& pMap,
 
 }
 
-void LocalMapper::SetLoopCloser(const std::shared_ptr<LoopCloser>& pLoopCloser) {
-  mpLoopCloser = pLoopCloser;
+void LocalMapper::SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) {
+  loop_closer_ = loop_closer;
 }
 
 void LocalMapper::Run() {
@@ -48,15 +48,15 @@ void LocalMapper::Run() {
       mbAbortBA = false;
       if (!CheckNewKeyFrames() && !stopRequested()) {
         // Local BA
-        if (mpMap->KeyFramesInMap() > 2) {
-          Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, mpMap);
+        if (map_->KeyFramesInMap() > 2) {
+          Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame, &mbAbortBA, map_);
         }
 
         // Check redundant local Keyframes
         KeyFrameCulling();
       }
 
-      mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
+      loop_closer_->InsertKeyFrame(mpCurrentKeyFrame);
 
     } else if (Stop()){
       // Safe area to stop
@@ -83,9 +83,9 @@ void LocalMapper::Run() {
   SetFinish();
 }
 
-void LocalMapper::InsertKeyFrame(KeyFrame* pKF) {
+void LocalMapper::InsertKeyFrame(KeyFrame* keyframe) {
   std::unique_lock<std::mutex> lock(mMutexNewKFs);
-  mlNewKeyFrames.push_back(pKF);
+  mlNewKeyFrames.push_back(keyframe);
   mbAbortBA = true;
 }
 
@@ -154,7 +154,7 @@ bool LocalMapper::AcceptKeyFrames() {
   return mbAcceptKeyFrames;
 }
 
-void LocalMapper::SetAcceptKeyFrames(bool flag) {
+void LocalMapper::SetAcceptKeyFrames(const bool flag) {
   std::unique_lock<std::mutex> lock(mMutexAccept);
   mbAcceptKeyFrames = flag;
 }
@@ -164,7 +164,7 @@ void LocalMapper::InterruptBA() {
   mbAbortBA = true;;
 }
 
-bool LocalMapper::SetNotStop(bool flag) {
+bool LocalMapper::SetNotStop(const bool flag) {
   std::unique_lock<std::mutex> lock(mMutexStop);
   if (flag && mbStopped) {
     return false;
@@ -224,7 +224,7 @@ void LocalMapper::ProcessNewKeyFrame() {
   mpCurrentKeyFrame->UpdateConnections();
 
   // Insert Keyframe in Map
-  mpMap->AddKeyFrame(mpCurrentKeyFrame);
+  map_->AddKeyFrame(mpCurrentKeyFrame);
 }
 
 void LocalMapper::MapPointCulling() {
@@ -233,7 +233,7 @@ void LocalMapper::MapPointCulling() {
   // const unsigned long int nCurrentKFid = mpCurrentKeyFrame->mnId;
   const int nCurrentKFid = static_cast<int>(mpCurrentKeyFrame->mnId);
 
-  const int cnThObs = mbMonocular? 2 : 3;
+  const int cnThObs = is_monocular_? 2 : 3;
 
   while (lit != mlpRecentAddedMapPoints.end()){
     MapPoint* pMP = *lit;
@@ -256,7 +256,7 @@ void LocalMapper::MapPointCulling() {
 
 void LocalMapper::CreateNewMapPoints() {
   // Retrieve neighbor keyframes in covisibility graph
-  const int nn = mbMonocular ? 20 : 10;
+  const int nn = is_monocular_ ? 20 : 10;
   const std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
 
   OrbMatcher matcher(0.6f, false);
@@ -291,7 +291,7 @@ void LocalMapper::CreateNewMapPoints() {
     cv::Mat vBaseline = Ow2 - Ow1;
     const float baseline = cv::norm(vBaseline);
 
-    if (!mbMonocular) {
+    if (!is_monocular_) {
       if (baseline < pKF2->mb) {
         continue;
       }
@@ -484,7 +484,7 @@ void LocalMapper::CreateNewMapPoints() {
       // Triangulation is succesfull
       MapPoint* pMP = new MapPoint(x3D,
                                    mpCurrentKeyFrame,
-                                   mpMap);
+                                   map_);
 
       pMP->AddObservation(mpCurrentKeyFrame, idx1);            
       pMP->AddObservation(pKF2, idx2);
@@ -495,7 +495,7 @@ void LocalMapper::CreateNewMapPoints() {
       pMP->ComputeDistinctiveDescriptors();
       pMP->UpdateNormalAndDepth();
 
-      mpMap->AddMapPoint(pMP);
+      map_->AddMapPoint(pMP);
       mlpRecentAddedMapPoints.push_back(pMP);
       ++nnew;
     }
@@ -504,10 +504,7 @@ void LocalMapper::CreateNewMapPoints() {
 
 void LocalMapper::SearchInNeighbors() {
   // Retrieve neighbor keyframes
-  // int nn = 10;
-  // if(mbMonocular)
-  //     nn=20;
-  const int nn = mbMonocular? 20 : 10;
+  const int nn = is_monocular_? 20 : 10;
   const std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
   std::vector<KeyFrame*> vpTargetKFs;
   for (vector<KeyFrame*>::const_iterator vit = vpNeighKFs.begin(); 
@@ -607,7 +604,7 @@ void LocalMapper::KeyFrameCulling() {
     for (size_t i = 0; i < vpMapPoints.size(); ++i) {
       MapPoint* pMP = vpMapPoints[i];
       if(pMP && !pMP->isBad()) {
-        if (!mbMonocular) {
+        if (!is_monocular_) {
           if (pKF->mvDepth[i] > pKF->mThDepth || 
               pKF->mvDepth[i] < 0) {
             continue;

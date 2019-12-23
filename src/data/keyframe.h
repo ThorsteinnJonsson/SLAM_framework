@@ -2,8 +2,8 @@
 #define SRC_KEYFRAME_H_
 
 
-#include "map_point.h"
-#include "frame.h"
+#include "data/map_point.h"
+#include "data/frame.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
 #include "orb_vocabulary.h"
