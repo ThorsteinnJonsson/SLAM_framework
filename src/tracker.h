@@ -2,15 +2,15 @@
 #define SRC_TRACKER_H_
 
 #include <opencv2/opencv.hpp>
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
-#include"map.h"
-#include"local_mapper.h"
-#include"loop_closer.h"
-#include"data/frame.h"
+#include "map.h"
+#include "local_mapper.h"
+#include "loop_closer.h"
+#include "data/frame.h"
 #include "orb_vocabulary.h"
 #include "keyframe_database.h"
 #include "orb_extractor.h"
@@ -107,8 +107,8 @@ protected:
   std::shared_ptr<LocalMapper> local_mapper_;
   std::shared_ptr<LoopCloser> loop_closer_;
 
-  std::shared_ptr<ORBextractor> mpORBextractorLeft;
-  std::shared_ptr<ORBextractor> mpORBextractorRight;
+  std::shared_ptr<ORBextractor> orb_extractor_left_;
+  std::shared_ptr<ORBextractor> orb_extractor_right_;
   std::shared_ptr<ORBextractor> mpIniORBextractor;
 
   const std::shared_ptr<OrbVocabulary> orb_vocabulary_;

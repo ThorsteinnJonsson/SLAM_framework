@@ -11,7 +11,7 @@
 #include "util/converter.h"
 #include "map.h"
 #include "optimizer.h"
-#include "pnp_solver.h"
+#include "solvers/pnp_solver.h"
 
 
 Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
@@ -90,17 +90,24 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   int fIniThFAST = 20;
   int fMinThFAST = 7;
 
-  mpORBextractorLeft = std::make_shared<ORBextractor>(nFeatures,
-                                                      fScaleFactor,
-                                                      nLevels,
-                                                      fIniThFAST,
-                                                      fMinThFAST);
+  orb_extractor_left_ = std::make_shared<ORBextractor>(nFeatures,
+                                                       fScaleFactor,
+                                                       nLevels,
+                                                       fIniThFAST,
+                                                       fMinThFAST);
   if (sensor == SENSOR_TYPE::STEREO) {
-    mpORBextractorRight = std::make_shared<ORBextractor>(nFeatures,
-                                                         fScaleFactor,
-                                                         nLevels,
-                                                         fIniThFAST,
-                                                         fMinThFAST);  
+    orb_extractor_right_ = std::make_shared<ORBextractor>(nFeatures,
+                                                          fScaleFactor,
+                                                          nLevels,
+                                                          fIniThFAST,
+                                                          fMinThFAST);
+  }
+  if (sensor == SENSOR_TYPE::MONOCULAR) {
+    mpIniORBextractor = std::make_shared<ORBextractor>(2*nFeatures,
+                                                       fScaleFactor,
+                                                       nLevels,
+                                                       fIniThFAST,
+                                                       fMinThFAST);
   }
 
   // mThDepth = mbf * static_cast<float>(fSettings["ThDepth"]) / fx;
@@ -146,8 +153,8 @@ cv::Mat Tracker::GrabImageStereo(const cv::Mat& left_image,
   current_frame_ = Frame(gray_image,
                          imGrayRight,
                          timestamp,
-                         mpORBextractorLeft,
-                         mpORBextractorRight,
+                         orb_extractor_left_,
+                         orb_extractor_right_,
                          orb_vocabulary_,
                          mK,
                          mDistCoef,
@@ -184,11 +191,11 @@ cv::Mat Tracker::GrabImageRGBD(const cv::Mat& rgbd_image,
   current_frame_ = Frame(gray_image,
                          imDepth,
                          timestamp,
-                         mpORBextractorLeft,
-                         orb_vocabulary_,
-                         mK,
+                         orb_extractor_left_,
+                          orb_vocabulary_,
+                          mK,
                          mDistCoef,
-                         mbf,
+                          mbf,
                          mThDepth);
   Track();
   return current_frame_.mTcw.clone();                      
@@ -224,11 +231,11 @@ cv::Mat Tracker::GrabImageMonocular(const cv::Mat& image,
   } else {
     current_frame_ = Frame(gray_image,
                            timestamp,
-                           mpORBextractorLeft,
-                           orb_vocabulary_,
-                           mK,
+                           orb_extractor_left_,
+                            orb_vocabulary_,
+                            mK,
                            mDistCoef,
-                           mbf,
+                            mbf,
                            mThDepth);
   }
   Track();

@@ -66,16 +66,16 @@ add_library(stereo_slam SHARED
             src/loop_closer.cpp 
             src/orb_extractor.cpp
             src/orb_matcher.cpp
+            src/map.cpp
+            src/optimizer.cpp
+            src/keyframe_database.cpp
+            src/initializer.cpp
             src/data/map_point.cpp
             src/data/keyframe.cpp
             src/data/frame.cpp
-            src/map.cpp
-            src/optimizer.cpp
-            src/pnp_solver.cpp
-            src/keyframe_database.cpp
-            src/sim3solver.cpp
-            src/initializer.cpp
-            src/util/converter.cpp
+            src/solvers/sim3solver.cpp
+            src/solvers/pnp_solver.cpp
+            src/util/converter.cpp  
 )
 
 target_include_directories(stereo_slam PUBLIC

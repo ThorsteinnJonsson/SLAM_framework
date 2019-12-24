@@ -1,4 +1,4 @@
-#include "data/map_point.h"
+#include "map_point.h"
 
 #include "orb_matcher.h"
 

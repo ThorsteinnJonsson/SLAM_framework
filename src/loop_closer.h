@@ -104,7 +104,7 @@ protected:
   bool mbFinishedGBA;
   bool mbStopGBA;
   std::mutex mMutexGBA;
-  std::unique_ptr<std::thread> global_bundle_adjustment_thread;
+  std::thread* global_bundle_adjustment_thread;
 
   // Fix scale in the stereo/RGB-D case
   bool mbFixScale;

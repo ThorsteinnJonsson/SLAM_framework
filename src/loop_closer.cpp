@@ -1,6 +1,6 @@
 #include "loop_closer.h"
 
-#include "sim3solver.h"
+#include "solvers/sim3solver.h"
 #include "util/converter.h"
 #include "optimizer.h"
 #include "orb_matcher.h"
@@ -554,6 +554,7 @@ void LoopCloser::CorrectLoop() {
 
     if (global_bundle_adjustment_thread) {
       global_bundle_adjustment_thread->detach();
+      delete global_bundle_adjustment_thread;
     }
   }
 
@@ -717,7 +718,10 @@ void LoopCloser::CorrectLoop() {
   mbRunningGBA = true;
   mbFinishedGBA = false;
   mbStopGBA = false;
-  global_bundle_adjustment_thread.reset(new std::thread(&LoopCloser::RunGlobalBundleAdjustment, this, mpCurrentKF->mnId));
+  global_bundle_adjustment_thread  = new std::thread(&LoopCloser::RunGlobalBundleAdjustment, 
+                                                     this, 
+                                                     mpCurrentKF->mnId);
+
   // Loop closed. Release Local Mapping.
   local_mapper_->Release();    
   mLastLoopKFid = mpCurrentKF->mnId;   
