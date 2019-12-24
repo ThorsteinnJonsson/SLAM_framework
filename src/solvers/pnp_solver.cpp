@@ -93,7 +93,7 @@ void PnPsolver::SetRansacParameters(double probability, int minInliers, int maxI
     else
         nIterations = ceil(log(1-mRansacProb)/log(1-pow(mRansacEpsilon,3)));
 
-    mRansacMaxIts = max(1,min(nIterations,mRansacMaxIts));
+    mRansacMaxIts = std::max(1,std::min(nIterations,mRansacMaxIts));
 
     mvMaxError.resize(mvSigma2.size());
     for(size_t i=0; i<mvSigma2.size(); i++)
@@ -572,9 +572,9 @@ void PnPsolver::estimate_R_and_t(double R[3][3], double t[3])
 
 void PnPsolver::print_pose(const double R[3][3], const double t[3])
 {
-  cout << R[0][0] << " " << R[0][1] << " " << R[0][2] << " " << t[0] << endl;
-  cout << R[1][0] << " " << R[1][1] << " " << R[1][2] << " " << t[1] << endl;
-  cout << R[2][0] << " " << R[2][1] << " " << R[2][2] << " " << t[2] << endl;
+  std::cout << R[0][0] << " " << R[0][1] << " " << R[0][2] << " " << t[0] << "\n";
+  std::cout << R[1][0] << " " << R[1][1] << " " << R[1][2] << " " << t[1] << "\n";
+  std::cout << R[2][0] << " " << R[2][1] << " " << R[2][2] << " " << t[2] << "\n";
 }
 
 void PnPsolver::solve_for_sign(void)
@@ -830,7 +830,7 @@ void PnPsolver::qr_solve(CvMat * A, CvMat * b, CvMat * X)
 
     if (eta == 0) {
       A1[k] = A2[k] = 0.0;
-      cerr << "God damnit, A is singular, this shouldn't happen." << endl;
+      std::cerr << "God damnit, A is singular, this shouldn't happen.\n";
       return;
     } else {
       double * ppAik = ppAkk, sum = 0.0, inv_eta = 1. / eta;
@@ -916,7 +916,7 @@ void PnPsolver::relative_error(double & rot_err, double & transl_err,
 			 (qtrue[3] + qest[3]) * (qtrue[3] + qest[3]) ) /
     sqrt(qtrue[0] * qtrue[0] + qtrue[1] * qtrue[1] + qtrue[2] * qtrue[2] + qtrue[3] * qtrue[3]);
 
-  rot_err = min(rot_err1, rot_err2);
+  rot_err = std::min(rot_err1, rot_err2);
 
   transl_err =
     sqrt((ttrue[0] - test[0]) * (ttrue[0] - test[0]) +

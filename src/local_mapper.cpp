@@ -189,7 +189,7 @@ int LocalMapper::NumKeyframesInQueue() {
 }
 
 bool LocalMapper::CheckNewKeyFrames() {
-  unique_lock<mutex> lock(mMutexNewKFs);
+  std::unique_lock<std::mutex> lock(mMutexNewKFs);
   return (!mlNewKeyFrames.empty());
 }
 
@@ -507,9 +507,9 @@ void LocalMapper::SearchInNeighbors() {
   const int nn = is_monocular_? 20 : 10;
   const std::vector<KeyFrame*> vpNeighKFs = mpCurrentKeyFrame->GetBestCovisibilityKeyFrames(nn);
   std::vector<KeyFrame*> vpTargetKFs;
-  for (vector<KeyFrame*>::const_iterator vit = vpNeighKFs.begin(); 
-                                         vit != vpNeighKFs.end(); 
-                                         ++vit) {
+  for (std::vector<KeyFrame*>::const_iterator vit = vpNeighKFs.begin(); 
+                                              vit != vpNeighKFs.end(); 
+                                              ++vit) {
     KeyFrame* pKFi = *vit;
     if (pKFi->isBad() || pKFi->mnFuseTargetForKF == mpCurrentKeyFrame->mnId) {
       continue;
@@ -519,9 +519,9 @@ void LocalMapper::SearchInNeighbors() {
 
     // Extend to some second neighbors
     const std::vector<KeyFrame*> vpSecondNeighKFs = pKFi->GetBestCovisibilityKeyFrames(5);
-    for(vector<KeyFrame*>::const_iterator vit2 = vpSecondNeighKFs.begin();
-                                          vit2 != vpSecondNeighKFs.end(); 
-                                          ++vit2) {
+    for(std::vector<KeyFrame*>::const_iterator vit2 = vpSecondNeighKFs.begin();
+                                               vit2 != vpSecondNeighKFs.end(); 
+                                               ++vit2) {
       KeyFrame* pKFi2 = *vit2;
       if (pKFi2->isBad() || 
           pKFi2->mnFuseTargetForKF == mpCurrentKeyFrame->mnId || 
@@ -535,9 +535,9 @@ void LocalMapper::SearchInNeighbors() {
   // Search matches by projection from current KF in target KFs
   OrbMatcher matcher;
   std::vector<MapPoint*> vpMapPointMatches = mpCurrentKeyFrame->GetMapPointMatches();
-  for (vector<KeyFrame*>::iterator vit = vpTargetKFs.begin(); 
-                                   vit != vpTargetKFs.end(); 
-                                   ++vit) {
+  for (std::vector<KeyFrame*>::iterator vit = vpTargetKFs.begin(); 
+                                        vit != vpTargetKFs.end(); 
+                                        ++vit) {
     KeyFrame* pKFi = *vit;
     matcher.Fuse(pKFi, vpMapPointMatches);
   }

@@ -27,7 +27,7 @@ void KeyframeDatabase::erase(KeyFrame* pKF) {
   {
     // List of keyframes that share the word
     std::list<KeyFrame*>& lKFs = mvInvertedFile[vit->first];
-    for(list<KeyFrame*>::iterator lit = lKFs.begin(); 
+    for(std::list<KeyFrame*>::iterator lit = lKFs.begin(); 
                                   lit != lKFs.end(); 
                                   ++lit) 
     {
@@ -99,10 +99,9 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
 
   // Compute similarity score. Retain the matches whose score is higher than minScore
   int nscores = 0;
-  for (list<KeyFrame*>::iterator lit = lKFsSharingWords.begin(); 
+  for (std::list<KeyFrame*>::iterator lit = lKFsSharingWords.begin(); 
                                  lit != lKFsSharingWords.end(); 
-                                 ++lit)
-  {
+                                 ++lit) {
     KeyFrame* pKFi = *lit;
     if (pKFi->mnLoopWords > minCommonWords) {
       ++nscores;

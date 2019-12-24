@@ -53,11 +53,11 @@ public:
   // Only for stereo and RGB-D. This method does not work for monocular.
   // Call Shutdown() before calling this function.
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
-  void SaveTrajectoryKITTI(const string& filename) const;
+  void SaveTrajectoryKITTI(const std::string& filename) const;
 
   // TODO: Save/Load functions (not implemented in the original ORB-SLAM)
-  // SaveMap(const string &filename);
-  // LoadMap(const string &filename);
+  // SaveMap(const std::string &filename);
+  // LoadMap(const std::string &filename);
 
   // Information from most recent processed frame
   // You can call this right after TrackMonocular (or stereo or RGBD)

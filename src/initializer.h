@@ -41,11 +41,11 @@ private:
   float CheckHomography(const cv::Mat& H21, 
                         const cv::Mat& H12, 
                         std::vector<bool>& vbMatchesInliers, 
-                        float sigma);
+                        const float sigma);
 
   float CheckFundamental(const cv::Mat& F21, 
                          std::vector<bool>& vbMatchesInliers, 
-                         float sigma);
+                         const float sigma);
 
   bool ReconstructF(std::vector<bool>& vbMatchesInliers, 
                     cv::Mat& F21, 

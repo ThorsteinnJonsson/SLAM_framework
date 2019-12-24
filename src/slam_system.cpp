@@ -51,14 +51,14 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
   //Initialize the Local Mapping thread and launch
   local_mapper_ = std::make_shared<LocalMapper>(map_, 
                                                 sensor_type_==SENSOR_TYPE::MONOCULAR);
-  local_mapping_thread_.reset(new thread(&LocalMapper::Run, local_mapper_));
+  local_mapping_thread_.reset(new std::thread(&LocalMapper::Run, local_mapper_));
 
   //Initialize the Loop Closing thread and launch
   loop_closer_ = std::make_shared<LoopCloser>(map_, 
                                               keyframe_database_, 
                                               orb_vocabulary_, 
                                               sensor_type_ != SENSOR_TYPE::MONOCULAR);
-  loop_closing_thread_.reset(new thread(&LoopCloser::Run, loop_closer_));
+  loop_closing_thread_.reset(new std::thread(&LoopCloser::Run, loop_closer_));
 
   //Set pointers between threads
   tracker_->SetLocalMapper(local_mapper_);
@@ -78,7 +78,7 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
                                 const cv::Mat& imRight, 
                                 const double timestamp) {
   if (sensor_type_ != SENSOR_TYPE::STEREO) {
-    cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
+    std::cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO.\n";
     exit(-1);
   }   
 
@@ -240,7 +240,7 @@ std::vector<cv::KeyPoint> SlamSystem::GetTrackedKeyPointsUn() const {
   return tracked_keypoints_un_;
 }
 
-void SlamSystem::SaveTrajectoryKITTI(const string& filename) const {
+void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
   std::cout << std::endl << "Saving camera trajectory to " << filename << " ..." << std::endl;
   if (sensor_type_ == MONOCULAR) {
     std::cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular.\n";
@@ -290,5 +290,5 @@ void SlamSystem::SaveTrajectoryKITTI(const string& filename) const {
           Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  << twc.at<float>(2) << std::endl;
   }
   f.close();
-  std::cout << std::endl << "Trajectory saved!" << endl;
+  std::cout << std::endl << "Trajectory saved!\n";
 }

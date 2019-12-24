@@ -14,7 +14,7 @@ def get_translation(filename):
 
 if __name__ == "__main__":
 
-  sequence = "00"
+  sequence = "03"
   # slam_translation = get_translation("results/" + sequence + ".txt")
   slam_translation = get_translation("tmp/positions.txt")
   gt_translation = get_translation("dataset/ground_truth_poses/poses/" + sequence + ".txt")
