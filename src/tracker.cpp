@@ -7,10 +7,10 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
-#include "orb_matcher.h"
+#include "orb_features/orb_matcher.h"
 #include "util/converter.h"
-#include "map.h"
-#include "optimizer.h"
+#include "data/map.h"
+#include "optimizer/optimizer.h"
 #include "solvers/pnp_solver.h"
 
 

@@ -4,9 +4,9 @@
 #include "data/map_point.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
-#include "orb_vocabulary.h"
+#include "orb_features/orb_vocabulary.h"
 #include "data/keyframe.h"
-#include "orb_extractor.h"
+#include "orb_features/orb_extractor.h"
 
 #include <opencv2/opencv.hpp>
 

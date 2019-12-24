@@ -1,7 +1,7 @@
 #include "local_mapper.h"
 
-#include "orb_matcher.h"
-#include "optimizer.h"
+#include "orb_features/orb_matcher.h"
+#include "optimizer/optimizer.h"
 
 LocalMapper::LocalMapper(const std::shared_ptr<Map>& map, 
                          const bool is_monocular)

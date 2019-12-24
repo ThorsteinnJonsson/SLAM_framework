@@ -6,9 +6,9 @@
 #include "data/frame.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
-#include "orb_vocabulary.h"
-#include "orb_extractor.h"
-#include "keyframe_database.h"
+#include "orb_features/orb_vocabulary.h"
+#include "orb_features/orb_extractor.h"
+#include "data/keyframe_database.h"
 
 #include <mutex>
 #include <set>

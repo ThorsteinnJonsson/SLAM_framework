@@ -2,8 +2,8 @@
 
 #include "solvers/sim3solver.h"
 #include "util/converter.h"
-#include "optimizer.h"
-#include "orb_matcher.h"
+#include "optimizer/optimizer.h"
+#include "orb_features/orb_matcher.h"
 
 LoopCloser::LoopCloser(const std::shared_ptr<Map>& map,
                        const std::shared_ptr<KeyframeDatabase>& keyframe_db,

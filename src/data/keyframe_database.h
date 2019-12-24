@@ -9,13 +9,10 @@
 
 #include "data/keyframe.h"
 #include "data/frame.h"
-#include "orb_vocabulary.h"
-
-
+#include "orb_features/orb_vocabulary.h"
 
 class KeyFrame;
 class Frame;
-
 
 class KeyframeDatabase {
 public:

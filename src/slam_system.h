@@ -11,7 +11,7 @@
 
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
-#include "map.h"
+#include "data/map.h"
 #include "tracker.h"
 #include "local_mapper.h"
 #include "loop_closer.h"

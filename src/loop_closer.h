@@ -1,12 +1,12 @@
 #ifndef SRC_LOOP_CLOSER_H_
 #define SRC_LOOP_CLOSER_H_
 
-#include "map.h"
+#include "data/map.h"
 #include "data/keyframe.h"
 #include "tracker.h"
 #include "local_mapper.h"
-#include "orb_vocabulary.h"
-#include "keyframe_database.h"
+#include "orb_features/orb_vocabulary.h"
+#include "data/keyframe_database.h"
 
 #include <thread>
 #include <mutex>

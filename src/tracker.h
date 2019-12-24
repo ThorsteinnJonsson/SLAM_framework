@@ -7,14 +7,14 @@
 
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
-#include "map.h"
+#include "data/map.h"
 #include "local_mapper.h"
 #include "loop_closer.h"
 #include "data/frame.h"
-#include "orb_vocabulary.h"
-#include "keyframe_database.h"
-#include "orb_extractor.h"
-#include "initializer.h"
+#include "orb_features/orb_vocabulary.h"
+#include "data/keyframe_database.h"
+#include "orb_features/orb_extractor.h"
+#include "util/initializer.h"
 
 #include <mutex>
 #include <memory>

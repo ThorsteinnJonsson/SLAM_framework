@@ -1,7 +1,7 @@
 #ifndef SRC_OPTIMIZER_H_
 #define SRC_OPTIMIZER_H_
 
-#include "map.h"
+#include "data/map.h"
 #include "data/map_point.h"
 #include "data/keyframe.h"
 #include "loop_closer.h"

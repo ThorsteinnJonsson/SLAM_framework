@@ -2,9 +2,9 @@
 #define SRC_LOCAL_MAPPER_H_
 
 #include "data/keyframe.h"
-#include "map.h"
+#include "data/map.h"
 #include "loop_closer.h"
-#include "keyframe_database.h"
+#include "data/keyframe_database.h"
 
 #include <mutex>
 

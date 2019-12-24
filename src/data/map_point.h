@@ -3,7 +3,7 @@
 
 #include "data/keyframe.h"
 #include "data/frame.h"
-#include "map.h"
+#include "data/map.h"
 
 #include<opencv2/core/core.hpp>
 #include<mutex>
