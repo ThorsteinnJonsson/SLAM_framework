@@ -2,8 +2,8 @@
 #define SRC_PNPSOLVER_H_
 
 #include <opencv2/core/core.hpp>
-#include "map_point.h"
-#include "frame.h"
+#include "data/map_point.h"
+#include "data/frame.h"
 
 
 class PnPsolver {

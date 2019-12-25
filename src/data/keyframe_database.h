@@ -5,20 +5,18 @@
 #include <list>
 #include <set>
 #include <mutex>
+#include <memory>
 
-#include "keyframe.h"
-#include "frame.h"
-#include "orb_vocabulary.h"
-
-
+#include "data/keyframe.h"
+#include "data/frame.h"
+#include "orb_features/orb_vocabulary.h"
 
 class KeyFrame;
 class Frame;
 
-
 class KeyframeDatabase {
 public:
-  KeyframeDatabase(const OrbVocabulary& voc);
+  KeyframeDatabase(const std::shared_ptr<OrbVocabulary>& voc);
   ~KeyframeDatabase() {}
 
   void add(KeyFrame* pKF);
@@ -29,7 +27,7 @@ public:
   std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F);// TODO this can probably be passed as a reference
 
 protected:
-  const OrbVocabulary* mpVoc;
+  const std::shared_ptr<OrbVocabulary> mpVoc;
   std::vector<std::list<KeyFrame*>> mvInvertedFile;
   std::mutex mMutex;
 };

@@ -1,16 +1,18 @@
 #ifndef SRC_FRAME_H
 #define SRC_FRAME_H
 
-#include "map_point.h"
+#include "data/map_point.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
-#include "orb_vocabulary.h"
-#include "keyframe.h"
-#include "orb_extractor.h"
+#include "orb_features/orb_vocabulary.h"
+#include "data/keyframe.h"
+#include "orb_features/orb_extractor.h"
 
 #include <opencv2/opencv.hpp>
 
-#define FRAME_GRID_ROWS 48
+#include <memory>
+
+#define FRAME_GRID_ROWS 48 // TODO not good to use macros
 #define FRAME_GRID_COLS 64
 
 // Forward declarations
@@ -29,19 +31,34 @@ public:
   Frame(const cv::Mat& imLeft, 
         const cv::Mat& imRight, 
         const double timeStamp, 
-        ORBextractor* extractorLeft, 
-        ORBextractor* extractorRight, 
-        OrbVocabulary* voc, 
+        const std::shared_ptr<ORBextractor>& extractorLeft, 
+        const std::shared_ptr<ORBextractor>& extractorRight, 
+        const std::shared_ptr<OrbVocabulary>& voc, 
         cv::Mat& K, 
         cv::Mat& distCoef, 
         const float bf, 
         const float thDepth);
 
-  // Constructor for RGB-D cameras. // TODO probably don't need
-  // Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+  // Constructor for RGB-D cameras.
+  Frame(const cv::Mat& imGray, 
+        const cv::Mat& imDepth, 
+        const double timeStamp, 
+        const std::shared_ptr<ORBextractor>& extractor,
+        const std::shared_ptr<OrbVocabulary>& voc, 
+        cv::Mat& K, 
+        cv::Mat& distCoef, 
+        const float bf, 
+        const float thDepth);
 
-  // Constructor for Monocular cameras. // TODO probably don't need
-  // Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+  // Constructor for Monocular cameras.
+  Frame(const cv::Mat& imGray, 
+        const double timeStamp, 
+        const std::shared_ptr<ORBextractor>& extractor,
+        const std::shared_ptr<OrbVocabulary>& voc, 
+        cv::Mat& K, 
+        cv::Mat& distCoef, 
+        const float bf, 
+        const float thDepth);
 
   // Extract ORB on the image. 0 for left image and 1 for right image.
   void ExtractORB(int flag, const cv::Mat& im);
@@ -82,18 +99,18 @@ public:
   void ComputeStereoMatches();
 
   // Associate a "right" coordinate to a keypoint if there is valid depth in the depthmap.
-  // void ComputeStereoFromRGBD(const cv::Mat& imDepth); // TODO do we need this for only stereo?
+  void ComputeStereoFromRGBD(const cv::Mat& imDepth);
 
   // Backprojects a keypoint (if stereo/depth info available) into 3D world coordinates.
   cv::Mat UnprojectStereo(const int i);
 
 public:
   // Vocabulary used for relocalization.
-  OrbVocabulary* mpORBvocabulary;
+  std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
 
   // Feature extractor. The right is used only in the stereo case.
-  ORBextractor* mpORBextractorLeft;
-  ORBextractor* mpORBextractorRight;
+  std::shared_ptr<ORBextractor> mpORBextractorLeft;
+  std::shared_ptr<ORBextractor> mpORBextractorRight;
 
   // Frame timestamp.
   double mTimeStamp;

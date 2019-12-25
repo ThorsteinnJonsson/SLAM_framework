@@ -6,9 +6,9 @@
 #include<opencv2/core/core.hpp>
 #include<opencv2/features2d/features2d.hpp>
 
-#include "map_point.h"
-#include "keyframe.h"
-#include "frame.h"
+#include "data/map_point.h"
+#include "data/keyframe.h"
+#include "data/frame.h"
 
 
 class OrbMatcher{
@@ -23,7 +23,7 @@ public:
   // Used to track the local map (Tracking)
   int SearchByProjection(Frame& F, 
                          const std::vector<MapPoint*>& vpMapPoints,
-                         const float th=3);
+                         const int th=3);
 
   // Project MapPoints tracked in last frame into the current frame and search matches.
   // Used to track from previous frame (Tracking)
@@ -60,11 +60,11 @@ public:
                   std::vector<MapPoint*> &vpMatches12);
 
   // Matching for the Map Initialization (only used in the monocular case) //TODO might not need this then
-  // int SearchForInitialization(Frame& F1, 
-  //                             Frame& F2, 
-  //                             std::vector<cv::Point2f>& vbPrevMatched, 
-  //                             std::vector<int>& vnMatches12, 
-  //                             int windowSize=10);
+  int SearchForInitialization(Frame& F1, 
+                              Frame& F2, 
+                              std::vector<cv::Point2f>& vbPrevMatched, 
+                              std::vector<int>& vnMatches12, 
+                              int windowSize=10);
 
   // Matching to triangulate new MapPoints. Check Epipolar Constraint.
   int SearchForTriangulation(KeyFrame* pKF1, 

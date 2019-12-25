@@ -1,17 +1,22 @@
 #ifndef SRC_MAPPOINT_H_
 #define SRC_MAPPOINT_H_
 
-#include "keyframe.h"
-#include "frame.h"
-#include "map.h"
+#include "data/keyframe.h"
+#include "data/frame.h"
+#include "data/map.h"
 
 #include<opencv2/core/core.hpp>
 #include<mutex>
 
 class MapPoint{
 public:
-  MapPoint(const cv::Mat& Pos, KeyFrame* pRefKF, Map* pMap);
-  MapPoint(const cv::Mat& Pos, Map* pMap, Frame* pFrame, const int &idxF);
+  MapPoint(const cv::Mat& Pos, 
+           KeyFrame* pRefKF, 
+           const std::shared_ptr<Map>& pMap);
+  MapPoint(const cv::Mat& Pos, 
+           const std::shared_ptr<Map>& pMap, 
+           Frame* pFrame, 
+           const int& idxF);
   ~MapPoint() {}
 
   void SetWorldPos(const cv::Mat& Pos);
@@ -86,7 +91,7 @@ public:
 
 protected:
   // Position in absolute coordinates
-  cv::Mat mWorldPos;
+  cv::Mat world_position_;
 
   // Keyframes observing the point and associated index in keyframe
   std::map<KeyFrame*,size_t> mObservations;
@@ -112,7 +117,7 @@ protected:
   float mfMinDistance;
   float mfMaxDistance;
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   std::mutex mMutexPos;
   std::mutex mMutexFeatures;

@@ -25,20 +25,24 @@
 #include <cmath>
 #include <opencv2/core/core.hpp>
 
-#include "keyframe.h"
-#include "orb_matcher.h"
+#include "data/keyframe.h"
+#include "orb_features/orb_matcher.h"
 
 #include "DUtils/Random.h"
 
 
 
-Sim3Solver::Sim3Solver(KeyFrame *pKF1, KeyFrame *pKF2, const vector<MapPoint *> &vpMatched12, const bool bFixScale):
-    mnIterations(0), mnBestInliers(0), mbFixScale(bFixScale)
-{
+Sim3Solver::Sim3Solver(KeyFrame *pKF1, 
+                       KeyFrame *pKF2, 
+                       const std::vector<MapPoint*>& vpMatched12, 
+                       const bool bFixScale)
+        : mnIterations(0)
+        , mnBestInliers(0)
+        , mbFixScale(bFixScale) {
     mpKF1 = pKF1;
     mpKF2 = pKF2;
 
-    vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
+    std::vector<MapPoint*> vpKeyFrameMP1 = pKF1->GetMapPointMatches();
 
     mN1 = vpMatched12.size();
 
@@ -130,15 +134,18 @@ void Sim3Solver::SetRansacParameters(double probability, int minInliers, int max
     else
         nIterations = ceil(log(1-mRansacProb)/log(1-pow(epsilon,3)));
 
-    mRansacMaxIts = max(1,min(nIterations,mRansacMaxIts));
+    mRansacMaxIts = std::max(1, std::min(nIterations,mRansacMaxIts));
 
     mnIterations = 0;
 }
 
-cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInliers, int &nInliers)
+cv::Mat Sim3Solver::iterate(int nIterations, 
+                            bool& bNoMore, 
+                            std::vector<bool>& vbInliers, 
+                            int& nInliers)
 {
     bNoMore = false;
-    vbInliers = vector<bool>(mN1,false);
+    vbInliers = std::vector<bool>(mN1,false);
     nInliers=0;
 
     if(N<mRansacMinInliers)
@@ -147,7 +154,7 @@ cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInli
         return cv::Mat();
     }
 
-    vector<size_t> vAvailableIndices;
+    std::vector<size_t> vAvailableIndices;
 
     cv::Mat P3Dc1i(3,3,CV_32F);
     cv::Mat P3Dc2i(3,3,CV_32F);
@@ -204,8 +211,8 @@ cv::Mat Sim3Solver::iterate(int nIterations, bool &bNoMore, vector<bool> &vbInli
     return cv::Mat();
 }
 
-cv::Mat Sim3Solver::find(vector<bool> &vbInliers12, int &nInliers)
-{
+cv::Mat Sim3Solver::find(std::vector<bool>& vbInliers12, 
+                         int& nInliers) {
     bool bFlag;
     return iterate(mRansacMaxIts,bFlag,vbInliers12,nInliers);
 }
@@ -337,7 +344,7 @@ void Sim3Solver::ComputeSim3(cv::Mat &P1, cv::Mat &P2)
 
 void Sim3Solver::CheckInliers()
 {
-    vector<cv::Mat> vP1im2, vP2im1;
+    std::vector<cv::Mat> vP1im2, vP2im1;
     Project(mvX3Dc2,vP2im1,mT12i,mK1);
     Project(mvX3Dc1,vP1im2,mT21i,mK2);
 
@@ -377,8 +384,10 @@ float Sim3Solver::GetEstimatedScale()
     return mBestScale;
 }
 
-void Sim3Solver::Project(const vector<cv::Mat> &vP3Dw, vector<cv::Mat> &vP2D, cv::Mat Tcw, cv::Mat K)
-{
+void Sim3Solver::Project(const std::vector<cv::Mat>& vP3Dw, 
+                         std::vector<cv::Mat>& vP2D, 
+                         cv::Mat Tcw, 
+                         cv::Mat K) {
     cv::Mat Rcw = Tcw.rowRange(0,3).colRange(0,3);
     cv::Mat tcw = Tcw.rowRange(0,3).col(3);
     const float &fx = K.at<float>(0,0);
@@ -400,12 +409,13 @@ void Sim3Solver::Project(const vector<cv::Mat> &vP3Dw, vector<cv::Mat> &vP2D, cv
     }
 }
 
-void Sim3Solver::FromCameraToImage(const vector<cv::Mat> &vP3Dc, vector<cv::Mat> &vP2D, cv::Mat K)
-{
-    const float &fx = K.at<float>(0,0);
-    const float &fy = K.at<float>(1,1);
-    const float &cx = K.at<float>(0,2);
-    const float &cy = K.at<float>(1,2);
+void Sim3Solver::FromCameraToImage(const std::vector<cv::Mat>& vP3Dc, 
+                                   std::vector<cv::Mat>& vP2D, 
+                                   cv::Mat K) {
+    const float fx = K.at<float>(0,0);
+    const float fy = K.at<float>(1,1);
+    const float cx = K.at<float>(0,2);
+    const float cy = K.at<float>(1,2);
 
     vP2D.clear();
     vP2D.reserve(vP3Dc.size());

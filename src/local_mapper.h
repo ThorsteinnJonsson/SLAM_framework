@@ -1,30 +1,28 @@
 #ifndef SRC_LOCAL_MAPPER_H_
 #define SRC_LOCAL_MAPPER_H_
 
-#include "keyframe.h"
-#include "map.h"
+#include "data/keyframe.h"
+#include "data/map.h"
 #include "loop_closer.h"
-#include "tracker.h"
-#include "keyframe_database.h"
+#include "data/keyframe_database.h"
 
 #include <mutex>
 
 // Forward declarations
 class LoopCloser;
-class Tracker;
 class Map;
 
 class LocalMapper {
 public:
-  LocalMapper(Map* pMap, const float bMonocular); // TODO why is this float???
+  explicit LocalMapper(const std::shared_ptr<Map>& map, 
+                       const bool is_monocular);
   ~LocalMapper() {}
 
-  void SetLoopCloser(LoopCloser* pLoopCloser);
-  void SetTracker(Tracker* pTracker);
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer);
 
   void Run();
 
-  void InsertKeyFrame(KeyFrame* pKF);
+  void InsertKeyFrame(KeyFrame* keyframe);
 
   void RequestStop();
   void RequestReset();
@@ -34,11 +32,11 @@ public:
   bool stopRequested();
   
   bool AcceptKeyFrames();
-  void SetAcceptKeyFrames(bool flag);
+  void SetAcceptKeyFrames(const bool flag);
   
   void InterruptBA();
   
-  bool SetNotStop(bool flag);
+  bool SetNotStop(const bool flag);
   
   void RequestFinish();
   bool isFinished();
@@ -55,11 +53,11 @@ protected:
 
   void KeyFrameCulling();
 
-  cv::Mat ComputeF12(KeyFrame* &pKF1, KeyFrame* &pKF2); // TODO why reference to a pointer????
+  cv::Mat ComputeF12(KeyFrame* pKF1, KeyFrame* pKF2) const;
 
-  cv::Mat SkewSymmetricMatrix(const cv::Mat &v);
+  cv::Mat SkewSymmetricMatrix(const cv::Mat &v) const;
 
-  bool mbMonocular;
+  bool is_monocular_;
 
   void ResetIfRequested();
   bool mbResetRequested;
@@ -71,10 +69,9 @@ protected:
   bool mbFinished;
   std::mutex mMutexFinish;
 
-  Map* mpMap;
+  std::shared_ptr<Map> map_;
 
-  LoopCloser* mpLoopCloser;
-  Tracker* mpTracker;
+  std::shared_ptr<LoopCloser> loop_closer_;
 
   std::list<KeyFrame*> mlNewKeyFrames;
 

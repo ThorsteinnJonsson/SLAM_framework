@@ -4,11 +4,14 @@
 
 #include <thread>
 #include <mutex>
+#include <memory>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
 
-#include "map.h"
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
+#include "data/map.h"
 #include "tracker.h"
 #include "local_mapper.h"
 #include "loop_closer.h"
@@ -20,34 +23,26 @@ class Tracker;
 class LocalMapper;
 class LoopCloser;
 
-enum SENSOR_TYPE {
-  STEREO = 0,
-  RGBD = 1,
-  MONOCULAR = 2
-};
-
 class SlamSystem {
 public:
-  SlamSystem(const std::string& strVocFile, 
-             const std::string& strSettingsFile, 
-             const SENSOR_TYPE sensor);
+  explicit SlamSystem(const std::string& vocabulary_path, 
+                      const std::string& settings_path, 
+                      const SENSOR_TYPE sensor);
   ~SlamSystem();
 
-  cv::Mat TrackStereo(const cv::Mat& imLeft, const cv::Mat& imRight, const double timestamp);
-  // cv::Mat TrackRGBD(const cv::Mat& im, const cv::Mat& depthmap, const double timestamp); // TODO implement later
-  // cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp); // TODO implement later
-
-  // Reset the system (clear map)
-  void Reset();
+  cv::Mat TrackStereo(const cv::Mat& imLeft, 
+                      const cv::Mat& imRight,
+                      const double timestamp);
+  cv::Mat TrackRGBD(const cv::Mat& im, 
+                    const cv::Mat& depthmap, 
+                    const double timestamp);
+  cv::Mat TrackMonocular(const cv::Mat& im, 
+                         const double timestamp);
 
   // This stops local mapping thread (map building) and performs only camera tracking.
   void ActivateLocalizationMode();
   // This resumes local mapping thread and performs SLAM again.
   void DeactivateLocalizationMode();
-
-  // Returns true if there have been a big map change (loop closure, global BA)
-  // since last call to this function
-  bool MapChanged();
 
   // All threads will be requested to finish.
   // It waits until all threads have finished.
@@ -56,65 +51,60 @@ public:
 
   // Save camera trajectory in the KITTI dataset format.
   // Only for stereo and RGB-D. This method does not work for monocular.
-  // Call first Shutdown()
+  // Call Shutdown() before calling this function.
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
-  void SaveTrajectoryKITTI(const string& filename);
+  void SaveTrajectoryKITTI(const std::string& filename) const;
 
   // TODO: Save/Load functions (not implemented in the original ORB-SLAM)
-  // SaveMap(const string &filename);
-  // LoadMap(const string &filename);
+  // SaveMap(const std::string &filename);
+  // LoadMap(const std::string &filename);
 
   // Information from most recent processed frame
   // You can call this right after TrackMonocular (or stereo or RGBD)
-  int GetTrackingState();
-  std::vector<MapPoint*> GetTrackedMapPoints();
-  std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
-
+  TrackingState GetTrackingState() const;
+  std::vector<MapPoint*> GetTrackedMapPoints() const;
+  std::vector<cv::KeyPoint> GetTrackedKeyPointsUn() const;
 
 private:
   // Input sensor
-  SENSOR_TYPE mSensor;
+  SENSOR_TYPE sensor_type_;
 
   // ORB vocabulary used for place recognition and feature matching.
-  OrbVocabulary* mpVocabulary;
+  std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
   // KeyFrame database for place recognition (relocalization and loop detection).
-  KeyframeDatabase* mpKeyFrameDatabase;
+  std::shared_ptr<KeyframeDatabase> keyframe_database_;
 
   // Map structure that stores the pointers to all KeyFrames and MapPoints.
-  Map* mpMap;
+  std::shared_ptr<Map> map_;
 
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints and
   // performs relocalization if tracking fails.
-  Tracker* mpTracker;
+  std::shared_ptr<Tracker> tracker_;
 
   // Local Mapper. It manages the local map and performs local bundle adjustment.
-  LocalMapper* mpLocalMapper;
+  std::shared_ptr<LocalMapper> local_mapper_;
 
   // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
   // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-  LoopCloser* mpLoopCloser;
+  std::shared_ptr<LoopCloser> loop_closer_;
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
-  std::thread* mptLocalMapping;
-  std::thread* mptLoopClosing;
-
-  // Reset flag
-  std::mutex mMutexReset;
-  bool mbReset;
+  std::unique_ptr<std::thread> local_mapping_thread_;
+  std::unique_ptr<std::thread> loop_closing_thread_;
 
   // Change mode flags
-  std::mutex mMutexMode;
-  bool mbActivateLocalizationMode;
-  bool mbDeactivateLocalizationMode;
+  mutable std::mutex mode_mutex_;
+  bool activate_localization_mode_;
+  bool deactivate_localization_mode_;
 
   // Tracking state
-  int mTrackingState;
-  std::vector<MapPoint*> mTrackedMapPoints;
-  std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
-  std::mutex mMutexState;  
+  TrackingState tracking_state_;
+  std::vector<MapPoint*> tracked_map_points_;
+  std::vector<cv::KeyPoint> tracked_keypoints_un_;
+  mutable std::mutex state_mutex_;  
  
 };
 

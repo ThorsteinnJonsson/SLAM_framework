@@ -2,13 +2,13 @@
 #define SRC_KEYFRAME_H_
 
 
-#include "map_point.h"
-#include "frame.h"
+#include "data/map_point.h"
+#include "data/frame.h"
 #include "DBoW2/BowVector.h"
 #include "DBoW2/FeatureVector.h"
-#include "orb_vocabulary.h"
-#include "orb_extractor.h"
-#include "keyframe_database.h"
+#include "orb_features/orb_vocabulary.h"
+#include "orb_features/orb_extractor.h"
+#include "data/keyframe_database.h"
 
 #include <mutex>
 #include <set>
@@ -22,7 +22,9 @@ class KeyframeDatabase;
 
 class KeyFrame{
 public:
-  KeyFrame(Frame& F, Map* pMap, KeyframeDatabase* pKFDB);
+  KeyFrame(const Frame& F, 
+           const std::shared_ptr<Map>& pMap, 
+           const std::shared_ptr<KeyframeDatabase>& pKFDB);
   ~KeyFrame() {}
 
   void SetPose(const cv::Mat& Tcw);
@@ -175,8 +177,8 @@ protected:
   std::vector<MapPoint*> mvpMapPoints;
 
   // BoW
-  KeyframeDatabase* mpKeyFrameDB;
-  OrbVocabulary* mpORBvocabulary;
+  std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
+  std::shared_ptr<OrbVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
   std::vector<std::vector<std::vector<size_t>>> mGrid;
@@ -198,7 +200,7 @@ protected:
 
   float mHalfBaseline; // Only for visualization
 
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   std::mutex mMutexPose;
   std::mutex mMutexConnections;

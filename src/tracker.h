@@ -2,23 +2,22 @@
 #define SRC_TRACKER_H_
 
 #include <opencv2/opencv.hpp>
-#include<opencv2/core/core.hpp>
-#include<opencv2/features2d/features2d.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/features2d/features2d.hpp>
 
-// #include"Viewer.h"
-// #include"FrameDrawer.h"
-#include"map.h"
-#include"local_mapper.h"
-#include"loop_closer.h"
-#include"frame.h"
-#include "orb_vocabulary.h"
-#include "keyframe_database.h"
-#include "orb_extractor.h"
-// #include "Initializer.h"
-// #include "MapDrawer.h"
-#include "slam_system.h"
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
+#include "data/map.h"
+#include "local_mapper.h"
+#include "loop_closer.h"
+#include "data/frame.h"
+#include "orb_features/orb_vocabulary.h"
+#include "data/keyframe_database.h"
+#include "orb_features/orb_extractor.h"
+#include "util/initializer.h"
 
 #include <mutex>
+#include <memory>
 
 // Forward declerations
 class Map;
@@ -26,82 +25,60 @@ class LocalMapper;
 class LoopCloser;
 class SlamSystem;
 
-
 class Tracker {
 public:
-  Tracker(SlamSystem* pSys, 
-          OrbVocabulary* pVoc, 
-          Map* pMap,
-          KeyframeDatabase* pKFDB, 
-          const std::string& strSettingPath, 
-          const int sensor);
+  Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
+          const std::shared_ptr<Map>& map,
+          const std::shared_ptr<KeyframeDatabase>& keyframe_db, 
+          const std::string& settings_path, 
+          const SENSOR_TYPE sensor);
   ~Tracker() {}
 
   // Preprocess the input and call Track(). Extract features and performs stereo matching.
-  cv::Mat GrabImageStereo(const cv::Mat& imRectLeft,
-                          const cv::Mat& imRectRight, 
+  cv::Mat GrabImageStereo(const cv::Mat& left_image,
+                          const cv::Mat& right_image, 
                           const double timestamp);
-  // cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double timestamp); // TODO
-  // cv::Mat GrabImageMonocular(const cv::Mat& im, const double timestamp); //TODO
+  cv::Mat GrabImageRGBD(const cv::Mat& rgbd_image,
+                        const cv::Mat& depth_image, 
+                        const double timestamp);
+  cv::Mat GrabImageMonocular(const cv::Mat& image, 
+                             const double timestamp);
 
-  void SetLocalMapper(LocalMapper* local_mapper) { mpLocalMapper = local_mapper; }
-  void SetLoopCloser(LoopCloser* loop_closer) { mpLoopClosing = loop_closer; }
+  void SetLocalMapper(const std::shared_ptr<LocalMapper>& local_mapper) { 
+    local_mapper_ = local_mapper; 
+  }
 
-  // Load new settings
-  // The focal lenght should be similar or scale prediction will fail when projecting points
-  // TODO: Modify MapPoint::PredictScale to take into account focal lenght
-  // void ChangeCalibration(const string &strSettingPath); // TODO doesn't seem to be used
+  void SetLoopCloser(const std::shared_ptr<LoopCloser>& loop_closer) { 
+    loop_closer_ = loop_closer;
+  }
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
-  void InformOnlyTracking(const bool &flag) { mbOnlyTracking = flag; }
+  void InformOnlyTracking(const bool flag) { mbOnlyTracking = flag; }
+
+  bool NeedSystemReset() const;
 
   void Reset();
 
-public:
-  // Tracking states
-  enum TrackingState {
-    SYSTEM_NOT_READY=-1,
-    NO_IMAGES_YET=0,
-    NOT_INITIALIZED=1,
-    OK=2,
-    LOST=3
-  };
+  TrackingState GetState() const { return state_; }
 
-  TrackingState mState;
-  TrackingState mLastProcessedState;
-
-  // Input sensor
-  int mSensor;
-
-  // Current Frame
-  Frame mCurrentFrame;
-  cv::Mat mImGray;
-
-  // Initialization Variables (Monocular) # TODO maybe don't need since only monocular???
-  // std::vector<int> mvIniLastMatches;
-  // std::vector<int> mvIniMatches;
-  // std::vector<cv::Point2f> mvbPrevMatched;
-  // std::vector<cv::Point3f> mvIniP3D;
-  // Frame mInitialFrame;
-
-  // Lists used to recover the full camera trajectory at the end of the execution.
-  // Basically we store the reference keyframe for each frame and its relative transformation
-  std::list<cv::Mat> mlRelativeFramePoses;
-  std::list<KeyFrame*> mlpReferences;
-  std::list<double> mlFrameTimes;
-  std::list<bool> mlbLost;
-
-  // True if local mapping is deactivated and we are performing only localization
-  bool mbOnlyTracking;
+  const Frame& GetCurrentFrame() const { return current_frame_; }
+  
+  const std::list<cv::Mat>& GetRelativeFramePoses() { return mlRelativeFramePoses; }
+  const std::list<KeyFrame*>& GetReferenceKeyframes() { return mlpReferences; }
+  const std::list<double>& GetFrameTimes() { return mlFrameTimes; }
 
 protected:
   // Map initialization for stereo and RGB-D
   void StereoInitialization();
 
+  // Map initialization for monocular
+  void MonocularInitialization();
+  void CreateInitialMapMonocular();
+
   // Main tracking function. It is independent of the input sensor.
   void Track();
 
-  void CheckReplacedInLastFrame();
+  void ReplaceInLastFrame();
   bool TrackReferenceKeyFrame();
   void UpdateLastFrame();
   bool TrackWithMotionModel();
@@ -124,27 +101,28 @@ protected:
   // points in the map. Still tracking will continue if there are enough matches with 
   // temporal points. In that case we are doing visual odometry. 
   // The system will try to do relocalization to recover "zero-drift" localization to the map.
-  bool mbVO;
+  bool use_visual_odometry_;
 
-  // Other Thread Pointers (TODO probably not the best way to do this)
-  LocalMapper* mpLocalMapper;
-  LoopCloser* mpLoopClosing;
+  // Other Thread Pointers
+  std::shared_ptr<LocalMapper> local_mapper_;
+  std::shared_ptr<LoopCloser> loop_closer_;
 
-  ORBextractor* mpORBextractorLeft;
-  ORBextractor* mpORBextractorRight;
-  ORBextractor* mpIniORBextractor;
+  std::shared_ptr<ORBextractor> orb_extractor_left_;
+  std::shared_ptr<ORBextractor> orb_extractor_right_;
+  std::shared_ptr<ORBextractor> mpIniORBextractor;
 
-  OrbVocabulary* mpORBVocabulary;
-  KeyframeDatabase* mpKeyFrameDB;
+  const std::shared_ptr<OrbVocabulary> orb_vocabulary_;
+  const std::shared_ptr<KeyframeDatabase> keyframe_db_;
+
+  // Initalization (only for monocular)
+  std::unique_ptr<Initializer> mpInitializer = nullptr; // TODO unique_ptr?
 
   //Local Map
   KeyFrame* mpReferenceKF;
   std::vector<KeyFrame*> mvpLocalKeyFrames;
   std::vector<MapPoint*> mvpLocalMapPoints;
 
-  SlamSystem* mpSystem;
-
-  Map* mpMap;
+  std::shared_ptr<Map> mpMap;
 
   // Calibration matrix
   cv::Mat mK;
@@ -178,7 +156,32 @@ protected:
   //Color order (true RGB, false BGR, ignored if grayscale)
   bool mbRGB;
 
-  std::list<MapPoint*> mlpTemporalPoints; // TODO do we ever use this
+private:
+  TrackingState state_;
+  TrackingState last_processed_state_;
+
+  SENSOR_TYPE sensor_type_;
+
+  Frame current_frame_;
+
+  // Lists used to recover the full camera trajectory at the end of the execution.
+  // Basically we store the reference keyframe for each frame and its relative transformation
+  std::list<cv::Mat> mlRelativeFramePoses;
+  std::list<KeyFrame*> mlpReferences;
+  std::list<double> mlFrameTimes;
+  std::list<bool> mlbLost;
+
+  // True if local mapping is deactivated and we are performing only localization
+  bool mbOnlyTracking;
+
+  // Initialization Variables (Monocular)
+  std::vector<int> mvIniMatches; // TODO Should probably be private
+  std::vector<cv::Point2f> mvbPrevMatched;
+  std::vector<cv::Point3f> mvIniP3D;
+  Frame mInitialFrame;
+
+  const int num_required_matches_ = 15;
+  bool system_reset_needed_ = false;
 };
 
 

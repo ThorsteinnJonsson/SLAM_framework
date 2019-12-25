@@ -1,12 +1,13 @@
 #include "keyframe.h"
-#include "converter.h"
+
+#include "util/converter.h"
 
 // Define static variables with initial values
 long unsigned int KeyFrame::nNextId = 0;
 
-KeyFrame::KeyFrame(Frame& F, 
-                   Map* pMap, 
-                   KeyframeDatabase* pKFDB) 
+KeyFrame::KeyFrame(const Frame& F, 
+                   const std::shared_ptr<Map>& pMap, 
+                   const std::shared_ptr<KeyframeDatabase>& pKFDB) 
       : mnFrameId(F.mnId)
       , mTimeStamp(F.mTimeStamp)
       , mnGridCols(FRAME_GRID_COLS), mnGridRows(FRAME_GRID_ROWS)
@@ -53,13 +54,12 @@ KeyFrame::KeyFrame(Frame& F,
       , mpKeyFrameDB(pKFDB)
       , mpORBvocabulary(F.mpORBvocabulary)
       , mbFirstConnection(true)
-      , mpParent(NULL)
+      , mpParent(nullptr)
       , mbNotErase(false)
       , mbToBeErased(false)
       , mbBad(false)
       , mHalfBaseline(F.mb/2)
-      , mpMap(pMap) 
-{
+      , mpMap(pMap) {
   mnId = nNextId++;
 
   mGrid.resize(mnGridCols);

@@ -1,8 +1,8 @@
 #ifndef SRC_MAP_H_
 #define SRC_MAP_H_
 
-#include "map_point.h"
-#include "keyframe.h"
+#include "data/map_point.h"
+#include "data/keyframe.h"
 
 #include <set>
 #include <mutex>

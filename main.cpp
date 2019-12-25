@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iomanip>
 #include <chrono>
-#include <fstream>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -46,15 +45,6 @@ void LoadKittiImages(const std::string& kitti_path,
       right_image_paths.push_back(right_folder + ss.str() + ".png");
   }
 }
-
-// void WriteResultsToFile(const std::vector<std::array<float,3>>& positions) {
-//   std::ofstream myfile;
-//   myfile.open("tmp/positions.txt");
-//   for (const auto& pos : positions) {
-//     myfile << pos[0] << " " << pos[1] << " " << pos[2] << std::endl;
-//   }
-//   myfile.close();
-// }
 
 int main(int argc, char **argv) {
   // Input TODO: change to actual input 
@@ -98,8 +88,10 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     
     cv::Mat pose = slam_system.TrackStereo(l_image,r_image,timestamp);
-    std::cout << "Finished SLAM on frame " << frame_id << std::endl;
-    // printf(" - Pos: %.2f, %.2f, %.2f\n", pose.at<float>(0,3), pose.at<float>(1,3), pose.at<float>(2,3));
+    if (frame_id % 250 == 0) {
+      std::cout << "Finished SLAM on frame " << frame_id << std::endl;
+    }
+    
     positions.push_back({pose.at<float>(0,3),
                          pose.at<float>(1,3),
                          pose.at<float>(2,3)});
@@ -127,7 +119,6 @@ int main(int argc, char **argv) {
   std::cout << "Done\n";
   
   // TODO print post-processing stuff
-  // WriteResultsToFile(positions);
   slam_system.SaveTrajectoryKITTI("tmp/positions.txt");
 
 }

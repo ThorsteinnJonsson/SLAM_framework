@@ -60,21 +60,28 @@ add_subdirectory(third_party)
 ## Internal libraries                   ##
 ##########################################
 add_library(stereo_slam SHARED
+            
             src/slam_system.cpp
             src/tracker.cpp
             src/local_mapper.cpp
-            src/loop_closer.cpp 
-            src/orb_extractor.cpp
-            src/orb_matcher.cpp
-            src/converter.cpp
-            src/map_point.cpp
-            src/keyframe.cpp
-            src/map.cpp
-            src/optimizer.cpp
-            src/pnp_solver.cpp
-            src/frame.cpp
-            src/keyframe_database.cpp
-            src/sim3solver.cpp
+            src/loop_closer.cpp
+            
+            src/data/map.cpp
+            src/data/map_point.cpp
+            src/data/frame.cpp
+            src/data/keyframe.cpp
+            src/data/keyframe_database.cpp
+
+            src/solvers/sim3solver.cpp
+            src/solvers/pnp_solver.cpp
+
+            src/optimizer/optimizer.cpp
+
+            src/orb_features/orb_extractor.cpp
+            src/orb_features/orb_matcher.cpp
+
+            src/util/initializer.cpp
+            src/util/converter.cpp  
 )
 
 target_include_directories(stereo_slam PUBLIC
