@@ -1,3 +1,9 @@
+// Main
+
+#include "slam_system.h"
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -5,16 +11,7 @@
 #include <iomanip>
 #include <chrono>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-
-#include "slam_system.h"
-
 // #pragma GCC optimize ("O0") //TODO remove
-
-#include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-
 
 void LoadKittiImages(const std::string& kitti_path, 
                      std::vector<std::string>& left_image_paths,

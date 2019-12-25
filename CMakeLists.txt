@@ -82,9 +82,10 @@ catkin_package(
 add_library(stereo_slam SHARED
             
             src/slam_system.cpp
-            src/tracker.cpp
-            src/local_mapper.cpp
-            src/loop_closer.cpp
+            
+            src/core/tracker.cpp
+            src/core/local_mapper.cpp
+            src/core/loop_closer.cpp
             
             src/data/map.cpp
             src/data/map_point.cpp

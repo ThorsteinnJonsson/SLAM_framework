@@ -1,21 +1,19 @@
 #ifndef SRC_STEREO_SLAM_H_
 #define SRC_STEREO_SLAM_H_
 
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+
+#include "core/tracker.h"
+#include "core/local_mapper.h"
+#include "core/loop_closer.h"
+#include "data/map.h"
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
 
 #include <thread>
 #include <mutex>
 #include <memory>
-
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-
-#include "util/sensor_type.h"
-#include "util/tracking_state.h"
-#include "data/map.h"
-#include "tracker.h"
-#include "local_mapper.h"
-#include "loop_closer.h"
-
 
 // Forward declarations
 class Map;

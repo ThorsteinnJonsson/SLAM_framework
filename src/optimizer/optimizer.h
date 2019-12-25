@@ -1,11 +1,12 @@
 #ifndef SRC_OPTIMIZER_H_
 #define SRC_OPTIMIZER_H_
 
-#include "data/map.h"
-#include "data/map_point.h"
-#include "data/keyframe.h"
-#include "loop_closer.h"
+#include "core/loop_closer.h"
 #include "data/frame.h"
+#include "data/keyframe.h"
+#include "data/map_point.h"
+#include "data/map.h"
+
 
 #include "g2o/types/types_seven_dof_expmap.h"
 
