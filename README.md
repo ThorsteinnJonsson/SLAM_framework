@@ -1,6 +1,7 @@
-# stereo_slams
+# stereo_slam
 
 
 
 ## TODO 
-- Remove using namespace std from everywhere
+- Add ROS for output
+- Add ROS for input

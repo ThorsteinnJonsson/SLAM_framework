@@ -91,7 +91,7 @@ public:
 
 protected:
   // Position in absolute coordinates
-  cv::Mat mWorldPos;
+  cv::Mat world_position_;
 
   // Keyframes observing the point and associated index in keyframe
   std::map<KeyFrame*,size_t> mObservations;

@@ -2,10 +2,10 @@
 
 #include "orb_features/orb_matcher.h"
 
-long unsigned int MapPoint::nNextId=0;
+long unsigned int MapPoint::nNextId = 0;
 std::mutex MapPoint::mGlobalMutex;
 
-MapPoint::MapPoint(const cv::Mat& Pos, 
+MapPoint::MapPoint(const cv::Mat& position, 
                    KeyFrame* pRefKF, 
                    const std::shared_ptr<Map>& pMap)
       : mnFirstKFid(pRefKF->mnId)
@@ -27,7 +27,7 @@ MapPoint::MapPoint(const cv::Mat& Pos,
       , mfMinDistance(0)
       , mfMaxDistance(0)
       , mpMap(pMap) {
-  Pos.copyTo(mWorldPos);
+  position.copyTo(world_position_);
   mNormalVector = cv::Mat::zeros(3,1,CV_32F);
 
   // MapPoints can be created from Tracking and Local Mapping. This mutex avoid conflicts with id.
@@ -35,7 +35,7 @@ MapPoint::MapPoint(const cv::Mat& Pos,
   mnId = nNextId++;
 }
 
-MapPoint::MapPoint(const cv::Mat& Pos, 
+MapPoint::MapPoint(const cv::Mat& position, 
                    const std::shared_ptr<Map>& pMap, 
                    Frame* pFrame, 
                    const int &idxF)
@@ -56,12 +56,12 @@ MapPoint::MapPoint(const cv::Mat& Pos,
       , mbBad(false)
       , mpReplaced(nullptr)
       , mpMap(pMap) {
-  Pos.copyTo(mWorldPos);
+  position.copyTo(world_position_);
   cv::Mat Ow = pFrame->GetCameraCenter();
-  mNormalVector = mWorldPos - Ow;
+  mNormalVector = world_position_ - Ow;
   mNormalVector = mNormalVector/cv::norm(mNormalVector);
 
-  cv::Mat PC = Pos - Ow;
+  cv::Mat PC = position - Ow;
   const float dist = cv::norm(PC);
   const int level = pFrame->mvKeysUn[idxF].octave;
   const float levelScaleFactor =  pFrame->mvScaleFactors[level];
@@ -77,15 +77,15 @@ MapPoint::MapPoint(const cv::Mat& Pos,
   mnId = nNextId++;
 }
 
-void MapPoint::SetWorldPos(const cv::Mat& Pos) {
+void MapPoint::SetWorldPos(const cv::Mat& position) {
   std::unique_lock<std::mutex> lock1(mGlobalMutex);
   std::unique_lock<std::mutex> lock2(mMutexPos);
-  Pos.copyTo(mWorldPos);
+  position.copyTo(world_position_);
 }
 
 cv::Mat MapPoint::GetWorldPos() {
   std::unique_lock<std::mutex> lock(mMutexPos);
-  return mWorldPos.clone();
+  return world_position_.clone();
 }
 
 cv::Mat MapPoint::GetNormal() {
@@ -118,7 +118,7 @@ void MapPoint::AddObservation(KeyFrame* pKF, size_t idx) {
   if (pKF->mvuRight[idx] >= 0) {
     nObs += 2;
   } else {
-    ++nObs;
+    nObs += 1;
   }
 }
 
@@ -126,21 +126,21 @@ void MapPoint::EraseObservation(KeyFrame* pKF) {
   bool bBad = false;
   { 
     std::unique_lock<std::mutex> lock(mMutexFeatures);
-    if(mObservations.count(pKF)) {
+    if (mObservations.count(pKF)) {
       int idx = mObservations[pKF];
-      if(pKF->mvuRight[idx] >= 0) {
-        nObs-=2;
+      if (pKF->mvuRight[idx] >= 0) {
+        nObs -= 2;
       } else {
-        nObs--;            
+        nObs -= 1;            
       }
       mObservations.erase(pKF);
 
-      if(mpRefKF==pKF) {
+      if (mpRefKF==pKF) {
         mpRefKF = mObservations.begin()->first;
       }
 
       // If only 2 observations or less, discard point
-      if(nObs<=2) {
+      if (nObs <= 2) {
         bBad = true;
       }
     }
@@ -175,7 +175,9 @@ void MapPoint::SetBadFlag() {
     obs = mObservations;
     mObservations.clear();
   }
-  for(std::map<KeyFrame*,size_t>::iterator mit=obs.begin(); mit!=obs.end(); mit++) {
+  for(std::map<KeyFrame*,size_t>::iterator mit = obs.begin(); 
+                                           mit != obs.end(); 
+                                           ++mit) {
     KeyFrame* pKF = mit->first;
     pKF->EraseMapPointMatch(mit->second);
   }
@@ -194,30 +196,29 @@ void MapPoint::Replace(MapPoint* pMP) {
   }
 
   int nvisible, nfound;
-  std::map<KeyFrame*,size_t> obs;
+  std::map<KeyFrame*,size_t> observations;
   
   {
     std::unique_lock<std::mutex> lock1(mMutexFeatures);
     std::unique_lock<std::mutex> lock2(mMutexPos);
     mbBad = true;
-    obs = mObservations;
+    observations = mObservations;
     mObservations.clear();
     nvisible = mnVisible;
     nfound = mnFound;
     mpReplaced = pMP;
   }
 
-  for(std::map<KeyFrame*,size_t>::iterator mit = obs.begin(); 
-                                           mit != obs.end(); 
-                                           ++mit) {
+  for (const auto& observation : observations) {
     // Replace measurement in keyframe
-    KeyFrame* pKF = mit->first;
+    KeyFrame* keyframe = observation.first;
+    const size_t index = observation.second;
 
-    if (!pMP->IsInKeyFrame(pKF)) {
-      pKF->ReplaceMapPointMatch(mit->second, pMP);
-      pMP->AddObservation(pKF, mit->second);
+    if (!pMP->IsInKeyFrame(keyframe)) {
+      keyframe->ReplaceMapPointMatch(index, pMP);
+      pMP->AddObservation(keyframe, index);
     } else {
-      pKF->EraseMapPointMatch(mit->second);
+      keyframe->EraseMapPointMatch(index);
     }
   } 
   pMP->IncreaseFound(nfound);
@@ -269,8 +270,7 @@ void MapPoint::ComputeDistinctiveDescriptors() {
   vDescriptors.reserve(observations.size());
   for (std::map<KeyFrame*, size_t>::iterator mit = observations.begin(); 
                                              mit != observations.end(); 
-                                             ++mit) 
-  {
+                                             ++mit) {
     KeyFrame* pKF = mit->first;
     if (!pKF->isBad()) {
       vDescriptors.push_back(pKF->mDescriptors.row(mit->second));
@@ -329,7 +329,7 @@ void MapPoint::UpdateNormalAndDepth() {
     }
     observations = mObservations;
     pRefKF = mpRefKF;
-    Pos = mWorldPos.clone();
+    Pos = world_position_.clone();
   }
 
   if (observations.empty()) {
@@ -344,7 +344,7 @@ void MapPoint::UpdateNormalAndDepth() {
   {
     KeyFrame* pKF = mit->first;
     cv::Mat Owi = pKF->GetCameraCenter();
-    cv::Mat normali = mWorldPos - Owi;
+    cv::Mat normali = world_position_ - Owi;
     normal = normal + normali / cv::norm(normali);
     ++n;
   }
