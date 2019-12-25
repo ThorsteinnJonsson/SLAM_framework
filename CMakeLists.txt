@@ -56,6 +56,26 @@ MESSAGE("Found Eigen: ${EIGEN3_FOUND}")
 # Included in this repo
 add_subdirectory(third_party)
 
+# ROS (catkin)
+find_package(catkin REQUIRED COMPONENTS 
+      roscpp
+      rospy 
+      rosbag
+      tf
+      std_msgs 
+      sensor_msgs
+      geometry_msgs
+      nav_msgs
+      message_filters 
+      message_generation 
+)
+MESSAGE("Found ROS: ${roscpp_FOUND}") 
+
+catkin_package(
+ CATKIN_DEPENDS roscpp sensor_msgs std_msgs message_filters message_runtime
+)
+
+
 ##########################################
 ## Internal libraries                   ##
 ##########################################
@@ -84,14 +104,18 @@ add_library(stereo_slam SHARED
             src/util/converter.cpp  
 )
 
+add_dependencies(stereo_slam ${catkin_EXPORTED_TARGETS})
+
 target_include_directories(stereo_slam PUBLIC
                            ${PROJECT_SOURCE_DIR}/src
                            ${PROJECT_SOURCE_DIR}
                            ${EIGEN3_INCLUDE_DIR}
+                           ${catkin_INCLUDE_DIRS}
 )
 
 target_link_libraries(stereo_slam PUBLIC
                       ${OpenCV_LIBS}
+                      ${catkin_LIBRARIES}
                       DBoW2
                       g2o
 )

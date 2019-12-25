@@ -12,6 +12,9 @@
 
 // #pragma GCC optimize ("O0") //TODO remove
 
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
+
 
 void LoadKittiImages(const std::string& kitti_path, 
                      std::vector<std::string>& left_image_paths,
