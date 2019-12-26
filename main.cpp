@@ -11,6 +11,8 @@
 #include <iomanip>
 #include <chrono>
 
+#include <ros/ros.h>
+
 // #pragma GCC optimize ("O0") //TODO remove
 
 void LoadKittiImages(const std::string& kitti_path, 
@@ -47,6 +49,9 @@ void LoadKittiImages(const std::string& kitti_path,
 }
 
 int main(int argc, char **argv) {
+
+  ros::init(argc, argv, "stereo_slam");
+
   // Input TODO: change to actual input 
   std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
 

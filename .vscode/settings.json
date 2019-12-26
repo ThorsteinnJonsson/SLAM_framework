@@ -56,7 +56,8 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "string": "cpp",
-    "random": "cpp"
+    "random": "cpp",
+    "csignal": "cpp"
   },
   "workbench.colorCustomizations": {
     "activityBar.background": "#273112",

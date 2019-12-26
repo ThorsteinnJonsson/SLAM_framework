@@ -10,6 +10,7 @@
 #include "data/map.h"
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
+#include "ros/ros_publisher.h"
 
 #include <thread>
 #include <mutex>
@@ -79,19 +80,23 @@ private:
   // Tracker. It receives a frame and computes the associated camera pose.
   // It also decides when to insert a new keyframe, create some new MapPoints and
   // performs relocalization if tracking fails.
-  std::shared_ptr<Tracker> tracker_;
+  std::shared_ptr<Tracker> tracker_ = nullptr;
 
   // Local Mapper. It manages the local map and performs local bundle adjustment.
-  std::shared_ptr<LocalMapper> local_mapper_;
+  std::shared_ptr<LocalMapper> local_mapper_ = nullptr;
 
   // Loop Closer. It searches loops with every new keyframe. If there is a loop it performs
   // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
-  std::shared_ptr<LoopCloser> loop_closer_;
+  std::shared_ptr<LoopCloser> loop_closer_ = nullptr;
+
+  // ROS publisher for visualization
+  std::shared_ptr<RosPublisher> ros_publisher_ = nullptr; // TODO maybe change to unique
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
   std::unique_ptr<std::thread> local_mapping_thread_;
   std::unique_ptr<std::thread> loop_closing_thread_;
+  std::unique_ptr<std::thread> ros_pub_thread_;
 
   // Change mode flags
   mutable std::mutex mode_mutex_;
@@ -102,7 +107,10 @@ private:
   TrackingState tracking_state_;
   std::vector<MapPoint*> tracked_map_points_;
   std::vector<cv::KeyPoint> tracked_keypoints_un_;
-  mutable std::mutex state_mutex_;  
+  mutable std::mutex state_mutex_;
+
+  // ROS
+  bool ros_output_enabled = true;
  
 };
 

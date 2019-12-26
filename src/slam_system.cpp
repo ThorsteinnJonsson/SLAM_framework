@@ -60,6 +60,11 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
                                               sensor_type_ != SENSOR_TYPE::MONOCULAR);
   loop_closing_thread_.reset(new std::thread(&LoopCloser::Run, loop_closer_));
 
+    ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
+  if (ros_output_enabled) {
+    ros_pub_thread_.reset(new std::thread(&RosPublisher::Run, ros_publisher_));
+  }
+
   //Set pointers between threads
   tracker_->SetLocalMapper(local_mapper_);
   tracker_->SetLoopCloser(loop_closer_);
@@ -214,15 +219,21 @@ void SlamSystem::DeactivateLocalizationMode() {
 void SlamSystem::Shutdown() {
   local_mapper_->RequestFinish();
   loop_closer_->RequestFinish();
+  ros_publisher_->RequestFinish();
 
   // Wait until all thread have effectively stopped
-  while (!local_mapper_->isFinished() || 
-         !loop_closer_->isFinished()  || 
+  while (!local_mapper_->isFinished()  || 
+         !loop_closer_->isFinished()   ||
+         !ros_publisher_->IsFinished() || 
           loop_closer_->isRunningGBA()) {
     usleep(5000);
   }
+  
   local_mapping_thread_->join();
   loop_closing_thread_->join();
+  if (ros_output_enabled) {
+    ros_pub_thread_->join();
+  }
 }
 
 TrackingState SlamSystem::GetTrackingState() const {
@@ -266,10 +277,9 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
   // For each frame we have a reference keyframe (lRit), the timestamp (lT) and a flag
   // which is true when tracking failed (lbL).
   auto lRit = tracker_->GetReferenceKeyframes().begin();
-  auto lT = tracker_->GetFrameTimes().begin();
   for (auto lit = tracker_->GetRelativeFramePoses().begin();
             lit != tracker_->GetRelativeFramePoses().end();
-            ++lit, ++lRit, ++lT) {
+            ++lit, ++lRit) {
     KeyFrame* pKF = *lRit;
 
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
