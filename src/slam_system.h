@@ -110,7 +110,7 @@ private:
   mutable std::mutex state_mutex_;
 
   // ROS
-  bool ros_output_enabled = true;
+  bool ros_output_enabled = false;
  
 };
 

@@ -60,8 +60,9 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
                                               sensor_type_ != SENSOR_TYPE::MONOCULAR);
   loop_closing_thread_.reset(new std::thread(&LoopCloser::Run, loop_closer_));
 
-    ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
+  
   if (ros_output_enabled) {
+    ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
     ros_pub_thread_.reset(new std::thread(&RosPublisher::Run, ros_publisher_));
   }
 
@@ -219,19 +220,22 @@ void SlamSystem::DeactivateLocalizationMode() {
 void SlamSystem::Shutdown() {
   local_mapper_->RequestFinish();
   loop_closer_->RequestFinish();
-  ros_publisher_->RequestFinish();
 
   // Wait until all thread have effectively stopped
   while (!local_mapper_->isFinished()  || 
          !loop_closer_->isFinished()   ||
-         !ros_publisher_->IsFinished() || 
           loop_closer_->isRunningGBA()) {
     usleep(5000);
   }
   
   local_mapping_thread_->join();
   loop_closing_thread_->join();
-  if (ros_output_enabled) {
+  
+  if (ros_publisher_) {
+    ros_publisher_->RequestFinish();
+    while (!ros_publisher_->IsFinished()) {
+      usleep(1000);
+    }
     ros_pub_thread_->join();
   }
 }
