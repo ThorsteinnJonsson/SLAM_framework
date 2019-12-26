@@ -1,3 +1,9 @@
+// Main
+
+#include "slam_system.h"
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
 
 #include <iostream>
 #include <algorithm>
@@ -5,13 +11,9 @@
 #include <iomanip>
 #include <chrono>
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/core/core.hpp>
-
-#include "slam_system.h"
+#include <ros/ros.h>
 
 // #pragma GCC optimize ("O0") //TODO remove
-
 
 void LoadKittiImages(const std::string& kitti_path, 
                      std::vector<std::string>& left_image_paths,
@@ -47,6 +49,9 @@ void LoadKittiImages(const std::string& kitti_path,
 }
 
 int main(int argc, char **argv) {
+
+  ros::init(argc, argv, "stereo_slam");
+
   // Input TODO: change to actual input 
   std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
 

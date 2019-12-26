@@ -4,7 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/eigen3"
+                "/usr/include/eigen3",
+                "/opt/ros/kinetic",
+                "/opt/ros/kinetic/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

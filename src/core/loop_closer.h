@@ -3,10 +3,10 @@
 
 #include "data/map.h"
 #include "data/keyframe.h"
-#include "tracker.h"
-#include "local_mapper.h"
-#include "orb_features/orb_vocabulary.h"
 #include "data/keyframe_database.h"
+#include "core/tracker.h"
+#include "core/local_mapper.h"
+#include "orb_features/orb_vocabulary.h"
 
 #include <thread>
 #include <mutex>

@@ -37,12 +37,6 @@ else()
    message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-##########################################
-## Library config                       ##
-##########################################
-SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 
 ##########################################
 ## Third party libraries                ##
@@ -56,15 +50,46 @@ MESSAGE("Found Eigen: ${EIGEN3_FOUND}")
 # Included in this repo
 add_subdirectory(third_party)
 
+# ROS (catkin)
+find_package(catkin REQUIRED COMPONENTS 
+      roscpp
+      rospy 
+      rosbag
+      tf
+      std_msgs 
+      sensor_msgs
+      geometry_msgs
+      nav_msgs
+      message_filters 
+      message_generation 
+)
+MESSAGE("Found ROS: ${roscpp_FOUND}") 
+
+catkin_package(
+ CATKIN_DEPENDS roscpp 
+                sensor_msgs 
+                std_msgs 
+                message_filters 
+                message_runtime
+)
+
+##########################################
+## Library config                       ##
+##########################################
+SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build/lib)
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
+
 ##########################################
 ## Internal libraries                   ##
 ##########################################
 add_library(stereo_slam SHARED
             
             src/slam_system.cpp
-            src/tracker.cpp
-            src/local_mapper.cpp
-            src/loop_closer.cpp
+            
+            src/core/tracker.cpp
+            src/core/local_mapper.cpp
+            src/core/loop_closer.cpp
             
             src/data/map.cpp
             src/data/map_point.cpp
@@ -81,17 +106,23 @@ add_library(stereo_slam SHARED
             src/orb_features/orb_matcher.cpp
 
             src/util/initializer.cpp
-            src/util/converter.cpp  
+            src/util/converter.cpp
+
+            src/ros/ros_publisher.cpp
 )
+
+add_dependencies(stereo_slam ${catkin_EXPORTED_TARGETS})
 
 target_include_directories(stereo_slam PUBLIC
                            ${PROJECT_SOURCE_DIR}/src
                            ${PROJECT_SOURCE_DIR}
                            ${EIGEN3_INCLUDE_DIR}
+                           ${catkin_INCLUDE_DIRS}
 )
 
 target_link_libraries(stereo_slam PUBLIC
                       ${OpenCV_LIBS}
+                      ${catkin_LIBRARIES}
                       DBoW2
                       g2o
 )

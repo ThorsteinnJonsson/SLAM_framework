@@ -5,16 +5,16 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 
-#include "util/sensor_type.h"
-#include "util/tracking_state.h"
+#include "core/local_mapper.h"
+#include "core/loop_closer.h"
 #include "data/map.h"
-#include "local_mapper.h"
-#include "loop_closer.h"
 #include "data/frame.h"
-#include "orb_features/orb_vocabulary.h"
 #include "data/keyframe_database.h"
+#include "orb_features/orb_vocabulary.h"
 #include "orb_features/orb_extractor.h"
 #include "util/initializer.h"
+#include "util/sensor_type.h"
+#include "util/tracking_state.h"
 
 #include <mutex>
 #include <memory>
