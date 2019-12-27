@@ -127,10 +127,10 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
                                                  ++sit)
         {
           KeyFrame* pChild = *sit;
-          if (pChild->mnBAGlobalForKF != nLoopKF) {
+          if (pChild->bundle_adj_global_for_keyframe_id != nLoopKF) {
             cv::Mat Tchildc = pChild->GetPose() * Twc;
             pChild->mTcwGBA = Tchildc * pKF->mTcwGBA;
-            pChild->mnBAGlobalForKF = nLoopKF;
+            pChild->bundle_adj_global_for_keyframe_id = nLoopKF;
           }
           lpKFtoCheck.push_back(pChild);
         }
@@ -150,14 +150,14 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
           continue;
         }
 
-        if (pMP->mnBAGlobalForKF == nLoopKF) {
+        if (pMP->bundle_adj_global_for_keyframe_id == nLoopKF) {
           // If optimized by Global BA, just update
-          pMP->SetWorldPos(pMP->mPosGBA);
+          pMP->SetWorldPos(pMP->position_global_bundle_adj);
         } else {
           // Update according to the correction of its reference keyframe
           KeyFrame* pRefKF = pMP->GetReferenceKeyFrame();
 
-          if(pRefKF->mnBAGlobalForKF != nLoopKF) {
+          if(pRefKF->bundle_adj_global_for_keyframe_id != nLoopKF) {
             continue;
           }
 
@@ -468,9 +468,9 @@ bool LoopCloser::ComputeSim3() {
     for (size_t i = 0; i < vpMapPoints.size(); ++i) {
       MapPoint* pMP = vpMapPoints[i];
       if (pMP) {
-        if (!pMP->isBad() && pMP->mnLoopPointForKF != mpCurrentKF->mnId) {
+        if (!pMP->isBad() && pMP->loop_point_for_keyframe != mpCurrentKF->mnId) {
           mvpLoopMapPoints.push_back(pMP);
-          pMP->mnLoopPointForKF = mpCurrentKF->mnId;
+          pMP->loop_point_for_keyframe = mpCurrentKF->mnId;
         }
       }
     }
@@ -622,7 +622,7 @@ void LoopCloser::CorrectLoop() {
         if(!pMPi || pMPi->isBad()) {
           continue;
         }
-        if(pMPi->mnCorrectedByKF == mpCurrentKF->mnId) {
+        if(pMPi->corrected_by_keyframe == mpCurrentKF->mnId) {
           continue;
         }
 
@@ -633,8 +633,8 @@ void LoopCloser::CorrectLoop() {
 
         cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
         pMPi->SetWorldPos(cvCorrectedP3Dw);
-        pMPi->mnCorrectedByKF = mpCurrentKF->mnId;
-        pMPi->mnCorrectedReference = pKFi->mnId;
+        pMPi->corrected_by_keyframe = mpCurrentKF->mnId;
+        pMPi->corrected_reference = pKFi->mnId;
         pMPi->UpdateNormalAndDepth();
       }
 

@@ -34,7 +34,7 @@ public:
   std::vector<KeyFrame*> mvpKeyFrameOrigins;
 
   std::mutex mMutexMapUpdate;
-  std::mutex mMutexPointCreation;
+  std::mutex point_creation_mutex;
 
 
 protected:

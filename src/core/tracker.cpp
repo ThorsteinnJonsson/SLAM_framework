@@ -611,7 +611,7 @@ void Tracker::Track() {
       // Clean VO matches
       for (int i=0; i < current_frame_.mN; ++i) {
         MapPoint* pMP = current_frame_.mvpMapPoints[i];
-        if (pMP && pMP->Observations() < 1) {
+        if (pMP && pMP->NumObservations() < 1) {
           current_frame_.mvbOutlier[i] = false; 
           current_frame_.mvpMapPoints[i] = nullptr;
         }
@@ -705,10 +705,10 @@ bool Tracker::TrackReferenceKeyFrame() {
 
         current_frame_.mvpMapPoints[i] = nullptr;
         current_frame_.mvbOutlier[i] = false;
-        pMP->mbTrackInView = false;
-        pMP->mnLastFrameSeen = current_frame_.mnId;
+        pMP->track_is_in_view = false;
+        pMP->last_frame_id_seen = current_frame_.mnId;
         --nmatches; // TODO never seem to use  this again
-      } else if (current_frame_.mvpMapPoints[i]->Observations() > 0) {
+      } else if (current_frame_.mvpMapPoints[i]->NumObservations() > 0) {
         nmatchesMap++;
       }
     }
@@ -756,7 +756,7 @@ void Tracker::UpdateLastFrame() {
     MapPoint* pMP = mLastFrame.mvpMapPoints[i];
     if (!pMP) {
       bCreateNew = true;
-    } else if (pMP->Observations() < 1) {
+    } else if (pMP->NumObservations() < 1) {
       bCreateNew = true;
     }
 
@@ -829,10 +829,10 @@ bool Tracker::TrackWithMotionModel() {
 
         current_frame_.mvpMapPoints[i] = nullptr;
         current_frame_.mvbOutlier[i] = false;
-        pMP->mbTrackInView = false;
-        pMP->mnLastFrameSeen = current_frame_.mnId;
+        pMP->track_is_in_view = false;
+        pMP->last_frame_id_seen = current_frame_.mnId;
         --nmatches;
-      } else if (current_frame_.mvpMapPoints[i]->Observations() > 0) {
+      } else if (current_frame_.mvpMapPoints[i]->NumObservations() > 0) {
         ++nmatchesMap;
       }
     }
@@ -1037,13 +1037,13 @@ void Tracker::UpdateLocalPoints() {
                                                ++itMP)
     {
       MapPoint* pMP = *itMP;
-      if (!pMP || (pMP->mnTrackReferenceForFrame == current_frame_.mnId)) {
+      if (!pMP || (pMP->track_reference_id_for_frame == current_frame_.mnId)) {
         continue;
       }
 
       if (!pMP->isBad()) {
         mvpLocalMapPoints.push_back(pMP);
-        pMP->mnTrackReferenceForFrame = current_frame_.mnId;
+        pMP->track_reference_id_for_frame = current_frame_.mnId;
       }
     }
   }
@@ -1173,7 +1173,7 @@ bool Tracker::TrackLocalMap() {
       if (!current_frame_.mvbOutlier[i]) {
         current_frame_.mvpMapPoints[i]->IncreaseFound();
         if (!mbOnlyTracking) {
-          if (current_frame_.mvpMapPoints[i]->Observations() > 0) {
+          if (current_frame_.mvpMapPoints[i]->NumObservations() > 0) {
             ++mnMatchesInliers;
           }
         } else {
@@ -1210,8 +1210,8 @@ void Tracker::SearchLocalPoints() {
         pMP = nullptr;
       } else {
         pMP->IncreaseVisible();
-        pMP->mnLastFrameSeen = current_frame_.mnId;
-        pMP->mbTrackInView = false;
+        pMP->last_frame_id_seen = current_frame_.mnId;
+        pMP->track_is_in_view = false;
       }
     }
   }
@@ -1223,7 +1223,7 @@ void Tracker::SearchLocalPoints() {
                                         ++vit)
   {
     MapPoint* pMP = *vit;
-    if (pMP->mnLastFrameSeen == current_frame_.mnId
+    if (pMP->last_frame_id_seen == current_frame_.mnId
         || pMP->isBad()) {
       continue;
     }
@@ -1370,7 +1370,7 @@ void Tracker::CreateNewKeyFrame() {
         MapPoint* pMP = current_frame_.mvpMapPoints[i];
         if (!pMP) {
           bCreateNew = true;
-        } else if (pMP->Observations() < 1) {
+        } else if (pMP->NumObservations() < 1) {
           bCreateNew = true;
           current_frame_.mvpMapPoints[i] = nullptr;
         }

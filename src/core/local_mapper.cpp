@@ -242,11 +242,11 @@ void LocalMapper::MapPointCulling() {
     } else if (pMP->GetFoundRatio() < 0.25f) {
       pMP->SetBadFlag();
       lit = mlpRecentAddedMapPoints.erase(lit);
-    } else if ((nCurrentKFid - static_cast<int>(pMP->mnFirstKFid)) >= 2 &&
-                pMP->Observations() <= cnThObs) {
+    } else if ((nCurrentKFid - static_cast<int>(pMP->GetFirstKeyframeID())) >= 2 &&
+                pMP->NumObservations() <= cnThObs) {
         pMP->SetBadFlag();
         lit = mlpRecentAddedMapPoints.erase(lit);
-    } else if((nCurrentKFid-static_cast<int>(pMP->mnFirstKFid)) >= 3) {
+    } else if((nCurrentKFid-static_cast<int>(pMP->GetFirstKeyframeID())) >= 3) {
         lit = mlpRecentAddedMapPoints.erase(lit);
     } else {
      ++lit;
@@ -559,10 +559,10 @@ void LocalMapper::SearchInNeighbors() {
       MapPoint* pMP = *vitMP;
       if(!pMP ||
           pMP->isBad() ||
-          pMP->mnFuseCandidateForKF == mpCurrentKeyFrame->mnId ) {
+          pMP->fuse_candidate_id_for_keyframe == mpCurrentKeyFrame->mnId ) {
           continue;
       }
-      pMP->mnFuseCandidateForKF = mpCurrentKeyFrame->mnId;
+      pMP->fuse_candidate_id_for_keyframe = mpCurrentKeyFrame->mnId;
       vpFuseCandidates.push_back(pMP);
     }
   }
@@ -612,7 +612,7 @@ void LocalMapper::KeyFrameCulling() {
         }
 
         ++nMPs;
-        if (pMP->Observations() > thObs) {
+        if (pMP->NumObservations() > thObs) {
           const int scaleLevel = pKF->mvKeysUn[i].octave;
           const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
           int nObs = 0;

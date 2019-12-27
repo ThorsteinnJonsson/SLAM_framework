@@ -77,7 +77,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*> &vpKFs,
             continue;
         g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
         vPoint->setEstimate(Converter::toVector3d(pMP->GetWorldPos()));
-        const int id = pMP->mnId+maxKFid+1;
+        const int id = pMP->GetId() + maxKFid+1;
         vPoint->setId(id);
         vPoint->setMarginalized(true);
         optimizer.addVertex(vPoint);
@@ -90,7 +90,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*> &vpKFs,
         {
 
             KeyFrame* pKF = mit->first;
-            if(pKF->isBad() || pKF->mnId>maxKFid)
+            if(pKF->isBad() || pKF->mnId > maxKFid)
                 continue;
 
             nEdges++;
@@ -189,7 +189,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*> &vpKFs,
         {
             pKF->mTcwGBA.create(4,4,CV_32F);
             Converter::toCvMat(SE3quat).copyTo(pKF->mTcwGBA);
-            pKF->mnBAGlobalForKF = nLoopKF;
+            pKF->bundle_adj_global_for_keyframe_id = nLoopKF;
         }
     }
 
@@ -203,7 +203,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*> &vpKFs,
 
         if(pMP->isBad())
             continue;
-        g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
+        g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->GetId() + maxKFid + 1));
 
         if(nLoopKF==0)
         {
@@ -212,9 +212,9 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*> &vpKFs,
         }
         else
         {
-            pMP->mPosGBA.create(3,1,CV_32F);
-            Converter::toCvMat(vPoint->estimate()).copyTo(pMP->mPosGBA);
-            pMP->mnBAGlobalForKF = nLoopKF;
+            pMP->position_global_bundle_adj.create(3,1,CV_32F);
+            Converter::toCvMat(vPoint->estimate()).copyTo(pMP->position_global_bundle_adj);
+            pMP->bundle_adj_global_for_keyframe_id = nLoopKF;
         }
     }
 
@@ -259,7 +259,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
 
     {
-    std::unique_lock<std::mutex> lock(MapPoint::mGlobalMutex);
+    std::unique_lock<std::mutex> lock(MapPoint::global_mutex);
 
     for(int i=0; i<N; i++)
     {
@@ -441,13 +441,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
   std::list<KeyFrame*> lLocalKeyFrames;
 
   lLocalKeyFrames.push_back(pKF);
-  pKF->mnBALocalForKF = pKF->mnId;
+  pKF->bundle_adj_local_id_for_keyframe = pKF->mnId;
 
   const std::vector<KeyFrame*> vNeighKFs = pKF->GetVectorCovisibleKeyFrames();
   for(int i=0, iend=vNeighKFs.size(); i<iend; i++)
   {
       KeyFrame* pKFi = vNeighKFs[i];
-      pKFi->mnBALocalForKF = pKF->mnId;
+      pKFi->bundle_adj_local_id_for_keyframe = pKF->mnId;
       if(!pKFi->isBad())
           lLocalKeyFrames.push_back(pKFi);
   }
@@ -462,10 +462,9 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
           MapPoint* pMP = *vit;
           if(pMP)
               if(!pMP->isBad())
-                  if(pMP->mnBALocalForKF!=pKF->mnId)
-                  {
+                  if(pMP->bundle_adj_local_id_for_keyframe != pKF->mnId) {
                       lLocalMapPoints.push_back(pMP);
-                      pMP->mnBALocalForKF=pKF->mnId;
+                      pMP->bundle_adj_local_id_for_keyframe=pKF->mnId;
                   }
       }
   }
@@ -479,7 +478,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
       {
           KeyFrame* pKFi = mit->first;
 
-          if(pKFi->mnBALocalForKF!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId)
+          if(pKFi->bundle_adj_local_id_for_keyframe!=pKF->mnId && pKFi->mnBAFixedForKF!=pKF->mnId)
           {                
               pKFi->mnBAFixedForKF=pKF->mnId;
               if(!pKFi->isBad())
@@ -560,7 +559,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
       MapPoint* pMP = *lit;
       g2o::VertexSBAPointXYZ* vPoint = new g2o::VertexSBAPointXYZ();
       vPoint->setEstimate(Converter::toVector3d(pMP->GetWorldPos()));
-      int id = pMP->mnId+maxKFid+1;
+      int id = pMP->GetId() + maxKFid + 1;
       vPoint->setId(id);
       vPoint->setMarginalized(true);
       optimizer.addVertex(vPoint);
@@ -754,12 +753,13 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
   }
 
   //Points
-  for(std::list<MapPoint*>::iterator lit=lLocalMapPoints.begin(), lend=lLocalMapPoints.end(); lit!=lend; lit++)
-  {
-      MapPoint* pMP = *lit;
-      g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->mnId+maxKFid+1));
-      pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
-      pMP->UpdateNormalAndDepth();
+  for (auto lit = lLocalMapPoints.begin(); 
+            lit != lLocalMapPoints.end(); 
+            ++lit){
+    MapPoint* pMP = *lit;
+    g2o::VertexSBAPointXYZ* vPoint = static_cast<g2o::VertexSBAPointXYZ*>(optimizer.vertex(pMP->GetId() + maxKFid + 1));
+    pMP->SetWorldPos(Converter::toCvMat(vPoint->estimate()));
+    pMP->UpdateNormalAndDepth();
   }
 }
 
@@ -1007,9 +1007,9 @@ void Optimizer::OptimizeEssentialGraph(const std::shared_ptr<Map>& pMap,
             continue;
 
         int nIDr;
-        if(pMP->mnCorrectedByKF==pCurKF->mnId)
+        if(pMP->corrected_by_keyframe==pCurKF->mnId)
         {
-            nIDr = pMP->mnCorrectedReference;
+            nIDr = pMP->corrected_reference;
         }
         else
         {

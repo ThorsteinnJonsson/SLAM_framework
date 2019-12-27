@@ -10,117 +10,114 @@
 
 class MapPoint{
 public:
-  MapPoint(const cv::Mat& Pos, 
-           KeyFrame* pRefKF, 
-           const std::shared_ptr<Map>& pMap);
-  MapPoint(const cv::Mat& Pos, 
-           const std::shared_ptr<Map>& pMap, 
-           Frame* pFrame, 
+  MapPoint(const cv::Mat& position, 
+           KeyFrame* reference_keyframe, 
+           const std::shared_ptr<Map>& map);
+  MapPoint(const cv::Mat& position, 
+           const std::shared_ptr<Map>& map, 
+           Frame* frame, 
            const int& idxF);
   ~MapPoint() {}
 
-  void SetWorldPos(const cv::Mat& Pos);
-  cv::Mat GetWorldPos();
+  void SetWorldPos(const cv::Mat& position);
+  cv::Mat GetWorldPos() const;
 
-  cv::Mat GetNormal();
-  KeyFrame* GetReferenceKeyFrame();
+  cv::Mat GetNormal() const;
+  KeyFrame* GetReferenceKeyFrame() const;
 
-  std::map<KeyFrame*,size_t> GetObservations();
-  int Observations();
+  std::map<KeyFrame*,size_t> GetObservations() const;
+  int NumObservations() const;
 
-  void AddObservation(KeyFrame* pKF,size_t idx);
-  void EraseObservation(KeyFrame* pKF);
+  void AddObservation(KeyFrame* keyframe,size_t idx);
+  void EraseObservation(KeyFrame* keyframe);
 
-  int GetIndexInKeyFrame(KeyFrame* pKF);
-  bool IsInKeyFrame(KeyFrame* pKF);
+  int GetIndexInKeyFrame(KeyFrame* keyframe) const;
+  bool IsInKeyFrame(KeyFrame* keyframe) const;
 
   void SetBadFlag();
-  bool isBad();
+  bool isBad() const;
 
-  void Replace(MapPoint* pMP);    
-  MapPoint* GetReplaced();
+  void Replace(MapPoint* point);    
+  MapPoint* GetReplaced() const;
 
   void IncreaseVisible(int n=1);
   void IncreaseFound(int n=1);
-  float GetFoundRatio();
-  inline int GetFound() { return mnFound; } //TODO this function doesn't seem to be used anywhere
+  float GetFoundRatio() const;
 
   void ComputeDistinctiveDescriptors();
   
-  cv::Mat GetDescriptor();
+  cv::Mat GetDescriptor() const;
 
   void UpdateNormalAndDepth();
 
-  float GetMinDistanceInvariance();
-  float GetMaxDistanceInvariance();
+  float GetMinDistanceInvariance() const;
+  float GetMaxDistanceInvariance() const;
 
-  int PredictScale(const float currentDist, KeyFrame* pKF);
-  int PredictScale(const float currentDist, Frame* pF);
+  int PredictScale(const float dist, KeyFrame* keyframe) const;
+  int PredictScale(const float dist, Frame* frame) const;
 
-private:
+  long unsigned int GetId() const { return id_; }
+  long int GetFirstKeyframeID() const { return first_keyframe_id_; }
 
 public:
-  long unsigned int mnId;
-  static long unsigned int nNextId;
-  long int mnFirstKFid;
-  long int mnFirstFrame;
-  int nObs;
+  static std::mutex global_mutex;
+  static long unsigned int next_id;
 
   // Variables used by the tracking
-  float mTrackProjX;
-  float mTrackProjY;
-  float mTrackProjXR;
-  bool mbTrackInView;
-  int mnTrackScaleLevel;
-  float mTrackViewCos;
-  long unsigned int mnTrackReferenceForFrame;
-  long unsigned int mnLastFrameSeen;
+  float track_projected_x;
+  float track_projected_y;
+  float track_projected_x_right;
+  bool track_is_in_view;
+  int track_scale_level;
+  float track_view_cos;
+  long unsigned int track_reference_id_for_frame;
+  long unsigned int last_frame_id_seen;
 
   // Variables used by local mapping
-  long unsigned int mnBALocalForKF;
-  long unsigned int mnFuseCandidateForKF;
+  long unsigned int bundle_adj_local_id_for_keyframe;
+  long unsigned int fuse_candidate_id_for_keyframe;
 
   // Variables used by loop closing
-  long unsigned int mnLoopPointForKF;
-  long unsigned int mnCorrectedByKF;
-  long unsigned int mnCorrectedReference;    
-  cv::Mat mPosGBA;
-  long unsigned int mnBAGlobalForKF;
-
-  static std::mutex mGlobalMutex;
+  long unsigned int loop_point_for_keyframe;
+  long unsigned int corrected_by_keyframe;
+  long unsigned int corrected_reference;    
+  cv::Mat position_global_bundle_adj;
+  long unsigned int bundle_adj_global_for_keyframe_id;
 
 protected:
-  // Position in absolute coordinates
+  long unsigned int id_;
+  long int first_keyframe_id_;
+  long int first_frame_id_;
+  int num_observations_;
+
   cv::Mat world_position_;
 
   // Keyframes observing the point and associated index in keyframe
-  std::map<KeyFrame*,size_t> mObservations;
+  std::map<KeyFrame*,size_t> observations_;
 
   // Mean viewing direction
-  cv::Mat mNormalVector;
+  cv::Mat normal_vector_;
 
   // Best descriptor to fast matching
-  cv::Mat mDescriptor;
+  cv::Mat descriptor_;
 
-  // Reference KeyFrame
-  KeyFrame* mpRefKF;
+  KeyFrame* reference_keyframe_;
 
   // Tracking counters
-  int mnVisible;
-  int mnFound;
+  int num_visible_;
+  int num_found_;
 
-  // Bad flag (we do not currently erase MapPoint from memory)
-  bool mbBad;
-  MapPoint* mpReplaced;
+  bool is_bad_;
+  MapPoint* replaced_point_;
 
   // Scale invariance distances
-  float mfMinDistance;
-  float mfMaxDistance;
+  float min_dist_;
+  float max_dist_;
 
-  std::shared_ptr<Map> mpMap;
+  std::shared_ptr<Map> map_;
 
-  std::mutex mMutexPos;
-  std::mutex mMutexFeatures;
+  mutable std::mutex position_mutex_;
+  mutable std::mutex feature_mutex_;
 
 };
 

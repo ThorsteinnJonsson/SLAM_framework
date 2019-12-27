@@ -113,7 +113,7 @@ public:
   long unsigned int mnFuseTargetForKF;
 
   // Variables used by the local mapping
-  long unsigned int mnBALocalForKF;
+  long unsigned int bundle_adj_local_id_for_keyframe;
   long unsigned int mnBAFixedForKF;
 
   // Variables used by the keyframe database
@@ -127,7 +127,7 @@ public:
   // Variables used by loop closing
   cv::Mat mTcwGBA;
   cv::Mat mTcwBefGBA;
-  long unsigned int mnBAGlobalForKF;
+  long unsigned int bundle_adj_global_for_keyframe_id;
 
   // Calibration parameters
   const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth; // TODO seems exessive to copy for every keyframe

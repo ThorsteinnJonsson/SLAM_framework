@@ -309,7 +309,7 @@ void Frame::UpdatePoseMatrices() {
 }
 
 bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
-  pMP->mbTrackInView = false;
+  pMP->track_is_in_view = false;
 
   // 3D in absolute coordinates
   cv::Mat P = pMP->GetWorldPos(); 
@@ -360,12 +360,12 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
   const int nPredictedLevel = pMP->PredictScale(dist, this);
 
   // Data used by the tracking
-  pMP->mbTrackInView = true;
-  pMP->mTrackProjX = u;
-  pMP->mTrackProjXR = u - mbf * invz;
-  pMP->mTrackProjY = v;
-  pMP->mnTrackScaleLevel= nPredictedLevel;
-  pMP->mTrackViewCos = viewCos;
+  pMP->track_is_in_view = true;
+  pMP->track_projected_x = u;
+  pMP->track_projected_x_right = u - mbf * invz;
+  pMP->track_projected_y = v;
+  pMP->track_scale_level= nPredictedLevel;
+  pMP->track_view_cos = viewCos;
 
   return true;
 }

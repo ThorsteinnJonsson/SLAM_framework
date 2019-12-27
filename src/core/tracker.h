@@ -16,7 +16,6 @@
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
 
-#include <mutex>
 #include <memory>
 
 // Forward declerations
