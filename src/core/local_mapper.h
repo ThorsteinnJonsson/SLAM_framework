@@ -31,7 +31,7 @@ public:
   bool isStopped();
   bool stopRequested();
   
-  bool AcceptKeyFrames();
+  bool IsAcceptingKeyFrames();
   void SetAcceptKeyFrames(const bool flag);
   
   void InterruptBA();
@@ -88,8 +88,8 @@ protected:
   bool mbNotStop;
   std::mutex mMutexStop;
 
-  bool mbAcceptKeyFrames;
-  std::mutex mMutexAccept;
+  bool is_accepting_keyframes_;
+  std::mutex accept_keyframe_mutex_;
 };
 
 #endif // SRC_LOCAL_MAPPER_H_

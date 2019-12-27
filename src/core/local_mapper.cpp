@@ -14,7 +14,7 @@ LocalMapper::LocalMapper(const std::shared_ptr<Map>& map,
     , mbStopped(false)
     , mbStopRequested(false)
     , mbNotStop(false)
-    , mbAcceptKeyFrames(true) {
+    , is_accepting_keyframes_(true) {
 
 }
 
@@ -149,14 +149,14 @@ bool LocalMapper::stopRequested(){
   return mbStopRequested;
 }
 
-bool LocalMapper::AcceptKeyFrames() {
-  std::unique_lock<std::mutex> lock(mMutexAccept);
-  return mbAcceptKeyFrames;
+bool LocalMapper::IsAcceptingKeyFrames() {
+  std::unique_lock<std::mutex> lock(accept_keyframe_mutex_);
+  return is_accepting_keyframes_;
 }
 
 void LocalMapper::SetAcceptKeyFrames(const bool flag) {
-  std::unique_lock<std::mutex> lock(mMutexAccept);
-  mbAcceptKeyFrames = flag;
+  std::unique_lock<std::mutex> lock(accept_keyframe_mutex_);
+  is_accepting_keyframes_ = flag;
 }
 
 void LocalMapper::InterruptBA() {
