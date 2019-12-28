@@ -65,6 +65,7 @@ public:
   const std::list<cv::Mat>& GetRelativeFramePoses() { return relative_frame_poses_; }
   const std::list<KeyFrame*>& GetReferenceKeyframes() { return reference_keyframes_; }
   const std::list<double>& GetFrameTimes() { return frame_times_; }
+  const std::list<bool>& GetLost() {return is_lost_; }
 
 protected:
   // Map initialization for stereo and RGB-D

@@ -13,6 +13,7 @@
 #include "optimizer/optimizer.h"
 #include "solvers/pnp_solver.h"
 
+// #pragma GCC optimize ("O0")
 
 Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
                  const std::shared_ptr<Map>& map,
@@ -33,10 +34,15 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   // float fy = fSettings["Camera.fy"];
   // float cx = fSettings["Camera.cx"];
   // float cy = fSettings["Camera.cy"];
-  float fx = 718.856f; // TODO, just use from kitti00 for now
+  float fx = 718.856f; // TODO, just use from kitti00-02 for now
   float fy = 718.856f;
   float cx = 607.1928f;
   float cy = 185.2157f;
+  // Kitti03
+  // float fx = 721.5377f; // TODO, just use from kitti00-02 for now
+  // float fy = 721.5377f;
+  // float cx = 609.5593f;
+  // float cy = 172.854f;
 
   cv::Mat K = cv::Mat::eye(3,3,CV_32F);
   K.at<float>(0,0) = fx;
@@ -63,7 +69,9 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   DistCoef.copyTo(dist_coeff_);
 
   // scaled_baseline_ = fSettings["Camera.bf"];
-  scaled_baseline_ = 386.1448f; // TODO just used from kitti00
+  scaled_baseline_ = 386.1448f; // TODO just used from kitti00-02
+  // scaled_baseline_ = 387.5744f; // TODO just used from kitti03
+  
 
   // float fps = fSettings["Camera.fps"];
   float fps = 10.0f; // TODO from kitti00
@@ -110,12 +118,13 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
                                                        fMinThFAST);
   }
 
-  // depth_threshold_ = scaled_baseline_ * static_cast<float>(fSettings["ThDepth"]) / fx;
-  depth_threshold_ = scaled_baseline_ * static_cast<float>(35) / fx;
+  if (sensor == SENSOR_TYPE::STEREO || sensor == SENSOR_TYPE::RGBD) {
+    depth_threshold_ = scaled_baseline_ * static_cast<float>(35) / fx;
+  }
   
   if(sensor == SENSOR_TYPE::RGBD) {
     // depth_map_factor_ = fSettings["DepthMapFactor"];
-    depth_map_factor_ = 0; 
+    depth_map_factor_ = 0; // from kitti params
     // if (std::fabs(depth_map_factor_) < 1e-5) {
     //   depth_map_factor_ = 1;
     // } else {
@@ -433,6 +442,7 @@ void Tracker::CreateInitialMapMonocular() {
   pKFini->UpdateConnections();
   pKFcur->UpdateConnections();
 
+
   // Bundle Adjustment
   std::cout << "New Map created with " << map_->MapPointsInMap() << " points\n";
 
@@ -500,7 +510,7 @@ void Tracker::Track() {
     } else {
       MonocularInitialization();
     }
-    if (state_ != OK) {
+    if (state_ != TrackingState::OK) {
       return;
     }
   } else {
@@ -529,7 +539,7 @@ void Tracker::Track() {
     }  else {
       std::cout << "Localization-only Mode\n";  
       // Localization Mode: Local Mapping is deactivated
-      if (state_ == LOST) {
+      if (state_ == TrackingState::LOST) {
         bOK = Relocalization();
       } else {
         if (use_visual_odometry_) {
@@ -1186,7 +1196,6 @@ bool Tracker::TrackLocalMap() {
       }
     }
   }
-
   // Decide if the tracking was succesful
   // More restrictive if there was a relocalization recently
   if (current_frame_.mnId < last_relocation_frame_id_ + max_frames_ 
@@ -1208,8 +1217,8 @@ void Tracker::SearchLocalPoints() {
     MapPoint* pMP = *vit;
     if (pMP) {
       if (pMP->isBad()) {
-        // *vit = nullptr;
-        pMP = nullptr;
+        *vit = nullptr;
+        // pMP = nullptr;
       } else {
         pMP->IncreaseVisible();
         pMP->last_frame_id_seen = current_frame_.mnId;

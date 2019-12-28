@@ -131,15 +131,28 @@ target_link_libraries(stereo_slam PUBLIC
 ##########################################
 ## Executables                          ##
 ##########################################
-add_executable(main_exe main.cpp)
+## STEREO
+add_executable(main_stereo main_stereo.cpp)
 
-# target_include_directories(main_exe PUBLIC 
+# target_include_directories(main_stereo PUBLIC 
 #                            # ${OpenCV_INCLUDE_DIRS}
 # )
 
-target_link_libraries(main_exe 
+target_link_libraries(main_stereo 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
                       stereo_slam
 )
 
+## Monocular
+add_executable(main_mono main_mono.cpp)
+
+# target_include_directories(main_mono PUBLIC 
+#                            # ${OpenCV_INCLUDE_DIRS}
+# )
+
+target_link_libraries(main_mono 
+                      ${OpenCV_LIBS}
+                      ${EIGEN3_LIBS}
+                      stereo_slam
+)

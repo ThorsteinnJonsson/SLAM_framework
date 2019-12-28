@@ -2,4 +2,7 @@
 
 
 ## TODO
-- Test monocular on kitti
+- Get monocular working
+- Refactor tracker
+- Refactor loop closer
+- Refactor local mapper

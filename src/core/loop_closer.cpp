@@ -5,6 +5,8 @@
 #include "optimizer/optimizer.h"
 #include "orb_features/orb_matcher.h"
 
+// #pragma GCC optimize ("O0")
+
 LoopCloser::LoopCloser(const std::shared_ptr<Map>& map,
                        const std::shared_ptr<KeyframeDatabase>& keyframe_db,
                        const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
