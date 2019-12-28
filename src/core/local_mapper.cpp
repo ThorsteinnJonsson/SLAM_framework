@@ -3,6 +3,8 @@
 #include "orb_features/orb_matcher.h"
 #include "optimizer/optimizer.h"
 
+// #pragma GCC optimize ("O0")
+
 LocalMapper::LocalMapper(const std::shared_ptr<Map>& map, 
                          const bool is_monocular)
     : is_monocular_(is_monocular)
@@ -336,19 +338,19 @@ void LocalMapper::CreateNewMapPoints() {
 
       const cv::KeyPoint& kp1 = mpCurrentKeyFrame->mvKeysUn[idx1];
       const float kp1_ur = mpCurrentKeyFrame->mvuRight[idx1];
-      bool bStereo1 = kp1_ur >= 0;
+      bool bStereo1 = (kp1_ur >= 0);
 
       const cv::KeyPoint& kp2 = pKF2->mvKeysUn[idx2];
       const float kp2_ur = pKF2->mvuRight[idx2];
       bool bStereo2 = (kp2_ur >= 0);
 
       // Check parallax between rays
-      cv::Mat xn1 = cv::Mat(3,1, CV_32F, {(kp1.pt.x-cx1)*invfx1, 
-                                          (kp1.pt.y-cy1)*invfy1, 
-                                           1.0});
-      cv::Mat xn2 = cv::Mat(3,1, CV_32F, {(kp2.pt.x-cx2)*invfx2, 
-                                          (kp2.pt.y-cy2)*invfy2, 
-                                           1.0});
+      cv::Mat xn1 = (cv::Mat_<float>(3,1) << (kp1.pt.x-cx1)*invfx1, 
+                                             (kp1.pt.y-cy1)*invfy1, 
+                                             1.0);
+      cv::Mat xn2 = (cv::Mat_<float>(3,1) << (kp2.pt.x-cx2)*invfx2, 
+                                             (kp2.pt.y-cy2)*invfy2, 
+                                             1.0);
       cv::Mat ray1 = Rwc1 * xn1;
       cv::Mat ray2 = Rwc2 * xn2;
       const float cosParallaxRays = ray1.dot(ray2) / (cv::norm(ray1)*cv::norm(ray2));
