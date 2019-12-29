@@ -77,7 +77,6 @@ int main(int argc, char **argv) {
   
   // For tracking statistics
   std::vector<double> tracked_times(timestamps.size(), -1.0);
-  // std::vector<std::array<float,3>> positions;
 
   // Main loop
   for (size_t frame_id = 0; frame_id < timestamps.size(); ++frame_id) {
@@ -100,10 +99,6 @@ int main(int argc, char **argv) {
       std::cout << "Finished SLAM on frame " << frame_id << std::endl;
     }
     
-    // positions.push_back({pose.at<float>(0,3),
-    //                      pose.at<float>(1,3),
-    //                      pose.at<float>(2,3)});
-
     std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
 
     double ttrack = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();

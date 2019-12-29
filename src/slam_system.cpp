@@ -96,7 +96,7 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -138,7 +138,7 @@ cv::Mat SlamSystem::TrackRGBD(const cv::Mat& im,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -180,7 +180,7 @@ cv::Mat SlamSystem::TrackMonocular(const cv::Mat& im,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -223,8 +223,8 @@ void SlamSystem::Shutdown() {
   loop_closer_->RequestFinish();
 
   // Wait until all thread have effectively stopped
-  while (!local_mapper_->isFinished()  || 
-         !loop_closer_->isFinished()   ||
+  while (!local_mapper_->IsFinished()  || 
+         !loop_closer_->IsFinished()   ||
           loop_closer_->isRunningGBA()) {
     usleep(5000);
   }

@@ -18,7 +18,7 @@ if __name__ == "__main__":
   # slam_translation = get_translation("results/" + sequence + ".txt")
   slam_translation = get_translation("tmp/positions.txt")
   gt_translation = get_translation("dataset/ground_truth_poses/poses/" + sequence + ".txt")
-
+  
   mpl.rcParams['legend.fontsize'] = 10
   
   fig_topview = plt.figure()

@@ -108,7 +108,7 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
       local_mapper_->RequestStop();
       // Wait until Local Mapping has effectively stopped
 
-      while (!local_mapper_->isStopped() && !local_mapper_->isFinished()) {
+      while (!local_mapper_->IsStopped() && !local_mapper_->IsFinished()) {
         usleep(1000);
       }
 
@@ -194,7 +194,7 @@ bool LoopCloser::isRunningGBA() {
   return mbRunningGBA;
 }
 
-bool LoopCloser::isFinishedGBA() {
+bool LoopCloser::IsFinishedGBA() {
   std::unique_lock<std::mutex> lock(mMutexGBA);
   return mbFinishedGBA;
 }
@@ -204,7 +204,7 @@ void LoopCloser::RequestFinish() {
   mbFinishRequested = true;
 }
 
-bool LoopCloser::isFinished() {
+bool LoopCloser::IsFinished() {
   std::unique_lock<std::mutex> lock(mMutexFinish);
   return mbFinished;
 }
@@ -561,7 +561,7 @@ void LoopCloser::CorrectLoop() {
   }
 
   // Wait until Local Mapping has effectively stopped
-  while(!local_mapper_->isStopped()) {
+  while(!local_mapper_->IsStopped()) {
     usleep(1000);
   }
 

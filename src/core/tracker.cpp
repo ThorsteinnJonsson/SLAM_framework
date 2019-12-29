@@ -1267,7 +1267,7 @@ bool Tracker::NeedNewKeyFrame() {
   }
 
   // If Local Mapping is frozen by a loop closure do not insert keyframes
-  if (local_mapper_->isStopped() || local_mapper_->stopRequested()) {
+  if (local_mapper_->IsStopped() || local_mapper_->stopRequested()) {
     return false;
   }
 

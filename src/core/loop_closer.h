@@ -45,10 +45,10 @@ public:
   void RunGlobalBundleAdjustment(unsigned long nLoopKF);
 
   bool isRunningGBA();
-  bool isFinishedGBA();
+  bool IsFinishedGBA();
 
   void RequestFinish();
-  bool isFinished();
+  bool IsFinished();
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
