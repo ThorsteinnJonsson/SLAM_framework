@@ -84,7 +84,7 @@ public:
 
   // Set/check bad flag
   void SetBadFlag();
-  bool isBad();
+  bool isBad() const;
 
   // Compute Scene Depth (q=2 median). Used in monocular.
   float ComputeSceneMedianDepth(const int q);
@@ -202,9 +202,9 @@ protected:
 
   std::shared_ptr<Map> mpMap;
 
-  std::mutex mMutexPose;
-  std::mutex mMutexConnections;
-  std::mutex mMutexFeatures;
+  mutable std::mutex mMutexPose;
+  mutable std::mutex mMutexConnections;
+  mutable std::mutex mMutexFeatures;
 
 
 };

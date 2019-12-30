@@ -495,76 +495,58 @@ void LocalMapper::CreateNewMapPoints() {
 void LocalMapper::SearchInNeighbors() {
   // Retrieve neighbor keyframes
   const int num_kf = is_monocular_? 20 : 10;
-  const std::vector<KeyFrame*> neighbor_keyframes = current_keyframe_->GetBestCovisibilityKeyFrames(num_kf);
   std::vector<KeyFrame*> target_keyframes;
-  for (auto vit = neighbor_keyframes.begin(); 
-            vit != neighbor_keyframes.end(); 
-            ++vit) {
-    KeyFrame* pKFi = *vit;
-    if (pKFi->isBad() || pKFi->mnFuseTargetForKF == current_keyframe_->mnId) {
+  for (KeyFrame* nbor_keyframe : current_keyframe_->GetBestCovisibilityKeyFrames(num_kf)) {
+    if (nbor_keyframe->isBad() 
+        || nbor_keyframe->mnFuseTargetForKF == current_keyframe_->mnId) {
       continue;
     }
-    target_keyframes.push_back(pKFi);
-    pKFi->mnFuseTargetForKF = current_keyframe_->mnId;
+    target_keyframes.push_back(nbor_keyframe);
+    nbor_keyframe->mnFuseTargetForKF = current_keyframe_->mnId;
 
     // Extend to some second neighbors
-    const std::vector<KeyFrame*> vpSecondNeighKFs = pKFi->GetBestCovisibilityKeyFrames(5);
-    for(std::vector<KeyFrame*>::const_iterator vit2 = vpSecondNeighKFs.begin();
-                                               vit2 != vpSecondNeighKFs.end(); 
-                                               ++vit2) {
-      KeyFrame* pKFi2 = *vit2;
-      if (pKFi2->isBad() || 
-          pKFi2->mnFuseTargetForKF == current_keyframe_->mnId || 
-          pKFi2->mnId == current_keyframe_->mnId) {
+    for (KeyFrame* second_nbor : nbor_keyframe->GetBestCovisibilityKeyFrames(5)) {
+      if (second_nbor->isBad() || 
+          second_nbor->mnFuseTargetForKF == current_keyframe_->mnId || 
+          second_nbor->mnId == current_keyframe_->mnId) {
         continue;
       }
-      target_keyframes.push_back(pKFi2);
+      target_keyframes.push_back(second_nbor);
     }
   }
 
   // Search matches by projection from current KF in target KFs
   OrbMatcher matcher;
   std::vector<MapPoint*> map_point_matches = current_keyframe_->GetMapPointMatches();
-  for (std::vector<KeyFrame*>::iterator vit = target_keyframes.begin(); 
-                                        vit != target_keyframes.end(); 
-                                        ++vit) {
-    KeyFrame* pKFi = *vit;
-    matcher.Fuse(pKFi, map_point_matches);
+  for (KeyFrame* target_keyframe : target_keyframes) {
+    matcher.Fuse(target_keyframe, map_point_matches);
   }
 
   // Search matches by projection from target KFs in current KF
-  std::vector<MapPoint*> vpFuseCandidates;
-  vpFuseCandidates.reserve(target_keyframes.size() * map_point_matches.size());
+  std::vector<MapPoint*> fuse_candidates;
+  fuse_candidates.reserve(target_keyframes.size() * map_point_matches.size());
 
-  for (std::vector<KeyFrame*>::iterator vitKF = target_keyframes.begin(); 
-                                        vitKF != target_keyframes.end(); 
-                                        ++vitKF) {
-    KeyFrame* pKFi = *vitKF;
-
-    std::vector<MapPoint*> vpMapPointsKFi = pKFi->GetMapPointMatches();
-
-    for (std::vector<MapPoint*>::iterator vitMP = vpMapPointsKFi.begin();
-                                          vitMP != vpMapPointsKFi.end(); 
-                                          ++vitMP) {
-      MapPoint* pMP = *vitMP;
-      if(!pMP ||
-          pMP->isBad() ||
-          pMP->fuse_candidate_id_for_keyframe == current_keyframe_->mnId ) {
-          continue;
+  for (KeyFrame* target_keyframe : target_keyframes) {
+    for (MapPoint* map_point : target_keyframe->GetMapPointMatches()) {
+      if (!map_point
+          || map_point->isBad()
+          || map_point->fuse_candidate_id_for_keyframe == current_keyframe_->mnId ) {
+        continue;
       }
-      pMP->fuse_candidate_id_for_keyframe = current_keyframe_->mnId;
-      vpFuseCandidates.push_back(pMP);
+      map_point->fuse_candidate_id_for_keyframe = current_keyframe_->mnId;
+      fuse_candidates.push_back(map_point);
     }
   }
-  matcher.Fuse(current_keyframe_, vpFuseCandidates);
+  fuse_candidates.shrink_to_fit();
+  matcher.Fuse(current_keyframe_, fuse_candidates);
 
   // Update points
   map_point_matches = current_keyframe_->GetMapPointMatches();
   for (size_t i = 0; i < map_point_matches.size(); ++i) {
-    MapPoint* pMP = map_point_matches[i];
-    if (pMP && !pMP->isBad()) {
-      pMP->ComputeDistinctiveDescriptors();
-      pMP->UpdateNormalAndDepth();
+    MapPoint* map_point = map_point_matches[i];
+    if (map_point && !map_point->isBad()) {
+      map_point->ComputeDistinctiveDescriptors();
+      map_point->UpdateNormalAndDepth();
     }
   }
 
@@ -577,60 +559,56 @@ void LocalMapper::KeyFrameCulling() {
   // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
   // in at least other 3 keyframes (in the same or finer scale)
   // We only consider close stereo points
-  std::vector<KeyFrame*> vpLocalKeyFrames = current_keyframe_->GetVectorCovisibleKeyFrames();
-
-  for (std::vector<KeyFrame*>::iterator vit = vpLocalKeyFrames.begin(); 
-                                        vit != vpLocalKeyFrames.end(); 
-                                        ++vit) {
-    KeyFrame* pKF = *vit;
-    if (pKF->mnId == 0) {
+  for (KeyFrame* keyframe : current_keyframe_->GetVectorCovisibleKeyFrames()) {
+    if (keyframe->mnId == 0) {
       continue;
     }
-    const std::vector<MapPoint*> vpMapPoints = pKF->GetMapPointMatches();
+    const std::vector<MapPoint*> map_points = keyframe->GetMapPointMatches();
 
-    const int thObs = 3;
-    int nRedundantObservations = 0;
-    int nMPs = 0;
-    for (size_t i = 0; i < vpMapPoints.size(); ++i) {
-      MapPoint* pMP = vpMapPoints[i];
-      if(pMP && !pMP->isBad()) {
+    const int obs_threshold = 3;
+    int num_redundant_obs = 0;
+    int num_points = 0;
+    for (size_t i = 0; i < map_points.size(); ++i) {
+      MapPoint* map_point = map_points[i];
+      if(map_point && !map_point->isBad()) {
         if (!is_monocular_) {
-          if (pKF->mvDepth[i] > pKF->mThDepth || 
-              pKF->mvDepth[i] < 0) {
+          if (keyframe->mvDepth[i] > keyframe->mThDepth || 
+              keyframe->mvDepth[i] < 0) {
             continue;
           }
         }
 
-        ++nMPs;
-        if (pMP->NumObservations() > thObs) {
-          const int scaleLevel = pKF->mvKeysUn[i].octave;
-          const std::map<KeyFrame*,size_t> observations = pMP->GetObservations();
-          int nObs = 0;
-          for (std::map<KeyFrame*,size_t>::const_iterator mit = observations.begin(); 
-                                                          mit != observations.end(); 
-                                                          ++mit) {
-            KeyFrame* pKFi = mit->first;
-            if (pKFi==pKF) {
+        ++num_points;
+        if (map_point->NumObservations() > obs_threshold) {
+          const int scale_level = keyframe->mvKeysUn[i].octave;
+          const std::map<KeyFrame*,size_t> observations = map_point->GetObservations();
+          int num_obs = 0;
+          for (auto mit = observations.begin(); 
+                    mit != observations.end(); 
+                    ++mit) {
+            const KeyFrame* obs_keyframe = mit->first;
+            const size_t obs_idx = mit->second;
+            if (obs_keyframe == keyframe) {
               continue;
             }
-            const int scaleLeveli = pKFi->mvKeysUn[mit->second].octave;
+            const int obs_scale_level = obs_keyframe->mvKeysUn[obs_idx].octave;
 
-            if(scaleLeveli <= scaleLevel + 1) {
-              nObs++;
-              if (nObs >= thObs) {
+            if (obs_scale_level <= scale_level + 1) {
+              ++num_obs;
+              if (num_obs >= obs_threshold) {
                 break;
               }
             }
           }
-          if (nObs >= thObs) {
-            ++nRedundantObservations;
+          if (num_obs >= obs_threshold) {
+            ++num_redundant_obs;
           }
         }
       }
     }  
 
-    if (nRedundantObservations > 0.9f * nMPs) {
-      pKF->SetBadFlag();
+    if (num_redundant_obs > 0.9f * num_points) {
+      keyframe->SetBadFlag();
     }
   }
 }
@@ -641,8 +619,8 @@ cv::Mat LocalMapper::ComputeFundamentalMatrix(KeyFrame* keyframe1, KeyFrame* key
   const cv::Mat R2w = keyframe2->GetRotation();
   const cv::Mat t2w = keyframe2->GetTranslation();
 
-  const cv::Mat R12 = R1w*R2w.t();
-  const cv::Mat t12 = -R1w*R2w.t()*t2w + t1w;
+  const cv::Mat R12 = R1w * R2w.t();
+  const cv::Mat t12 = -R1w * R2w.t() * t2w + t1w;
 
   const cv::Mat t12x = SkewSymmetricMatrix(t12);
 

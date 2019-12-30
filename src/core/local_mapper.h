@@ -67,10 +67,8 @@ protected:
   void SetFinish();
   bool finish_requested_;
   bool is_finished_;
-  mutable std::mutex finished_mutex_;
 
   std::shared_ptr<Map> map_;
-
   std::shared_ptr<LoopCloser> loop_closer_;
 
   std::list<KeyFrame*> new_keyframes_;
@@ -79,17 +77,19 @@ protected:
 
   std::list<MapPoint*> recently_added_map_points_;
 
-  mutable std::mutex new_keyframes_mutex_;
-
   bool abort_bundle_adjustment_;
 
   bool is_stopped_;
   bool requested_stop_;
   bool not_stop_;
-  mutable std::mutex stop_mutex_;
-
+  
   bool is_accepting_keyframes_;
+  
+  mutable std::mutex finished_mutex_;
+  mutable std::mutex new_keyframes_mutex_;
+  mutable std::mutex stop_mutex_;
   mutable std::mutex accept_keyframe_mutex_;
+  
 };
 
 #endif // SRC_LOCAL_MAPPER_H_

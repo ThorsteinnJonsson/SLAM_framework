@@ -612,7 +612,7 @@ void KeyFrame::SetBadFlag() {
   mpKeyFrameDB->erase(this);
 }
 
-bool KeyFrame::isBad() {
+bool KeyFrame::isBad() const {
   std::unique_lock<std::mutex> lock(mMutexConnections);
   return mbBad;
 }

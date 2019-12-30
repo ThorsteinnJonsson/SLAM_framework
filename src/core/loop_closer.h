@@ -44,16 +44,12 @@ public:
   // This function will run in a separate thread
   void RunGlobalBundleAdjustment(unsigned long nLoopKF);
 
-  bool isRunningGBA();
-  bool IsFinishedGBA();
-
+  bool IsRunningGBA() const;
   void RequestFinish();
-  bool IsFinished();
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  bool IsFinished()const ;
 
 protected:
-  bool CheckNewKeyFrames();
+  bool CheckNewKeyFrames() const;
 
   bool DetectLoop();
 
@@ -65,13 +61,13 @@ protected:
 
   void ResetIfRequested();
   bool mbResetRequested;
-  std::mutex mMutexReset;
 
-  bool CheckFinish();
+
+  bool CheckFinish() const;
   void SetFinish();
   bool mbFinishRequested;
   bool mbFinished;
-  std::mutex mMutexFinish;
+
 
   std::shared_ptr<Map> map_;
   std::shared_ptr<LocalMapper> local_mapper_;
@@ -79,16 +75,14 @@ protected:
   const std::shared_ptr<KeyframeDatabase> keyframe_db_;
   const std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
-  std::list<KeyFrame*> mlpLoopKeyFrameQueue;
-
-  std::mutex mMutexLoopQueue;
+  std::list<KeyFrame*> loop_keyframe_queue_;
 
   // Loop detector parameters
-  const float covisibility_consistency_threshold;
+  const float covisibility_consistency_threshold_;
 
   // Loop detector variables
-  KeyFrame* mpCurrentKF;
-  KeyFrame* mpMatchedKF;
+  KeyFrame* current_keyframe_;
+  KeyFrame* matched_keyframe_;
   std::vector<ConsistentGroup> mvConsistentGroups;
   std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
   std::vector<KeyFrame*> mvpCurrentConnectedKFs;
@@ -97,19 +91,23 @@ protected:
   cv::Mat mScw;
   g2o::Sim3 mg2oScw;
 
-  long unsigned int mLastLoopKFid;
+  long unsigned int last_loop_kf_id_;
 
   // Variables related to Global Bundle Adjustment
-  bool mbRunningGBA;
-  bool mbFinishedGBA;
-  bool mbStopGBA;
-  std::mutex mMutexGBA;
-  std::thread* global_bundle_adjustment_thread;
+  bool is_running_global_budle_adj_;
+  bool is_finished_global_budle_adj_;
+  bool stop_global_bundle_adj_;
+  std::thread* global_bundle_adjustment_thread_;
 
   // Fix scale in the stereo/RGB-D case
-  bool mbFixScale;
+  bool fix_scale_;
 
-  bool mnFullBAIdx;
+  bool full_bundle_adj_idx_;
+
+  mutable std::mutex reset_mutex_;
+  mutable std::mutex finish_mutex_;
+  mutable std::mutex loop_queue_mutex_;
+  mutable std::mutex global_bundle_adj_mutex_;
 
 };
 

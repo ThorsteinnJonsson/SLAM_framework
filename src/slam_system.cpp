@@ -225,7 +225,7 @@ void SlamSystem::Shutdown() {
   // Wait until all thread have effectively stopped
   while (!local_mapper_->IsFinished()  || 
          !loop_closer_->IsFinished()   ||
-          loop_closer_->isRunningGBA()) {
+          loop_closer_->IsRunningGBA()) {
     usleep(5000);
   }
   
