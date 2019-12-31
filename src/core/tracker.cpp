@@ -263,9 +263,9 @@ void Tracker::Reset() {
   local_mapper_->RequestReset();
   loop_closer_->RequestReset();
 
-  keyframe_db_->clear();
+  keyframe_db_->Clear();
 
-  map_->clear();
+  map_->Clear();
 
   KeyFrame::nNextId = 0;
   Frame::nNextId = 0;
@@ -308,7 +308,7 @@ void Tracker::StereoInitialization() {
       }
     }
 
-    std::cout << "New map created with " << map_->MapPointsInMap() << " points" << std::endl;
+    std::cout << "New map created with " << map_->NumMapPointsInMap() << " points" << std::endl;
 
     local_mapper_->InsertKeyFrame(pKFini);
 
@@ -323,7 +323,7 @@ void Tracker::StereoInitialization() {
     current_frame_.mpReferenceKF = pKFini;
 
     map_->SetReferenceMapPoints(local_map_points_);
-    map_->mvpKeyFrameOrigins.push_back(pKFini);
+    map_->AddOrigin(pKFini);
 
     state_ = TrackingState::OK;
   }
@@ -444,7 +444,7 @@ void Tracker::CreateInitialMapMonocular() {
 
 
   // Bundle Adjustment
-  std::cout << "New Map created with " << map_->MapPointsInMap() << " points\n";
+  std::cout << "New Map created with " << map_->NumMapPointsInMap() << " points\n";
 
   Optimizer::GlobalBundleAdjustemnt(map_,20);
 
@@ -489,7 +489,7 @@ void Tracker::CreateInitialMapMonocular() {
 
   map_->SetReferenceMapPoints(local_map_points_);
 
-  map_->mvpKeyFrameOrigins.push_back(pKFini);
+  map_->AddOrigin(pKFini);
 
   state_ = TrackingState::OK;
 }
@@ -502,7 +502,7 @@ void Tracker::Track() {
 
   last_processed_state_ = state_;
 
-  std::unique_lock<std::mutex> lock(map_->mMutexMapUpdate);
+  std::unique_lock<std::mutex> lock(map_->map_update_mutex);
 
   if (state_ == TrackingState::NOT_INITIALIZED) {
     if(sensor_type_ == SENSOR_TYPE::STEREO || sensor_type_ == SENSOR_TYPE::RGBD) {
@@ -647,7 +647,7 @@ void Tracker::Track() {
 
     // Reset if the camera gets lost soon after initialization
     if (state_ == TrackingState::LOST) {
-      if (map_->KeyFramesInMap() <= 5) {
+      if (map_->NumKeyFramesInMap() <= 5) {
         std::cout << "Track lost soon after initialisation, resetting...\n";
         system_reset_needed_ = true;
         return;
@@ -1271,7 +1271,7 @@ bool Tracker::NeedNewKeyFrame() {
     return false;
   }
 
-  const int nKFs = map_->KeyFramesInMap();
+  const int nKFs = map_->NumKeyFramesInMap();
 
   // Do not insert keyframes if not enough frames have passed from last relocalisation
   if (current_frame_.mnId < last_relocation_frame_id_ + max_frames_ && nKFs > max_frames_) {

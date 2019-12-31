@@ -49,7 +49,7 @@ void LocalMapper::Run() {
       abort_bundle_adjustment_ = false;
       if (!CheckNewKeyFrames() && !stopRequested()) {
         // Local BA
-        if (map_->KeyFramesInMap() > 2) {
+        if (map_->NumKeyFramesInMap() > 2) {
           Optimizer::LocalBundleAdjustment(current_keyframe_, 
                                            &abort_bundle_adjustment_, 
                                            map_);

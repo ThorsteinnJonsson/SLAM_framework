@@ -728,7 +728,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
   }
 
   // Get Map Mutex
-  std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
+  std::unique_lock<std::mutex> lock(pMap->map_update_mutex);
 
   if(!vToErase.empty())
   {
@@ -786,7 +786,7 @@ void Optimizer::OptimizeEssentialGraph(const std::shared_ptr<Map>& pMap,
     const std::vector<KeyFrame*> vpKFs = pMap->GetAllKeyFrames();
     const std::vector<MapPoint*> vpMPs = pMap->GetAllMapPoints();
 
-    const unsigned int nMaxKFid = pMap->GetMaxKFid();
+    const unsigned int nMaxKFid = pMap->GetMaxKeyframeId();
 
     std::vector<g2o::Sim3,Eigen::aligned_allocator<g2o::Sim3> > vScw(nMaxKFid+1);
     std::vector<g2o::Sim3,Eigen::aligned_allocator<g2o::Sim3> > vCorrectedSwc(nMaxKFid+1);
@@ -975,7 +975,7 @@ void Optimizer::OptimizeEssentialGraph(const std::shared_ptr<Map>& pMap,
     optimizer.initializeOptimization();
     optimizer.optimize(20);
 
-    std::unique_lock<std::mutex> lock(pMap->mMutexMapUpdate);
+    std::unique_lock<std::mutex> lock(pMap->map_update_mutex);
 
     // SE3 Pose Recovering. Sim3:[sR t;0 1] -> SE3:[R t/s;0 1]
     for(size_t i=0;i<vpKFs.size();i++)

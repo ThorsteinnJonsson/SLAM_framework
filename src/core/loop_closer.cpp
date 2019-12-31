@@ -102,11 +102,11 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long loop_kf_index) {
       }
 
       // Get Map Mutex
-      std::unique_lock<std::mutex> lock(map_->mMutexMapUpdate);
+      std::unique_lock<std::mutex> lock(map_->map_update_mutex);
 
       // Correct keyframes starting at map first keyframe
-      std::list<KeyFrame*> keyframes_to_check(map_->mvpKeyFrameOrigins.begin(),
-                                              map_->mvpKeyFrameOrigins.end());
+      std::list<KeyFrame*> keyframes_to_check(map_->GetKeyframeOrigins().begin(),
+                                              map_->GetKeyframeOrigins().end());
 
       while (!keyframes_to_check.empty()) {
         KeyFrame* keyframe = keyframes_to_check.front();
@@ -488,7 +488,7 @@ void LoopCloser::SearchAndFuse(const KeyFrameAndPose& corrected_poses_map) {
                  vpReplacePoints);
 
     // Get Map Mutex
-    std::unique_lock<std::mutex> lock(map_->mMutexMapUpdate);
+    std::unique_lock<std::mutex> lock(map_->map_update_mutex);
     for (size_t i = 0; i < loop_map_points_.size(); ++i) {
       MapPoint* replace_point = vpReplacePoints[i];
       if (replace_point) {
@@ -535,7 +535,7 @@ void LoopCloser::CorrectLoop() {
 
   {
     // Get Map Mutex
-    std::unique_lock<std::mutex> lock(map_->mMutexMapUpdate);
+    std::unique_lock<std::mutex> lock(map_->map_update_mutex);
 
     for (std::vector<KeyFrame*>::iterator vit = cur_connected_keyframes.begin(); 
                                           vit != cur_connected_keyframes.end();
