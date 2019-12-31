@@ -42,7 +42,7 @@ public:
   void RequestReset();
 
   // This function will run in a separate thread
-  void RunGlobalBundleAdjustment(unsigned long nLoopKF);
+  void RunGlobalBundleAdjustment(unsigned long loop_kf_index);
 
   bool IsRunningGBA() const;
   void RequestFinish();
@@ -60,13 +60,13 @@ protected:
   void CorrectLoop();
 
   void ResetIfRequested();
-  bool mbResetRequested;
+  bool reset_requested_ = false;
 
 
   bool CheckFinish() const;
   void SetFinish();
-  bool mbFinishRequested;
-  bool mbFinished;
+  bool finish_requested_ = false;
+  bool is_finished_ = false;
 
 
   std::shared_ptr<Map> map_;
@@ -78,31 +78,31 @@ protected:
   std::list<KeyFrame*> loop_keyframe_queue_;
 
   // Loop detector parameters
-  const float covisibility_consistency_threshold_;
+  const float covisibility_consistency_threshold_ = 3;
 
   // Loop detector variables
-  KeyFrame* current_keyframe_;
-  KeyFrame* matched_keyframe_;
-  std::vector<ConsistentGroup> mvConsistentGroups;
-  std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
-  std::vector<KeyFrame*> mvpCurrentConnectedKFs;
-  std::vector<MapPoint*> mvpCurrentMatchedPoints;
-  std::vector<MapPoint*> mvpLoopMapPoints;
-  cv::Mat mScw;
-  g2o::Sim3 mg2oScw;
+  KeyFrame* current_keyframe_ = nullptr;
+  KeyFrame* matched_keyframe_ = nullptr;
+  std::vector<ConsistentGroup> consistent_groups_;
+  std::vector<KeyFrame*> consistent_enough_candidates_;
+  // std::vector<KeyFrame*> cur_connected_keyframes_; doesn't need to be a member
+  std::vector<MapPoint*> cur_matched_points_;
+  std::vector<MapPoint*> loop_map_points_;
+  cv::Mat Scw_;
+  g2o::Sim3 g2o_Scw_;
 
-  long unsigned int last_loop_kf_id_;
+  long unsigned int last_loop_kf_id_ = 0;
 
   // Variables related to Global Bundle Adjustment
-  bool is_running_global_budle_adj_;
-  bool is_finished_global_budle_adj_;
-  bool stop_global_bundle_adj_;
-  std::thread* global_bundle_adjustment_thread_;
+  bool is_running_global_budle_adj_ = false;
+  bool is_finished_global_budle_adj_ = true;
+  bool stop_global_bundle_adj_ = false;
+  std::unique_ptr<std::thread> global_bundle_adjustment_thread_ = nullptr;
 
   // Fix scale in the stereo/RGB-D case
   bool fix_scale_;
 
-  bool full_bundle_adj_idx_;
+  bool full_bundle_adj_idx_ = 0;
 
   mutable std::mutex reset_mutex_;
   mutable std::mutex finish_mutex_;

@@ -78,7 +78,7 @@ public:
   long unsigned int fuse_candidate_id_for_keyframe;
 
   // Variables used by loop closing
-  long unsigned int loop_point_for_keyframe;
+  long unsigned int loop_point_for_keyframe_id;
   long unsigned int corrected_by_keyframe;
   long unsigned int corrected_reference;    
   cv::Mat position_global_bundle_adj;
