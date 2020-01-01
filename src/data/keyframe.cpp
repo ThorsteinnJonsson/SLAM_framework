@@ -15,13 +15,13 @@ KeyFrame::KeyFrame(const Frame& F,
       , mfGridElementHeightInv(F.mfGridElementHeightInv)
       , mnTrackReferenceForFrame(0)
       , mnFuseTargetForKF(0)
-      , mnBALocalForKF(0)
+      , bundle_adj_local_id_for_keyframe(0)
       , mnBAFixedForKF(0)
       , mnLoopQuery(0)
       , mnLoopWords(0)
       , mnRelocQuery(0)
       , mnRelocWords(0)
-      , mnBAGlobalForKF(0)
+      , bundle_adj_global_for_keyframe_id(0)
       , fx(F.fx)
       , fy(F.fy)
       , cx(F.cx)
@@ -419,7 +419,7 @@ int KeyFrame::TrackedMapPoints(const int minObs) {
     MapPoint* pMP = mvpMapPoints[i];
     if (pMP && !pMP->isBad()) {
       if (bCheckObs) {
-        if (mvpMapPoints[i]->Observations() >= minObs) {
+        if (mvpMapPoints[i]->NumObservations() >= minObs) {
           nPoints++;
         }
       }
@@ -612,7 +612,7 @@ void KeyFrame::SetBadFlag() {
   mpKeyFrameDB->erase(this);
 }
 
-bool KeyFrame::isBad() {
+bool KeyFrame::isBad() const {
   std::unique_lock<std::mutex> lock(mMutexConnections);
   return mbBad;
 }

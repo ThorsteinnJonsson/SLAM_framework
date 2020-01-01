@@ -81,13 +81,13 @@ public:
   // Enable/Disable bad flag changes
   void SetNotErase();
   void SetErase();
-
+  
   // Set/check bad flag
   void SetBadFlag();
-  bool isBad();
+  bool isBad() const;
 
   // Compute Scene Depth (q=2 median). Used in monocular.
-  float ComputeSceneMedianDepth(const int q); // TODO probably not necessary for only stereo
+  float ComputeSceneMedianDepth(const int q);
 
   static bool weightComp(int a, int b) { return a > b; } // TODO just use lambda
 
@@ -113,7 +113,7 @@ public:
   long unsigned int mnFuseTargetForKF;
 
   // Variables used by the local mapping
-  long unsigned int mnBALocalForKF;
+  long unsigned int bundle_adj_local_id_for_keyframe;
   long unsigned int mnBAFixedForKF;
 
   // Variables used by the keyframe database
@@ -127,7 +127,7 @@ public:
   // Variables used by loop closing
   cv::Mat mTcwGBA;
   cv::Mat mTcwBefGBA;
-  long unsigned int mnBAGlobalForKF;
+  long unsigned int bundle_adj_global_for_keyframe_id;
 
   // Calibration parameters
   const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth; // TODO seems exessive to copy for every keyframe
@@ -202,9 +202,9 @@ protected:
 
   std::shared_ptr<Map> mpMap;
 
-  std::mutex mMutexPose;
-  std::mutex mMutexConnections;
-  std::mutex mMutexFeatures;
+  mutable std::mutex mMutexPose;
+  mutable std::mutex mMutexConnections;
+  mutable std::mutex mMutexFeatures;
 
 
 };

@@ -5,10 +5,31 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "debug_launch",
+      "name": "stereo_debug_launch",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/main_exe",
+      "program": "${workspaceFolder}/build/main_stereo",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "build_command",
+      // "additionalSOLibSearchPath": "/usr/lib/x86_64-linux-gnu;/usr/include/opencv;/usr/local/lib",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "mono_debug_launch",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/main_mono",
       "args": [],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",

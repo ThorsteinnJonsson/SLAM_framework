@@ -21,7 +21,7 @@ public:
 
   void add(KeyFrame* pKF);
   void erase(KeyFrame* pKF);
-  void clear();
+  void Clear();
 
   std::vector<KeyFrame *> DetectLoopCandidates(KeyFrame* pKF, float minScore);
   std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F);// TODO this can probably be passed as a reference

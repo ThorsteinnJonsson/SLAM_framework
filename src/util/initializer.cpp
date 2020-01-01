@@ -21,9 +21,12 @@ Initializer::Initializer(const Frame& ReferenceFrame,
   mMaxIterations = iterations;
 }
 
-bool Initializer::Initialize(const Frame &CurrentFrame, const std::vector<int> &vMatches12, cv::Mat &R21, cv::Mat &t21,
-                             std::vector<cv::Point3f> &vP3D, std::vector<bool> &vbTriangulated)
-{
+bool Initializer::Initialize(const Frame& CurrentFrame, 
+                             const std::vector<int>& vMatches12, 
+                             cv::Mat& R21, 
+                             cv::Mat& t21,
+                             std::vector<cv::Point3f>& vP3D,
+                             std::vector<bool>& vbTriangulated) {
   // Fill structures with current keypoints and matches with reference frame
   // Reference Frame: 1, Current Frame: 2
   mvKeys2 = CurrentFrame.mvKeysUn;
@@ -49,9 +52,8 @@ bool Initializer::Initialize(const Frame &CurrentFrame, const std::vector<int> &
   vAllIndices.reserve(N);
   std::vector<size_t> vAvailableIndices;
 
-  for(int i=0; i<N; i++)
-  {
-      vAllIndices.push_back(i);
+  for (int i = 0; i < N; ++i){
+    vAllIndices.push_back(i);
   }
 
   // Generate sets of 8 points for each RANSAC iteration
@@ -573,12 +575,13 @@ bool Initializer::ReconstructH(std::vector<bool>& vbMatchesInliers,
                                std::vector<cv::Point3f>& vP3D, 
                                std::vector<bool>& vbTriangulated, 
                                float minParallax, 
-                               int minTriangulated)
-{
+                               int minTriangulated) {
   int N=0;
-  for(size_t i=0, iend = vbMatchesInliers.size() ; i<iend; i++)
-      if(vbMatchesInliers[i])
-          N++;
+  for(size_t i = 0; i < vbMatchesInliers.size(); ++i){
+    if(vbMatchesInliers[i]) {
+      ++N;
+    }
+  }
 
   // We recover 8 motion hypotheses using the method of Faugeras et al.
   // Motion and structure from motion in a piecewise planar environment.

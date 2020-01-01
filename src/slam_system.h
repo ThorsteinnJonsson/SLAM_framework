@@ -54,6 +54,9 @@ public:
   // See format details at: http://www.cvlibs.net/datasets/kitti/eval_odometry.php
   void SaveTrajectoryKITTI(const std::string& filename) const;
 
+  // Save trajectory, should work for all sensor types 
+  void SaveKeyFrameTrajectory(const std::string& filename) const;
+
   // TODO: Save/Load functions (not implemented in the original ORB-SLAM)
   // SaveMap(const std::string &filename);
   // LoadMap(const std::string &filename);
@@ -110,7 +113,7 @@ private:
   mutable std::mutex state_mutex_;
 
   // ROS
-  bool ros_output_enabled = true;
+  bool ros_output_enabled = false;
  
 };
 

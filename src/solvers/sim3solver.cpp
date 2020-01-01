@@ -144,71 +144,70 @@ cv::Mat Sim3Solver::iterate(int nIterations,
                             std::vector<bool>& vbInliers, 
                             int& nInliers)
 {
-    bNoMore = false;
-    vbInliers = std::vector<bool>(mN1,false);
-    nInliers=0;
+  bNoMore = false;
+  vbInliers = std::vector<bool>(mN1,false);
+  nInliers=0;
 
-    if(N<mRansacMinInliers)
-    {
-        bNoMore = true;
-        return cv::Mat();
-    }
-
-    std::vector<size_t> vAvailableIndices;
-
-    cv::Mat P3Dc1i(3,3,CV_32F);
-    cv::Mat P3Dc2i(3,3,CV_32F);
-
-    int nCurrentIterations = 0;
-    while(mnIterations<mRansacMaxIts && nCurrentIterations<nIterations)
-    {
-        nCurrentIterations++;
-        mnIterations++;
-
-        vAvailableIndices = mvAllIndices;
-
-        // Get min set of points
-        for(short i = 0; i < 3; ++i)
-        {
-            int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
-
-            int idx = vAvailableIndices[randi];
-
-            mvX3Dc1[idx].copyTo(P3Dc1i.col(i));
-            mvX3Dc2[idx].copyTo(P3Dc2i.col(i));
-
-            vAvailableIndices[randi] = vAvailableIndices.back();
-            vAvailableIndices.pop_back();
-        }
-
-        ComputeSim3(P3Dc1i,P3Dc2i);
-
-        CheckInliers();
-
-        if(mnInliersi>=mnBestInliers)
-        {
-            mvbBestInliers = mvbInliersi;
-            mnBestInliers = mnInliersi;
-            mBestT12 = mT12i.clone();
-            mBestRotation = mR12i.clone();
-            mBestTranslation = mt12i.clone();
-            mBestScale = ms12i;
-
-            if(mnInliersi>mRansacMinInliers)
-            {
-                nInliers = mnInliersi;
-                for(int i=0; i<N; i++)
-                    if(mvbInliersi[i])
-                        vbInliers[mvnIndices1[i]] = true;
-                return mBestT12;
-            }
-        }
-    }
-
-    if(mnIterations>=mRansacMaxIts)
-        bNoMore=true;
-
+  if (N < mRansacMinInliers) {
+    bNoMore = true;
     return cv::Mat();
+  }
+
+  std::vector<size_t> vAvailableIndices;
+
+  cv::Mat P3Dc1i(3,3,CV_32F);
+  cv::Mat P3Dc2i(3,3,CV_32F);
+
+  int nCurrentIterations = 0;
+  while(mnIterations<mRansacMaxIts && nCurrentIterations<nIterations) {
+    nCurrentIterations++;
+    mnIterations++;
+
+    vAvailableIndices = mvAllIndices;
+
+    // Get min set of points
+    for(short i = 0; i < 3; ++i)
+    {
+        int randi = DUtils::Random::RandomInt(0, vAvailableIndices.size()-1);
+
+        int idx = vAvailableIndices[randi];
+
+        mvX3Dc1[idx].copyTo(P3Dc1i.col(i));
+        mvX3Dc2[idx].copyTo(P3Dc2i.col(i));
+
+        vAvailableIndices[randi] = vAvailableIndices.back();
+        vAvailableIndices.pop_back();
+    }
+
+    ComputeSim3(P3Dc1i,P3Dc2i);
+
+    CheckInliers();
+
+    if(mnInliersi>=mnBestInliers)
+    {
+        mvbBestInliers = mvbInliersi;
+        mnBestInliers = mnInliersi;
+        mBestT12 = mT12i.clone();
+        mBestRotation = mR12i.clone();
+        mBestTranslation = mt12i.clone();
+        mBestScale = ms12i;
+
+        if(mnInliersi>mRansacMinInliers)
+        {
+            nInliers = mnInliersi;
+            for(int i=0; i<N; i++)
+                if(mvbInliersi[i])
+                    vbInliers[mvnIndices1[i]] = true;
+            return mBestT12;
+        }
+    }
+  }
+
+  if (mnIterations>=mRansacMaxIts) {
+    bNoMore=true;
+  }
+
+  return cv::Mat();
 }
 
 cv::Mat Sim3Solver::find(std::vector<bool>& vbInliers12, 

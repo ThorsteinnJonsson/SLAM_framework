@@ -69,7 +69,7 @@ public:
   // Matching to triangulate new MapPoints. Check Epipolar Constraint.
   int SearchForTriangulation(KeyFrame* pKF1, 
                              KeyFrame* pKF2, 
-                             cv::Mat F12,
+                             const cv::Mat& F12,
                              std::vector<std::pair<size_t, size_t>>& vMatchedPairs,
                              const bool bOnlyStereo);
 

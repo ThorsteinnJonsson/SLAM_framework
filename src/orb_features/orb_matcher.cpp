@@ -19,22 +19,26 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
     for(size_t iMP=0; iMP<vpMapPoints.size(); iMP++)
     {
         MapPoint* pMP = vpMapPoints[iMP];
-        if(!pMP->mbTrackInView)
+        if(!pMP->track_is_in_view)
             continue;
 
         if(pMP->isBad())
             continue;
 
-        const int &nPredictedLevel = pMP->mnTrackScaleLevel;
+        const int &nPredictedLevel = pMP->track_scale_level;
 
         // The size of the window will depend on the viewing direction
-        float r = RadiusByViewingCos(pMP->mTrackViewCos);
+        float r = RadiusByViewingCos(pMP->track_view_cos);
 
         if(bFactor)
             r*=th;
 
         const vector<size_t> vIndices =
-                F.GetFeaturesInArea(pMP->mTrackProjX,pMP->mTrackProjY,r*F.mvScaleFactors[nPredictedLevel],nPredictedLevel-1,nPredictedLevel);
+                F.GetFeaturesInArea(pMP->track_projected_x,
+                                    pMP->track_projected_y,
+                                    r*F.mvScaleFactors[nPredictedLevel],
+                                    nPredictedLevel-1,
+                                    nPredictedLevel);
 
         if(vIndices.empty())
             continue;
@@ -53,12 +57,12 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
             const size_t idx = *vit;
 
             if(F.mvpMapPoints[idx])
-                if(F.mvpMapPoints[idx]->Observations()>0)
+                if(F.mvpMapPoints[idx]->NumObservations()>0)
                     continue;
 
             if(F.mvuRight[idx]>0)
             {
-                const float er = fabs(pMP->mTrackProjXR-F.mvuRight[idx]);
+                const float er = fabs(pMP->track_projected_x_right-F.mvuRight[idx]);
                 if(er>r*F.mvScaleFactors[nPredictedLevel])
                     continue;
             }
@@ -625,7 +629,9 @@ int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     return nmatches;
 }
 
-int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1, KeyFrame *pKF2, cv::Mat F12,
+int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1, 
+                                       KeyFrame *pKF2, 
+                                       const cv::Mat& F12,
                                        vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo)
 {    
     const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
@@ -927,7 +933,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
             {
                 if(!pMPinKF->isBad())
                 {
-                    if(pMPinKF->Observations()>pMP->Observations())
+                    if(pMPinKF->NumObservations() > pMP->NumObservations())
                         pMP->Replace(pMPinKF);
                     else
                         pMPinKF->Replace(pMP);
@@ -1373,12 +1379,14 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 int bestDist = 256;
                 int bestIdx2 = -1;
 
-                for(vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
+                for(std::vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
                 {
                     const size_t i2 = *vit;
-                    if(CurrentFrame.mvpMapPoints[i2])
-                        if(CurrentFrame.mvpMapPoints[i2]->Observations()>0)
-                            continue;
+                    if(CurrentFrame.mvpMapPoints[i2]) {
+                      if(CurrentFrame.mvpMapPoints[i2]->NumObservations() > 0) {
+                          continue;
+                      }
+                    }
 
                     if(CurrentFrame.mvuRight[i2]>0)
                     {

@@ -16,7 +16,6 @@
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
 
-#include <mutex>
 #include <memory>
 
 // Forward declerations
@@ -53,7 +52,7 @@ public:
   }
 
   // Use this function if you have deactivated local mapping and you only want to localize the camera.
-  void InformOnlyTracking(const bool flag) { mbOnlyTracking = flag; }
+  void InformOnlyTracking(const bool flag) { is_only_tracking_ = flag; }
 
   bool NeedSystemReset() const;
 
@@ -63,9 +62,10 @@ public:
 
   const Frame& GetCurrentFrame() const { return current_frame_; }
   
-  const std::list<cv::Mat>& GetRelativeFramePoses() { return mlRelativeFramePoses; }
-  const std::list<KeyFrame*>& GetReferenceKeyframes() { return mlpReferences; }
-  const std::list<double>& GetFrameTimes() { return mlFrameTimes; }
+  const std::list<cv::Mat>& GetRelativeFramePoses() { return relative_frame_poses_; }
+  const std::list<KeyFrame*>& GetReferenceKeyframes() { return reference_keyframes_; }
+  const std::list<double>& GetFrameTimes() { return frame_times_; }
+  const std::list<bool>& GetLost() {return is_lost_; }
 
 protected:
   // Map initialization for stereo and RGB-D
@@ -109,52 +109,52 @@ protected:
 
   std::shared_ptr<ORBextractor> orb_extractor_left_;
   std::shared_ptr<ORBextractor> orb_extractor_right_;
-  std::shared_ptr<ORBextractor> mpIniORBextractor;
+  std::shared_ptr<ORBextractor> orb_extractor_ini_;
 
   const std::shared_ptr<OrbVocabulary> orb_vocabulary_;
   const std::shared_ptr<KeyframeDatabase> keyframe_db_;
 
   // Initalization (only for monocular)
-  std::unique_ptr<Initializer> mpInitializer = nullptr; // TODO unique_ptr?
+  std::unique_ptr<Initializer> mpInitializer = nullptr;
 
   //Local Map
-  KeyFrame* mpReferenceKF;
-  std::vector<KeyFrame*> mvpLocalKeyFrames;
-  std::vector<MapPoint*> mvpLocalMapPoints;
+  KeyFrame* reference_keyframe_;
+  std::vector<KeyFrame*> local_keyframes_;
+  std::vector<MapPoint*> local_map_points_;
 
-  std::shared_ptr<Map> mpMap;
+  std::shared_ptr<Map> map_;
 
   // Calibration matrix
-  cv::Mat mK;
-  cv::Mat mDistCoef;
-  float mbf;
+  cv::Mat calibration_mat_;
+  cv::Mat dist_coeff_;
+  float scaled_baseline_; // Stereo baseline times fx
 
   // New KeyFrame rules (according to fps)
-  int mMinFrames;
-  int mMaxFrames;
+  int min_frames_;
+  int max_frames_;
 
   // Threshold close/far points
   // Points seen as close by the stereo/RGBD sensor are considered reliable
   // and inserted from just one frame. Far points requiere a match in two keyframes.
-  float mThDepth;
+  float depth_threshold_;
 
   // For RGB-D inputs only. For some datasets (e.g. TUM) the depthmap values are scaled.
-  float mDepthMapFactor;
+  float depth_map_factor_;
 
   // Current matches in frame
-  int mnMatchesInliers;
+  int num_inlier_matches_;
 
   // Last Frame, KeyFrame and Relocalisation Info
-  KeyFrame* mpLastKeyFrame;
-  Frame mLastFrame;
-  unsigned int mnLastKeyFrameId;
-  unsigned int mnLastRelocFrameId;
+  KeyFrame* last_keyframe_;
+  Frame last_frame_;
+  unsigned int last_keyframe_id_;
+  unsigned int last_relocation_frame_id_;
 
   //Motion Model
-  cv::Mat mVelocity;
+  cv::Mat velocity_;
 
   //Color order (true RGB, false BGR, ignored if grayscale)
-  bool mbRGB;
+  bool is_rgb_;
 
 private:
   TrackingState state_;
@@ -165,20 +165,21 @@ private:
   Frame current_frame_;
 
   // Lists used to recover the full camera trajectory at the end of the execution.
-  // Basically we store the reference keyframe for each frame and its relative transformation
-  std::list<cv::Mat> mlRelativeFramePoses;
-  std::list<KeyFrame*> mlpReferences;
-  std::list<double> mlFrameTimes;
-  std::list<bool> mlbLost;
+  // Basically we store the reference keyframe for each frame 
+  // and its relative transformation //TODO put this into a struct
+  std::list<cv::Mat> relative_frame_poses_;
+  std::list<KeyFrame*> reference_keyframes_;
+  std::list<double> frame_times_;
+  std::list<bool> is_lost_;
 
   // True if local mapping is deactivated and we are performing only localization
-  bool mbOnlyTracking;
+  bool is_only_tracking_;
 
   // Initialization Variables (Monocular)
-  std::vector<int> mvIniMatches; // TODO Should probably be private
-  std::vector<cv::Point2f> mvbPrevMatched;
-  std::vector<cv::Point3f> mvIniP3D;
-  Frame mInitialFrame;
+  std::vector<int> init_matches_;
+  std::vector<cv::Point2f> prev_matched_;
+  std::vector<cv::Point3f> init_points_;
+  Frame initial_frame_;
 
   const int num_required_matches_ = 15;
   bool system_reset_needed_ = false;

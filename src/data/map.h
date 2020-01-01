@@ -18,37 +18,40 @@ public:
   void EraseKeyFrame(KeyFrame* pKF);
   void SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs);
   void InformNewBigChange();
-  int GetLastBigChangeIdx();
+  int GetLastBigChangeIdx() const;
 
-  std::vector<KeyFrame*> GetAllKeyFrames();
-  std::vector<MapPoint*> GetAllMapPoints();
-  std::vector<MapPoint*> GetReferenceMapPoints();
+  std::vector<KeyFrame*> GetAllKeyFrames() const;
+  std::vector<MapPoint*> GetAllMapPoints() const;
+  std::vector<MapPoint*> GetReferenceMapPoints() const;
 
-  long unsigned  KeyFramesInMap();
-  long unsigned int MapPointsInMap();
+  long unsigned  NumKeyFramesInMap() const;
+  long unsigned int NumMapPointsInMap() const;
+  long unsigned int GetMaxKeyframeId() const;
 
-  long unsigned int GetMaxKFid();
+  const std::vector<KeyFrame*>& GetKeyframeOrigins() { return keyframe_origins_; }
+  void AddOrigin(KeyFrame* kf) {
+    keyframe_origins_.push_back(kf);
+  }
 
-  void clear();
+  void Clear();
 
-  std::vector<KeyFrame*> mvpKeyFrameOrigins;
-
-  std::mutex mMutexMapUpdate;
-  std::mutex mMutexPointCreation;
-
+  mutable std::mutex map_update_mutex;
+  mutable std::mutex point_creation_mutex;
 
 protected:
-  std::set<KeyFrame*> mspKeyFrames;
-  std::set<MapPoint*> mspMapPoints;
+  std::set<KeyFrame*> keyframes_;
+  std::set<MapPoint*> map_points_;
 
-  std::vector<MapPoint*> mvpReferenceMapPoints;
+  std::vector<MapPoint*> reference_map_points_;
+
+  std::vector<KeyFrame*> keyframe_origins_;
   
-  long unsigned int mnMaxKFid;
+  long unsigned int max_kf_id_;
   
   // Index related to a big change in the map (loop closure, global BA)
-  int mnBigChangeIdx;
+  int big_change_idx_;
 
-  std::mutex mMutexMap;
+  mutable std::mutex map_mutex_;
 
 };
 

@@ -42,18 +42,14 @@ public:
   void RequestReset();
 
   // This function will run in a separate thread
-  void RunGlobalBundleAdjustment(unsigned long nLoopKF);
+  void RunGlobalBundleAdjustment(unsigned long loop_kf_index);
 
-  bool isRunningGBA();
-  bool isFinishedGBA();
-
+  bool IsRunningGBA() const;
   void RequestFinish();
-  bool isFinished();
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  bool IsFinished()const ;
 
 protected:
-  bool CheckNewKeyFrames();
+  bool CheckNewKeyFrames() const;
 
   bool DetectLoop();
 
@@ -64,14 +60,14 @@ protected:
   void CorrectLoop();
 
   void ResetIfRequested();
-  bool mbResetRequested;
-  std::mutex mMutexReset;
+  bool reset_requested_ = false;
 
-  bool CheckFinish();
+
+  bool CheckFinish() const;
   void SetFinish();
-  bool mbFinishRequested;
-  bool mbFinished;
-  std::mutex mMutexFinish;
+  bool finish_requested_ = false;
+  bool is_finished_ = false;
+
 
   std::shared_ptr<Map> map_;
   std::shared_ptr<LocalMapper> local_mapper_;
@@ -79,37 +75,39 @@ protected:
   const std::shared_ptr<KeyframeDatabase> keyframe_db_;
   const std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
-  std::list<KeyFrame*> mlpLoopKeyFrameQueue;
-
-  std::mutex mMutexLoopQueue;
+  std::list<KeyFrame*> loop_keyframe_queue_;
 
   // Loop detector parameters
-  const float covisibility_consistency_threshold;
+  const float covisibility_consistency_threshold_ = 3;
 
   // Loop detector variables
-  KeyFrame* mpCurrentKF;
-  KeyFrame* mpMatchedKF;
-  std::vector<ConsistentGroup> mvConsistentGroups;
-  std::vector<KeyFrame*> mvpEnoughConsistentCandidates;
-  std::vector<KeyFrame*> mvpCurrentConnectedKFs;
-  std::vector<MapPoint*> mvpCurrentMatchedPoints;
-  std::vector<MapPoint*> mvpLoopMapPoints;
-  cv::Mat mScw;
-  g2o::Sim3 mg2oScw;
+  KeyFrame* current_keyframe_ = nullptr;
+  KeyFrame* matched_keyframe_ = nullptr;
+  std::vector<ConsistentGroup> consistent_groups_;
+  std::vector<KeyFrame*> consistent_enough_candidates_;
+  // std::vector<KeyFrame*> cur_connected_keyframes_; doesn't need to be a member
+  std::vector<MapPoint*> cur_matched_points_;
+  std::vector<MapPoint*> loop_map_points_;
+  cv::Mat Scw_;
+  g2o::Sim3 g2o_Scw_;
 
-  long unsigned int mLastLoopKFid;
+  long unsigned int last_loop_kf_id_ = 0;
 
   // Variables related to Global Bundle Adjustment
-  bool mbRunningGBA;
-  bool mbFinishedGBA;
-  bool mbStopGBA;
-  std::mutex mMutexGBA;
-  std::thread* global_bundle_adjustment_thread;
+  bool is_running_global_budle_adj_ = false;
+  bool is_finished_global_budle_adj_ = true;
+  bool stop_global_bundle_adj_ = false;
+  std::unique_ptr<std::thread> global_bundle_adjustment_thread_ = nullptr;
 
   // Fix scale in the stereo/RGB-D case
-  bool mbFixScale;
+  bool fix_scale_;
 
-  bool mnFullBAIdx;
+  bool full_bundle_adj_idx_ = 0;
+
+  mutable std::mutex reset_mutex_;
+  mutable std::mutex finish_mutex_;
+  mutable std::mutex loop_queue_mutex_;
+  mutable std::mutex global_bundle_adj_mutex_;
 
 };
 

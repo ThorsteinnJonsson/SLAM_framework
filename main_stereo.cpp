@@ -50,6 +50,8 @@ void LoadKittiImages(const std::string& kitti_path,
 
 int main(int argc, char **argv) {
 
+  std::cout << "STEREO SLAM\n";
+
   ros::init(argc, argv, "stereo_slam");
 
   // Input TODO: change to actual input 
@@ -93,7 +95,7 @@ int main(int argc, char **argv) {
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     
     cv::Mat pose = slam_system.TrackStereo(l_image,r_image,timestamp);
-    if (frame_id % 250 == 0) {
+    if (frame_id % 100 == 0) {
       std::cout << "Finished SLAM on frame " << frame_id << std::endl;
     }
     

@@ -2,6 +2,7 @@
 
 #include <unistd.h> // usleep
 
+// #pragma GCC optimize ("O0")
 
 SlamSystem::SlamSystem(const std::string& vocabulary_path, 
                        const std::string& settings_path, 
@@ -60,8 +61,9 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
                                               sensor_type_ != SENSOR_TYPE::MONOCULAR);
   loop_closing_thread_.reset(new std::thread(&LoopCloser::Run, loop_closer_));
 
-    ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
+  
   if (ros_output_enabled) {
+    ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
     ros_pub_thread_.reset(new std::thread(&RosPublisher::Run, ros_publisher_));
   }
 
@@ -94,7 +96,7 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -136,7 +138,7 @@ cv::Mat SlamSystem::TrackRGBD(const cv::Mat& im,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -178,7 +180,7 @@ cv::Mat SlamSystem::TrackMonocular(const cv::Mat& im,
       local_mapper_->RequestStop();
 
       // Wait until Local Mapping has effectively stopped
-      while (!local_mapper_->isStopped()) {
+      while (!local_mapper_->IsStopped()) {
         usleep(1000);
       }
 
@@ -219,19 +221,22 @@ void SlamSystem::DeactivateLocalizationMode() {
 void SlamSystem::Shutdown() {
   local_mapper_->RequestFinish();
   loop_closer_->RequestFinish();
-  ros_publisher_->RequestFinish();
 
   // Wait until all thread have effectively stopped
-  while (!local_mapper_->isFinished()  || 
-         !loop_closer_->isFinished()   ||
-         !ros_publisher_->IsFinished() || 
-          loop_closer_->isRunningGBA()) {
+  while (!local_mapper_->IsFinished()  || 
+         !loop_closer_->IsFinished()   ||
+          loop_closer_->IsRunningGBA()) {
     usleep(5000);
   }
   
   local_mapping_thread_->join();
   loop_closing_thread_->join();
-  if (ros_output_enabled) {
+  
+  if (ros_publisher_) {
+    ros_publisher_->RequestFinish();
+    while (!ros_publisher_->IsFinished()) {
+      usleep(1000);
+    }
     ros_pub_thread_->join();
   }
 }
@@ -252,7 +257,7 @@ std::vector<cv::KeyPoint> SlamSystem::GetTrackedKeyPointsUn() const {
 }
 
 void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
-  std::cout << std::endl << "Saving camera trajectory to " << filename << " ..." << std::endl;
+  std::cout << "\nSaving camera trajectory to " << filename << " ..." << std::endl;
   if (sensor_type_ == MONOCULAR) {
     std::cerr << "ERROR: SaveTrajectoryKITTI cannot be used for monocular.\n";
     return;
@@ -300,5 +305,40 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
           Rwc.at<float>(2,0) << " " << Rwc.at<float>(2,1)  << " " << Rwc.at<float>(2,2) << " "  << twc.at<float>(2) << std::endl;
   }
   f.close();
-  std::cout << std::endl << "Trajectory saved!\n";
+  std::cout << "\nTrajectory saved!\n";
+}
+
+void SlamSystem::SaveKeyFrameTrajectory(const std::string& filename) const {
+  std::cout << "\nSaving keyframe trajectory to " << filename << " ...\n";
+
+  std::vector<KeyFrame*> keyframes = map_->GetAllKeyFrames();
+  std::sort(keyframes.begin(), keyframes.end(), KeyFrame::lId);
+
+  // Transform all keyframes so that the first keyframe is at the origin.
+  // After a loop closure the first keyframe might not be at the origin.
+  //cv::Mat Two = keyframes[0]->GetPoseInverse();
+
+  std::ofstream f;
+  f.open(filename.c_str());
+  f << std::fixed;
+
+  for (size_t i = 0; i < keyframes.size(); ++i) {
+    KeyFrame* pKF = keyframes[i];
+
+    // pKF->SetPose(pKF->GetPose()*Two);
+
+    if(pKF->isBad()) {
+      continue;
+    }
+
+    cv::Mat R = pKF->GetRotation().t();
+    cv::Mat t = pKF->GetCameraCenter();
+    f << std::setprecision(9) 
+      <<  R.at<float>(0,0) << " " << R.at<float>(0,1)  << " " << R.at<float>(0,2) << " "  << t.at<float>(0) << " " <<
+          R.at<float>(1,0) << " " << R.at<float>(1,1)  << " " << R.at<float>(1,2) << " "  << t.at<float>(1) << " " <<
+          R.at<float>(2,0) << " " << R.at<float>(2,1)  << " " << R.at<float>(2,2) << " "  << t.at<float>(2) << std::endl;
+  }
+
+  f.close();
+  std::cout << "\nTrajectory saved!\n";
 }
