@@ -76,9 +76,8 @@ int main(int argc, char **argv) {
   }
 
   // Set up SLAM system
-  std::string vocab_filename = "vocabulary/ORBvoc.txt";
   SENSOR_TYPE sensor = SENSOR_TYPE::MONOCULAR;
-  SlamSystem slam_system(vocab_filename, config_file, sensor);
+  SlamSystem slam_system(config_file, sensor);
   
   // For tracking statistics
   std::vector<double> tracked_times(timestamps.size(), -1.0);
