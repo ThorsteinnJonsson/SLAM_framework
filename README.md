@@ -1,6 +1,7 @@
-# stereo_slam
+# SLAM framework
 
 
 ## TODO
-- Refactor loop closer
-- Refactor local mapper
+- Refactor optimizer
+- Refactor frame
+- Refactor keyframe

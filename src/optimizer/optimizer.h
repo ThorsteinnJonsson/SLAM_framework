@@ -12,16 +12,9 @@
 
 class Optimizer {
 public:
-  // TODO this function can probably be private
-  static void BundleAdjustment(const std::vector<KeyFrame*>& vpKF, 
-                               const std::vector<MapPoint*>& vpMP,
-                               int nIterations=5, 
-                               bool* pbStopFlag=nullptr, 
-                               const unsigned long nLoopKF=0,
-                               const bool bRobust=true);
 
   static void GlobalBundleAdjustemnt(const std::shared_ptr<Map>& pMap, 
-                                     int nIterations=5, 
+                                     const int nIterations=5, 
                                      bool *pbStopFlag=nullptr,
                                      const unsigned long nLoopKF=0, 
                                      const bool bRobust=true);
@@ -49,6 +42,14 @@ public:
                           g2o::Sim3& g2oS12, 
                           const float th2, 
                           const bool bFixScale);
+
+private:
+  static void BundleAdjustment(const std::vector<KeyFrame*>& vpKF, 
+                               const std::vector<MapPoint*>& vpMP,
+                               const int nIterations=5, 
+                               bool* pbStopFlag=nullptr, 
+                               const unsigned long nLoopKF=0,
+                               const bool bRobust=true);
 };
 
 #endif // SRC_OPTIMIZER_H_

@@ -81,7 +81,7 @@ public:
   // Enable/Disable bad flag changes
   void SetNotErase();
   void SetErase();
-
+  
   // Set/check bad flag
   void SetBadFlag();
   bool isBad() const;
