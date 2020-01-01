@@ -1,6 +1,6 @@
 // Main
 
-#pragma GCC optimize ("O0")
+// #pragma GCC optimize ("O0")
 
 #include "slam_system.h"
 
@@ -52,6 +52,12 @@ void LoadKittiImages(const std::string& kitti_path,
 
 int main(int argc, char **argv) {
 
+  if (argv[1] == nullptr){
+		std::cout << "No path specified for config json-file." << std::endl;
+		return 0;
+	}
+  const std::string config_file = argv[1];
+
   std::cout << "MONOCULAR SLAM\n";
 
   ros::init(argc, argv, "stereo_slam");
@@ -70,10 +76,8 @@ int main(int argc, char **argv) {
   }
 
   // Set up SLAM system
-  std::string vocab_filename = "vocabulary/ORBvoc.txt";
-  std::string config_file = "";
   SENSOR_TYPE sensor = SENSOR_TYPE::MONOCULAR;
-  SlamSystem slam_system(vocab_filename, config_file, sensor);
+  SlamSystem slam_system(config_file, sensor);
   
   // For tracking statistics
   std::vector<double> tracked_times(timestamps.size(), -1.0);

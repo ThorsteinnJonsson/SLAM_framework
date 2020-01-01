@@ -13,12 +13,10 @@
 #include "optimizer/optimizer.h"
 #include "solvers/pnp_solver.h"
 
-// #pragma GCC optimize ("O0")
-
 Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
                  const std::shared_ptr<Map>& map,
                  const std::shared_ptr<KeyframeDatabase>& keyframe_db, 
-                 const std::string& settings_path, // TODO
+                 const nlohmann::json& config, 
                  const SENSOR_TYPE sensor)
       : use_visual_odometry_(false)
       , orb_vocabulary_(orb_vocabulary)
@@ -28,21 +26,10 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
       , state_(TrackingState::NO_IMAGES_YET)
       , sensor_type_(sensor)
       , is_only_tracking_(false) {
-  // Load camera parameters from settings file
-  // cv::FileStorage fSettings(settings_path, cv::FileStorage::READ);
-  // float fx = fSettings["Camera.fx"];
-  // float fy = fSettings["Camera.fy"];
-  // float cx = fSettings["Camera.cx"];
-  // float cy = fSettings["Camera.cy"];
-  float fx = 718.856f; // TODO, just use from kitti00-02 for now
-  float fy = 718.856f;
-  float cx = 607.1928f;
-  float cy = 185.2157f;
-  // Kitti03
-  // float fx = 721.5377f; // TODO, just use from kitti00-02 for now
-  // float fy = 721.5377f;
-  // float cx = 609.5593f;
-  // float cy = 172.854f;
+  float fx = config["camera"]["fx"];
+  float fy = config["camera"]["fy"];
+  float cx = config["camera"]["cx"];
+  float cy = config["camera"]["cy"];
 
   cv::Mat K = cv::Mat::eye(3,3,CV_32F);
   K.at<float>(0,0) = fx;
@@ -52,51 +39,35 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   K.copyTo(calibration_mat_);
 
   cv::Mat DistCoef(4,1,CV_32F);
-  // DistCoef.at<float>(0) = fSettings["Camera.k1"];
-  // DistCoef.at<float>(1) = fSettings["Camera.k2"];
-  // DistCoef.at<float>(2) = fSettings["Camera.p1"];
-  // DistCoef.at<float>(3) = fSettings["Camera.p2"];
-  // const float k3 = fSettings["Camera.k3"];
-  DistCoef.at<float>(0) = 0.0f; // TODO just use kitti00 params for now
-  DistCoef.at<float>(1) = 0.0f;
-  DistCoef.at<float>(2) = 0.0f;
-  DistCoef.at<float>(3) = 0.0f;
-  const float k3 = 0.0f;
+  DistCoef.at<float>(0) = config["camera"]["k1"];
+  DistCoef.at<float>(1) = config["camera"]["k2"];
+  DistCoef.at<float>(2) = config["camera"]["p1"];
+  DistCoef.at<float>(3) = config["camera"]["p2"];
+  const float k3 = config["camera"]["k3"];
   if (k3 != 0) {
     DistCoef.resize(5);
     DistCoef.at<float>(4) = k3;
   }
   DistCoef.copyTo(dist_coeff_);
 
-  // scaled_baseline_ = fSettings["Camera.bf"];
+  scaled_baseline_ = config["camera"]["bf"];
   scaled_baseline_ = 386.1448f; // TODO just used from kitti00-02
-  // scaled_baseline_ = 387.5744f; // TODO just used from kitti03
   
 
-  // float fps = fSettings["Camera.fps"];
-  float fps = 10.0f; // TODO from kitti00
-  if (fps == 0) {
-    fps = 30.0f;
-  }
+  float fps = config["camera"]["fps"];
 
   // Max/Min Frames to insert keyframes and to check relocalisation
   min_frames_ = 0;
   max_frames_ = fps;
 
-  // is_rgb_ = fSettings["Camera.RGB"];
-  is_rgb_ = 1;
+  is_rgb_ = config["camera"]["rgb"];
 
   // Load ORB params
-  // int nFeatures = fSettings["ORBextractor.nFeatures"];
-  // float fScaleFactor = fSettings["ORBextractor.scaleFactor"];
-  // int nLevels = fSettings["ORBextractor.nLevels"];
-  // int fIniThFAST = fSettings["ORBextractor.iniThFAST"];
-  // int fMinThFAST = fSettings["ORBextractor.minThFAST"];
-  int nFeatures = 2000;
-  float fScaleFactor = 1.2f;
-  int nLevels = 8;
-  int fIniThFAST = 20;
-  int fMinThFAST = 7;
+  int nFeatures = config["orb_parameters"]["num_features"];
+  float fScaleFactor = config["orb_parameters"]["scale_factor"];
+  int nLevels = config["orb_parameters"]["num_levels"];
+  int fIniThFAST = config["orb_parameters"]["ini_thresh_FAST"];
+  int fMinThFAST = config["orb_parameters"]["min_thresh_FAST"];
 
   orb_extractor_left_ = std::make_shared<ORBextractor>(nFeatures,
                                                        fScaleFactor,
@@ -112,24 +83,19 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   }
   if (sensor == SENSOR_TYPE::MONOCULAR) {
     orb_extractor_ini_ = std::make_shared<ORBextractor>(2*nFeatures,
-                                                       fScaleFactor,
-                                                       nLevels,
-                                                       fIniThFAST,
-                                                       fMinThFAST);
+                                                        fScaleFactor,
+                                                        nLevels,
+                                                        fIniThFAST,
+                                                        fMinThFAST);
   }
 
   if (sensor == SENSOR_TYPE::STEREO || sensor == SENSOR_TYPE::RGBD) {
-    depth_threshold_ = scaled_baseline_ * static_cast<float>(35) / fx;
+    const int th_depth = config["tuning_params"]["depth_threshold"];
+    depth_threshold_ = scaled_baseline_ * static_cast<float>(th_depth) / fx;
   }
   
   if(sensor == SENSOR_TYPE::RGBD) {
-    // depth_map_factor_ = fSettings["DepthMapFactor"];
-    depth_map_factor_ = 0; // from kitti params
-    // if (std::fabs(depth_map_factor_) < 1e-5) {
-    //   depth_map_factor_ = 1;
-    // } else {
-    //   depth_map_factor_ = 1.0f / depth_map_factor_;
-    // }
+    depth_map_factor_ = config["camera"]["depth_map_factor"];
     const bool is_negliable = std::fabs(depth_map_factor_) < 1e-5;
     depth_map_factor_ = is_negliable ? 1.0f : 1.0f / depth_map_factor_;
   }

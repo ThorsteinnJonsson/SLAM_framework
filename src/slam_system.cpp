@@ -1,16 +1,21 @@
 #include "slam_system.h"
 
 #include <unistd.h> // usleep
+#include "json.hpp"
 
 // #pragma GCC optimize ("O0")
 
-SlamSystem::SlamSystem(const std::string& vocabulary_path, 
-                       const std::string& settings_path, 
+SlamSystem::SlamSystem(const std::string& config_path, 
                        const SENSOR_TYPE sensor) 
         : sensor_type_(sensor) 
         , activate_localization_mode_(false)
         , deactivate_localization_mode_(false) {
-    
+  
+  // Parse json
+  std::ifstream input_stream(config_path);
+  nlohmann::json config;
+  input_stream >> config;
+
   // Output welcome message
   std::cout << "\n" << "Starting SLAM system." << "\n";
 
@@ -27,10 +32,10 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
   std::cout << "\n" << "Loading ORB Vocabulary. This could take a while..." << "\n";
 
   orb_vocabulary_ = std::make_shared<OrbVocabulary>();
-  bool load_sucessful = orb_vocabulary_->loadFromTextFile(vocabulary_path);
+  bool load_sucessful = orb_vocabulary_->loadFromTextFile(config["orb_vocabulary"]);
   if (!load_sucessful) {
       std::cerr << "Wrong path to vocabulary. " << "\n";
-      std::cerr << "Failed to open: " << vocabulary_path << "\n";
+      std::cerr << "Failed to open: " << config["orb_vocabulary"] << "\n";
       exit(-1);
   }
   std::cout << "Vocabulary loaded!" << "\n" << "\n";
@@ -46,7 +51,7 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
   tracker_ = std::make_shared<Tracker>(orb_vocabulary_, 
                                        map_, 
                                        keyframe_database_, 
-                                       settings_path, 
+                                       config, 
                                        sensor_type_);
 
   //Initialize the Local Mapping thread and launch

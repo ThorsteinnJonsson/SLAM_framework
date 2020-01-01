@@ -118,6 +118,7 @@ target_include_directories(stereo_slam PUBLIC
                            ${PROJECT_SOURCE_DIR}
                            ${EIGEN3_INCLUDE_DIR}
                            ${catkin_INCLUDE_DIRS}
+                           ${PROJECT_SOURCE_DIR}/third_party/nlohmann
 )
 
 target_link_libraries(stereo_slam PUBLIC

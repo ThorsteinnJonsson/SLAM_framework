@@ -24,8 +24,7 @@ class LoopCloser;
 
 class SlamSystem {
 public:
-  explicit SlamSystem(const std::string& vocabulary_path, 
-                      const std::string& settings_path, 
+  explicit SlamSystem(const std::string& settings_path, 
                       const SENSOR_TYPE sensor);
   ~SlamSystem();
 
