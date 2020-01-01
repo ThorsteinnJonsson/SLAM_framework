@@ -50,6 +50,12 @@ void LoadKittiImages(const std::string& kitti_path,
 
 int main(int argc, char **argv) {
 
+  if (argv[1] == nullptr){
+		std::cout << "No path specified for config json-file." << std::endl;
+		return 0;
+	}
+  const std::string config_file = argv[1];
+
   std::cout << "STEREO SLAM\n";
 
   ros::init(argc, argv, "stereo_slam");
@@ -69,7 +75,6 @@ int main(int argc, char **argv) {
 
   // Set up SLAM system
   std::string vocab_filename = "vocabulary/ORBvoc.txt";
-  std::string config_file = "/home/steini/Dev/stereo_slam/config/kitti_config_stereo.json";
   SENSOR_TYPE sensor = SENSOR_TYPE::STEREO;
   SlamSystem slam_system(vocab_filename, config_file, sensor);
   
