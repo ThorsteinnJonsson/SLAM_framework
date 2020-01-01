@@ -15,8 +15,6 @@
 #include <mutex>
 #include <memory>
 
-#pragma GCC optimize ("O0") // TODO remove
-
 void Optimizer::GlobalBundleAdjustemnt(const std::shared_ptr<Map>& map, 
                                        const int num_iter, 
                                        bool* stop_flag, 
