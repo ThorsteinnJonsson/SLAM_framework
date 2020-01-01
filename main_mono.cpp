@@ -1,6 +1,6 @@
 // Main
 
-#pragma GCC optimize ("O0")
+// #pragma GCC optimize ("O0")
 
 #include "slam_system.h"
 
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
 
   // Set up SLAM system
   std::string vocab_filename = "vocabulary/ORBvoc.txt";
-  std::string config_file = "";
+  std::string config_file = "/home/steini/Dev/stereo_slam/config/kitti_config_stereo.json";
   SENSOR_TYPE sensor = SENSOR_TYPE::MONOCULAR;
   SlamSystem slam_system(vocab_filename, config_file, sensor);
   

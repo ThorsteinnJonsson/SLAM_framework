@@ -1,0 +1,30 @@
+{
+  "orb_vocabulary": "vocabulary/ORBvoc.txt",
+  "camera": {
+    "fx": 718.856,
+    "fy": 718.856,
+    "cx": 607.1928,
+    "cy": 185.2157,
+    "k1": 0.0,
+    "k2": 0.0,
+    "p1": 0.0,
+    "p2": 0.0,
+    "k3": 0.0,
+    "width": 1241,
+    "height":376,
+    "fps": 10.0,
+    "bf": 386.1448,
+    "rgb": true,
+    "depth_map_factor": 0
+  },
+  "tuning_params": {
+    "depth_threshold": 35
+  },
+  "orb_parameters": {
+    "num_features": 2000,
+    "scale_factor": 1.2,
+    "num_levels": 8,
+    "ini_thresh_FAST": 20, 
+    "min_thresh_FAST": 7
+  }
+}

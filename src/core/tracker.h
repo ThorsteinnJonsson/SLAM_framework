@@ -15,6 +15,7 @@
 #include "util/initializer.h"
 #include "util/sensor_type.h"
 #include "util/tracking_state.h"
+#include "json.hpp"
 
 #include <memory>
 
@@ -29,7 +30,7 @@ public:
   Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary, 
           const std::shared_ptr<Map>& map,
           const std::shared_ptr<KeyframeDatabase>& keyframe_db, 
-          const std::string& settings_path, 
+          const nlohmann::json& config, 
           const SENSOR_TYPE sensor);
   ~Tracker() {}
 

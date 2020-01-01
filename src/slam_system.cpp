@@ -1,16 +1,22 @@
 #include "slam_system.h"
 
 #include <unistd.h> // usleep
+#include "json.hpp"
 
 // #pragma GCC optimize ("O0")
 
 SlamSystem::SlamSystem(const std::string& vocabulary_path, 
-                       const std::string& settings_path, 
+                       const std::string& config_path, 
                        const SENSOR_TYPE sensor) 
         : sensor_type_(sensor) 
         , activate_localization_mode_(false)
         , deactivate_localization_mode_(false) {
-    
+  
+  // Parse json
+  std::ifstream input_stream(config_path);
+  nlohmann::json config;
+  input_stream >> config;
+
   // Output welcome message
   std::cout << "\n" << "Starting SLAM system." << "\n";
 
@@ -46,7 +52,7 @@ SlamSystem::SlamSystem(const std::string& vocabulary_path,
   tracker_ = std::make_shared<Tracker>(orb_vocabulary_, 
                                        map_, 
                                        keyframe_database_, 
-                                       settings_path, 
+                                       config, 
                                        sensor_type_);
 
   //Initialize the Local Mapping thread and launch
