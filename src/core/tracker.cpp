@@ -706,7 +706,7 @@ bool Tracker::TrackReferenceKeyFrame() {
   current_frame_.mvpMapPoints = vpMapPointMatches;
   current_frame_.SetPose(last_frame_.mTcw);
 
-  Optimizer::PoseOptimization(&current_frame_);
+  Optimizer::PoseOptimization(current_frame_);
 
   // Discard outliers
   int nmatchesMap = 0;
@@ -830,7 +830,7 @@ bool Tracker::TrackWithMotionModel() {
   }
       
   // Optimize frame pose with all matches
-  Optimizer::PoseOptimization(&current_frame_);
+  Optimizer::PoseOptimization(current_frame_);
 
   // Discard outliers
   int nmatchesMap = 0;
@@ -956,7 +956,7 @@ bool Tracker::Relocalization() {
           }
         }
 
-        int nGood = Optimizer::PoseOptimization(&current_frame_);
+        int nGood = Optimizer::PoseOptimization(current_frame_);
 
         if(nGood < 10) {
           continue;
@@ -977,7 +977,7 @@ bool Tracker::Relocalization() {
                                                         100);
 
           if (nadditional + nGood >= 50) {
-            nGood = Optimizer::PoseOptimization(&current_frame_);
+            nGood = Optimizer::PoseOptimization(current_frame_);
 
             // If many inliers but still not enough, search by projection again in a narrower window
             // the camera has been already optimized with many points
@@ -996,7 +996,7 @@ bool Tracker::Relocalization() {
 
               // Final optimization
               if (nGood + nadditional >= 50) {
-                nGood = Optimizer::PoseOptimization(&current_frame_);
+                nGood = Optimizer::PoseOptimization(current_frame_);
 
                 for (int io = 0; io < current_frame_.mN; ++io) {
                   if (current_frame_.mvbOutlier[io]) {
@@ -1176,7 +1176,7 @@ bool Tracker::TrackLocalMap() {
   SearchLocalPoints();
 
   // Optimize Pose
-  Optimizer::PoseOptimization(&current_frame_);
+  Optimizer::PoseOptimization(current_frame_);
   num_inlier_matches_ = 0;
 
   // Update MapPoints Statistics
