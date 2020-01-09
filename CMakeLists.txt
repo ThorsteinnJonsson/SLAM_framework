@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(stereo_slam)
+project(stone_slam)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -83,50 +83,51 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 ##########################################
 ## Internal libraries                   ##
 ##########################################
-add_library(stereo_slam SHARED
+add_subdirectory(src)
+# add_library(stone_slam SHARED
             
-            src/slam_system.cpp
+#             src/slam_system.cpp
             
-            src/core/tracker.cpp
-            src/core/local_mapper.cpp
-            src/core/loop_closer.cpp
+#             src/core/tracker.cpp
+#             src/core/local_mapper.cpp
+#             src/core/loop_closer.cpp
             
-            src/data/map.cpp
-            src/data/map_point.cpp
-            src/data/frame.cpp
-            src/data/keyframe.cpp
-            src/data/keyframe_database.cpp
+#             src/data/map.cpp
+#             src/data/map_point.cpp
+#             src/data/frame.cpp
+#             src/data/keyframe.cpp
+#             src/data/keyframe_database.cpp
 
-            src/solvers/sim3solver.cpp
-            src/solvers/pnp_solver.cpp
+#             src/solvers/sim3solver.cpp
+#             src/solvers/pnp_solver.cpp
 
-            src/optimizer/optimizer.cpp
+#             src/optimizer/optimizer.cpp
 
-            src/orb_features/orb_extractor.cpp
-            src/orb_features/orb_matcher.cpp
+#             src/orb_features/orb_extractor.cpp
+#             src/orb_features/orb_matcher.cpp
 
-            src/util/initializer.cpp
-            src/util/converter.cpp
+#             src/util/initializer.cpp
+#             src/util/converter.cpp
 
-            src/ros/ros_publisher.cpp
-)
+#             src/ros/ros_publisher.cpp
+# )
 
-add_dependencies(stereo_slam ${catkin_EXPORTED_TARGETS})
+# add_dependencies(stone_slam ${catkin_EXPORTED_TARGETS})
 
-target_include_directories(stereo_slam PUBLIC
-                           ${PROJECT_SOURCE_DIR}/src
-                           ${PROJECT_SOURCE_DIR}
-                           ${EIGEN3_INCLUDE_DIR}
-                           ${catkin_INCLUDE_DIRS}
-                           ${PROJECT_SOURCE_DIR}/third_party/nlohmann
-)
+# target_include_directories(stone_slam PUBLIC
+#                            ${PROJECT_SOURCE_DIR}/src
+#                            ${PROJECT_SOURCE_DIR}
+#                            ${EIGEN3_INCLUDE_DIR}
+#                            ${catkin_INCLUDE_DIRS}
+#                            ${PROJECT_SOURCE_DIR}/third_party/nlohmann
+# )
 
-target_link_libraries(stereo_slam PUBLIC
-                      ${OpenCV_LIBS}
-                      ${catkin_LIBRARIES}
-                      DBoW2
-                      g2o
-)
+# target_link_libraries(stone_slam PUBLIC
+#                       ${OpenCV_LIBS}
+#                       ${catkin_LIBRARIES}
+#                       DBoW2
+#                       g2o
+# )
 
 
 ##########################################
@@ -138,7 +139,7 @@ add_executable(main_stereo examples/main_stereo.cpp)
 target_link_libraries(main_stereo 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stereo_slam
+                      stone_slam
 )
 
 ## Monocular
@@ -147,5 +148,5 @@ add_executable(main_mono examples/main_mono.cpp)
 target_link_libraries(main_mono 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stereo_slam
+                      stone_slam
 )

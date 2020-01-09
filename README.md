@@ -14,6 +14,5 @@ TODO
 
 
 ## TODO list
-- Separate examples from slam library better
 - Refactor frame
 - Refactor keyframe

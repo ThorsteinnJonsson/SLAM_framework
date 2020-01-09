@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
 
   std::cout << "MONOCULAR SLAM\n";
 
-  ros::init(argc, argv, "stereo_slam");
+  ros::init(argc, argv, "slam");
 
   // Input TODO: change to actual input 
   std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";

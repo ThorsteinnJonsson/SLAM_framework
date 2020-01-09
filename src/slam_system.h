@@ -1,5 +1,5 @@
-#ifndef SRC_STEREO_SLAM_H_
-#define SRC_STEREO_SLAM_H_
+#ifndef SRC_SLAM_SYSTEM_H_
+#define SRC_SLAM_SYSTEM_H_
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -116,4 +116,4 @@ private:
  
 };
 
-# endif //SRC_STEREO_SLAM_H_
+# endif //SRC_SLAM_SYSTEM_H_
