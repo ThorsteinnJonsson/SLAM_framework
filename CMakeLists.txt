@@ -133,11 +133,7 @@ target_link_libraries(stereo_slam PUBLIC
 ## Executables                          ##
 ##########################################
 ## STEREO
-add_executable(main_stereo main_stereo.cpp)
-
-# target_include_directories(main_stereo PUBLIC 
-#                            # ${OpenCV_INCLUDE_DIRS}
-# )
+add_executable(main_stereo examples/main_stereo.cpp)
 
 target_link_libraries(main_stereo 
                       ${OpenCV_LIBS}
@@ -146,11 +142,7 @@ target_link_libraries(main_stereo
 )
 
 ## Monocular
-add_executable(main_mono main_mono.cpp)
-
-# target_include_directories(main_mono PUBLIC 
-#                            # ${OpenCV_INCLUDE_DIRS}
-# )
+add_executable(main_mono examples/main_mono.cpp)
 
 target_link_libraries(main_mono 
                       ${OpenCV_LIBS}

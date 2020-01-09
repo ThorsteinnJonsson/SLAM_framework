@@ -14,6 +14,6 @@ TODO
 
 
 ## TODO list
-- Put input parameters in json
+- Separate examples from slam library better
 - Refactor frame
 - Refactor keyframe
