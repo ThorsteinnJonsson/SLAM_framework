@@ -66,8 +66,8 @@ SlamSystem::SlamSystem(const std::string& config_path,
                                               sensor_type_ != SENSOR_TYPE::MONOCULAR);
   loop_closing_thread_.reset(new std::thread(&LoopCloser::Run, loop_closer_));
 
-  
-  if (ros_output_enabled) {
+  ros_output_enabled_ = config["use_ros"];
+  if (ros_output_enabled_) {
     ros_publisher_ = std::make_shared<RosPublisher>(map_, tracker_);
     ros_pub_thread_.reset(new std::thread(&RosPublisher::Run, ros_publisher_));
   }
