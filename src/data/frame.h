@@ -12,9 +12,6 @@
 
 #include <memory>
 
-#define FRAME_GRID_ROWS 48 // TODO not good to use macros
-#define FRAME_GRID_COLS 64
-
 // Forward declarations
 class MapPoint;
 class KeyFrame;
@@ -105,6 +102,9 @@ public:
   cv::Mat UnprojectStereo(const int i);
 
 public:
+  static constexpr int grid_rows = 48;
+  static constexpr int grid_cols = 68;
+
   // Vocabulary used for relocalization.
   std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
 
@@ -168,7 +168,7 @@ public:
   // when projecting MapPoints.
   static float mfGridElementWidthInv;
   static float mfGridElementHeightInv;
-  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS]; 
+  std::vector<std::size_t> mGrid[grid_cols][grid_rows]; 
   // TODO above line have more clear syntax. This creates a double array of std::vectors
 
   // Camera pose.
@@ -202,7 +202,7 @@ private:
   // Undistort keypoints given OpenCV distortion parameters.
   // Only for the RGB-D case. Stereo must be already rectified!
   // (called in the constructor).
-  void UndistortKeyPoints(); // TODO probably redundant for only stereo camera
+  void UndistortKeyPoints();
 
   // Computes image bounds for the undistorted image (called in the constructor).
   void ComputeImageBounds(const cv::Mat& imLeft);

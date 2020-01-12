@@ -47,8 +47,8 @@ Frame::Frame(const Frame& frame)
       , mvInvScaleFactors(frame.mvInvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2) {
-  for (int i = 0; i < FRAME_GRID_COLS; ++i) {
-    for (int j = 0; j < FRAME_GRID_ROWS; ++j) {
+  for (int i = 0; i < grid_cols; ++i) {
+    for (int j = 0; j < grid_rows; ++j) {
       mGrid[i][j] = frame.mGrid[i][j];
     }
   }
@@ -109,8 +109,8 @@ Frame::Frame(const cv::Mat& imLeft,
   if (mbInitialComputations)  {
     ComputeImageBounds(imLeft);
 
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
+    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
+    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
 
     fx = K.at<float>(0,0);
     fy = K.at<float>(1,1);
@@ -177,8 +177,8 @@ Frame::Frame(const cv::Mat& imGray,
   if (mbInitialComputations) {
     ComputeImageBounds(imGray);
 
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
+    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
+    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
 
     fx = K.at<float>(0,0);
     fy = K.at<float>(1,1);
@@ -246,8 +246,8 @@ Frame::Frame(const cv::Mat& imGray,
   if(mbInitialComputations) {
     ComputeImageBounds(imGray);
 
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
+    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
+    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
 
     fx = K.at<float>(0,0);
     fy = K.at<float>(1,1);
@@ -266,9 +266,9 @@ Frame::Frame(const cv::Mat& imGray,
 
 
 void Frame::AssignFeaturesToGrid() {
-  int nReserve = 0.5f * mN / (FRAME_GRID_COLS * FRAME_GRID_ROWS);
-  for(unsigned int i=0; i < FRAME_GRID_COLS; ++i) {
-    for (unsigned int j=0; j < FRAME_GRID_ROWS; ++j) {
+  int nReserve = 0.5f * mN / (grid_cols * grid_rows);
+  for(unsigned int i=0; i < grid_cols; ++i) {
+    for (unsigned int j=0; j < grid_rows; ++j) {
       mGrid[i][j].reserve(nReserve);
     }
   }
@@ -375,7 +375,7 @@ bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
   posY = round( (kp.pt.y - mnMinY) * mfGridElementHeightInv);
 
   //Keypoint's coordinates are undistorted, which could cause to go out of the image
-  if( posX < 0 || posX >= FRAME_GRID_COLS || posY < 0 || posY >= FRAME_GRID_ROWS ) {
+  if( posX < 0 || posX >= grid_cols || posY < 0 || posY >= grid_rows ) {
     return false;
   }
   return true;
@@ -391,17 +391,17 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
   const int nMinCellX = std::max(0, 
                                   static_cast<int>(std::floor((x-mnMinX-r) * mfGridElementWidthInv)));
-  const int nMaxCellX = std::min(static_cast<int>(FRAME_GRID_COLS-1),
+  const int nMaxCellX = std::min(static_cast<int>(grid_cols-1),
                                   static_cast<int>(std::ceil((x-mnMinX+r) * mfGridElementWidthInv)));
-  if( nMaxCellX < 0 || nMinCellX >= FRAME_GRID_COLS ) {
+  if( nMaxCellX < 0 || nMinCellX >= grid_cols ) {
     return vIndices;
   }
 
   const int nMinCellY = std::max(0,
                                   static_cast<int>(std::floor((y-mnMinY-r) * mfGridElementHeightInv)));
-  const int nMaxCellY = std::min(static_cast<int>(FRAME_GRID_ROWS-1),
+  const int nMaxCellY = std::min(static_cast<int>(grid_rows-1),
                                   static_cast<int>(std::ceil((y-mnMinY+r) * mfGridElementHeightInv)));
-  if(nMaxCellY < 0 || nMinCellY >= FRAME_GRID_ROWS) {
+  if(nMaxCellY < 0 || nMinCellY >= grid_rows) {
     return vIndices;
   }
 
