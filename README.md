@@ -16,3 +16,5 @@ TODO
 ## TODO list
 - Refactor frame
 - Refactor keyframe
+- Resolve all TODOs
+- Make proper README
