@@ -103,7 +103,7 @@ public:
 
 public:
   static constexpr int grid_rows = 48;
-  static constexpr int grid_cols = 68;
+  static constexpr int grid_cols = 64;
 
   // Vocabulary used for relocalization.
   std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
@@ -168,8 +168,8 @@ public:
   // when projecting MapPoints.
   static float mfGridElementWidthInv;
   static float mfGridElementHeightInv;
-  std::vector<std::size_t> mGrid[grid_cols][grid_rows]; 
-  // TODO above line have more clear syntax. This creates a double array of std::vectors
+
+  const std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols>& GetGrid() const { return grid_; }
 
   // Camera pose.
   cv::Mat mTcw;
@@ -208,6 +208,7 @@ private:
   void ComputeImageBounds(const cv::Mat& imLeft);
 
   // Assign keypoints to the grid for speed up feature matching (called in the constructor).
+  std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
   void AssignFeaturesToGrid();
 
   // Rotation, translation and camera center

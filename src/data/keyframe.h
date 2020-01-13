@@ -22,7 +22,7 @@ class KeyframeDatabase;
 
 class KeyFrame{
 public:
-  KeyFrame(const Frame& F, 
+  KeyFrame(const Frame& frame, 
            const std::shared_ptr<Map>& pMap, 
            const std::shared_ptr<KeyframeDatabase>& pKFDB);
   ~KeyFrame() {}
@@ -41,7 +41,6 @@ public:
   // Covisibility graph functions
   void AddConnection(KeyFrame* pKF, const int weight);
   void EraseConnection(KeyFrame* pKF);
-  void UpdateBestCovisibles(); // TODO can't this be private??
   void UpdateConnections();
   std::set<KeyFrame*> GetConnectedKeyFrames();
   std::vector<KeyFrame*> GetVectorCovisibleKeyFrames();
@@ -89,10 +88,10 @@ public:
   // Compute Scene Depth (q=2 median). Used in monocular.
   float ComputeSceneMedianDepth(const int q);
 
-  static bool weightComp(int a, int b) { return a > b; } // TODO just use lambda
-
   static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->mnId < pKF2->mnId; }
 
+private:
+  void UpdateBestCovisibles();
 
 // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -103,10 +102,8 @@ public:
   const double mTimeStamp;
 
   // Grid (to speed up feature matching)
-  const int mnGridCols;
-  const int mnGridRows;
-  const float mfGridElementWidthInv;
-  const float mfGridElementHeightInv;
+  static constexpr int grid_rows = 48;
+  static constexpr int grid_cols = 64;
 
   // Variables used by the tracking
   long unsigned int mnTrackReferenceForFrame;
@@ -181,7 +178,10 @@ protected:
   std::shared_ptr<OrbVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
-  std::vector<std::vector<std::vector<size_t>>> mGrid;
+  const float mfGridElementWidthInv;
+  const float mfGridElementHeightInv;
+
+  std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
 
   std::map<KeyFrame*,int> mConnectedKeyFrameWeights;
   std::vector<KeyFrame*> mvpOrderedConnectedKeyFrames;

@@ -5,15 +5,11 @@
 // Define static variables with initial values
 long unsigned int KeyFrame::nNextId = 0;
 
-KeyFrame::KeyFrame(const Frame& F, 
+KeyFrame::KeyFrame(const Frame& frame, 
                    const std::shared_ptr<Map>& pMap, 
                    const std::shared_ptr<KeyframeDatabase>& pKFDB) 
-      : mnFrameId(F.mnId)
-      , mTimeStamp(F.mTimeStamp)
-      , mnGridCols(F.grid_cols)
-      , mnGridRows(F.grid_rows)
-      , mfGridElementWidthInv(F.mfGridElementWidthInv)
-      , mfGridElementHeightInv(F.mfGridElementHeightInv)
+      : mnFrameId(frame.mnId)
+      , mTimeStamp(frame.mTimeStamp)
       , mnTrackReferenceForFrame(0)
       , mnFuseTargetForKF(0)
       , bundle_adj_local_id_for_keyframe(0)
@@ -23,55 +19,52 @@ KeyFrame::KeyFrame(const Frame& F,
       , mnRelocQuery(0)
       , mnRelocWords(0)
       , bundle_adj_global_for_keyframe_id(0)
-      , fx(F.fx)
-      , fy(F.fy)
-      , cx(F.cx)
-      , cy(F.cy)
-      , invfx(F.invfx)
-      , invfy(F.invfy)
-      , mbf(F.mbf)
-      , mb(F.mb)
-      , mThDepth(F.mThDepth)
-      , N(F.mN)
-      , mvKeys(F.mvKeys)
-      , mvKeysUn(F.mvKeysUn)
-      , mvuRight(F.mvuRight)
-      , mvDepth(F.mvDepth)
-      , mDescriptors(F.mDescriptors.clone())
-      , mBowVec(F.mBowVec)
-      , mFeatVec(F.mFeatVec)
-      , mnScaleLevels(F.mnScaleLevels)
-      , mfScaleFactor(F.mfScaleFactor)
-      , mfLogScaleFactor(F.mfLogScaleFactor)
-      , mvScaleFactors(F.mvScaleFactors)
-      , mvLevelSigma2(F.mvLevelSigma2)
-      , mvInvLevelSigma2(F.mvInvLevelSigma2)
-      , mnMinX(F.mnMinX)
-      , mnMinY(F.mnMinY)
-      , mnMaxX(F.mnMaxX)
-      , mnMaxY(F.mnMaxY)
-      , mK(F.mK)
-      , mvpMapPoints(F.mvpMapPoints)
+      , fx(frame.fx)
+      , fy(frame.fy)
+      , cx(frame.cx)
+      , cy(frame.cy)
+      , invfx(frame.invfx)
+      , invfy(frame.invfy)
+      , mbf(frame.mbf)
+      , mb(frame.mb)
+      , mThDepth(frame.mThDepth)
+      , N(frame.mN)
+      , mvKeys(frame.mvKeys)
+      , mvKeysUn(frame.mvKeysUn)
+      , mvuRight(frame.mvuRight)
+      , mvDepth(frame.mvDepth)
+      , mDescriptors(frame.mDescriptors.clone())
+      , mBowVec(frame.mBowVec)
+      , mFeatVec(frame.mFeatVec)
+      , mnScaleLevels(frame.mnScaleLevels)
+      , mfScaleFactor(frame.mfScaleFactor)
+      , mfLogScaleFactor(frame.mfLogScaleFactor)
+      , mvScaleFactors(frame.mvScaleFactors)
+      , mvLevelSigma2(frame.mvLevelSigma2)
+      , mvInvLevelSigma2(frame.mvInvLevelSigma2)
+      , mnMinX(frame.mnMinX)
+      , mnMinY(frame.mnMinY)
+      , mnMaxX(frame.mnMaxX)
+      , mnMaxY(frame.mnMaxY)
+      , mK(frame.mK)
+      , mvpMapPoints(frame.mvpMapPoints)
       , mpKeyFrameDB(pKFDB)
-      , mpORBvocabulary(F.mpORBvocabulary)
+      , mpORBvocabulary(frame.mpORBvocabulary)
+      , mfGridElementWidthInv(frame.mfGridElementWidthInv)
+      , mfGridElementHeightInv(frame.mfGridElementHeightInv)
       , mbFirstConnection(true)
       , mpParent(nullptr)
       , mbNotErase(false)
       , mbToBeErased(false)
       , mbBad(false)
-      , mHalfBaseline(F.mb/2)
+      , mHalfBaseline(frame.mb/2)
       , mpMap(pMap) {
+
   mnId = nNextId++;
 
-  mGrid.resize(mnGridCols);
-  for(int i=0; i < mnGridCols; ++i) {
-    mGrid[i].resize(mnGridRows);
-    for(int j=0; j < mnGridRows; ++j) {
-      mGrid[i][j] = F.mGrid[i][j];
-    }
-  }
+  grid_ = frame.GetGrid();
 
-  SetPose(F.mTcw);  
+  SetPose(frame.mTcw);  
 }
 
 void KeyFrame::SetPose(const cv::Mat& input_Tcw) {
@@ -307,7 +300,7 @@ std::vector<KeyFrame*> KeyFrame::GetCovisiblesByWeight(const int w) {
   std::vector<int>::iterator it = std::upper_bound(mvOrderedWeights.begin(),
                                                    mvOrderedWeights.end(),
                                                    w,
-                                                   KeyFrame::weightComp);
+                                                   [](int a, int b){ return a > b; });
   if (it == mvOrderedWeights.end()) {
     return std::vector<KeyFrame*>();
   } else {
@@ -446,22 +439,22 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
 
   const int nMinCellX = std::max(0,
                                  static_cast<int>(std::floor((x-mnMinX-r) * mfGridElementWidthInv)));
-  const int nMaxCellX = std::min(static_cast<int>(mnGridCols-1), // TODO is this needed? 
+  const int nMaxCellX = std::min(static_cast<int>(grid_cols-1), // TODO is this needed? 
                                  static_cast<int>(std::ceil((x-mnMinX+r)*mfGridElementWidthInv)));
   const int nMinCellY = std::max(0,
                                  static_cast<int>(std::floor((y-mnMinY-r) * mfGridElementHeightInv)));
-  const int nMaxCellY = std::min(static_cast<int>(mnGridRows-1), // TODO is this needed? 
+  const int nMaxCellY = std::min(static_cast<int>(grid_rows-1), // TODO is this needed? 
                                  static_cast<int>(std::ceil((y-mnMinY+r)*mfGridElementHeightInv)));
-  if(nMaxCellX < 0 || nMinCellX >= mnGridCols) {
+  if(nMaxCellX < 0 || nMinCellX >= grid_cols) {
     return vIndices;
   }    
-  if(nMaxCellY < 0 || nMinCellY >= mnGridRows) {
+  if(nMaxCellY < 0 || nMinCellY >= grid_rows) {
     return vIndices;
   }
       
   for (int ix = nMinCellX; ix <= nMaxCellX; ++ix) {
     for (int iy = nMinCellY; iy <= nMaxCellY; ++iy) {
-      const std::vector<size_t> vCell = mGrid[ix][iy];
+      const std::vector<size_t>& vCell = grid_[ix][iy]; // TODO changed to ref, check if ok
       for (size_t j = 0; j < vCell.size(); ++j) {
         const cv::KeyPoint& kpUn = mvKeysUn[vCell[j]];
         const float distx = kpUn.pt.x - x;

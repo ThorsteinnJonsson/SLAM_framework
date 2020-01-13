@@ -47,11 +47,7 @@ Frame::Frame(const Frame& frame)
       , mvInvScaleFactors(frame.mvInvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2) {
-  for (int i = 0; i < grid_cols; ++i) {
-    for (int j = 0; j < grid_rows; ++j) {
-      mGrid[i][j] = frame.mGrid[i][j];
-    }
-  }
+  grid_ = frame.GetGrid();
   if (!frame.mTcw.empty()) {
     SetPose(frame.mTcw);
   }
@@ -269,14 +265,14 @@ void Frame::AssignFeaturesToGrid() {
   int nReserve = 0.5f * mN / (grid_cols * grid_rows);
   for(unsigned int i=0; i < grid_cols; ++i) {
     for (unsigned int j=0; j < grid_rows; ++j) {
-      mGrid[i][j].reserve(nReserve);
+      grid_[i][j].reserve(nReserve);
     }
   }
   for (int i=0; i < mN; ++i) {
     const cv::KeyPoint& kp = mvKeysUn[i];
     int nGridPosX, nGridPosY;
     if(PosInGrid(kp, nGridPosX, nGridPosY)) {
-      mGrid[nGridPosX][nGridPosY].push_back(i);
+      grid_[nGridPosX][nGridPosY].push_back(i);
     }
   }
 }
@@ -409,7 +405,7 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
   for(int ix = nMinCellX; ix <= nMaxCellX; ++ix) {
     for(int iy = nMinCellY; iy <= nMaxCellY; ++iy) {
-      const std::vector<size_t> vCell = mGrid[ix][iy]; // TODO needless copying?
+      const std::vector<size_t>& vCell = grid_[ix][iy]; // TODO needless copying? changed to ref
       if(vCell.empty()) {
         continue;
       }
