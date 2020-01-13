@@ -507,7 +507,7 @@ int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
     const cv::Mat &Descriptors2 = pKF2->mDescriptors;
 
     vpMatches12 = vector<MapPoint*>(vpMapPoints1.size(),static_cast<MapPoint*>(nullptr));
-    vector<bool> vbMatched2(vpMapPoints2.size(),false);
+    deque<bool> vbMatched2(vpMapPoints2.size(),false);
 
     vector<int> rotHist[HISTO_LENGTH];
     for(int i=0;i<HISTO_LENGTH;i++)
@@ -651,7 +651,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
     // Compare only ORB that share the same node
 
     int nmatches=0;
-    vector<bool> vbMatched2(pKF2->N,false);
+    deque<bool> vbMatched2(pKF2->N,false);
     vector<int> vMatches12(pKF1->N,-1);
 
     vector<int> rotHist[HISTO_LENGTH];
@@ -1108,8 +1108,8 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
     const vector<MapPoint*> vpMapPoints2 = pKF2->GetMapPointMatches();
     const int N2 = vpMapPoints2.size();
 
-    vector<bool> vbAlreadyMatched1(N1,false);
-    vector<bool> vbAlreadyMatched2(N2,false);
+    deque<bool> vbAlreadyMatched1(N1,false);
+    deque<bool> vbAlreadyMatched2(N2,false);
 
     for(int i=0; i<N1; i++)
     {

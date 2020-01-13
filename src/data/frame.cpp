@@ -99,7 +99,7 @@ Frame::Frame(const cv::Mat& imLeft,
   ComputeStereoMatches();
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);    
-  mvbOutlier = std::vector<bool>(mN, false); // vector of bools is bad
+  mvbOutlier = std::deque<bool>(mN, false); // vector of bools is bad
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations)  {
@@ -167,7 +167,7 @@ Frame::Frame(const cv::Mat& imGray,
   ComputeStereoFromRGBD(imDepth);
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::vector<bool>(mN, false);
+  mvbOutlier = std::deque<bool>(mN, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations) {
@@ -236,7 +236,7 @@ Frame::Frame(const cv::Mat& imGray,
   mvDepth = std::vector<float>(mN,-1);
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::vector<bool>(mN, false);
+  mvbOutlier = std::deque<bool>(mN, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if(mbInitialComputations) {

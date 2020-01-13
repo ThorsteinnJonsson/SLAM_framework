@@ -100,13 +100,13 @@ void PnPsolver::SetRansacParameters(double probability, int minInliers, int maxI
         mvMaxError[i] = mvSigma2[i]*th2;
 }
 
-cv::Mat PnPsolver::find(std::vector<bool> &vbInliers, int &nInliers)
+cv::Mat PnPsolver::find(std::deque<bool> &vbInliers, int &nInliers)
 {
     bool bFlag;
     return iterate(mRansacMaxIts,bFlag,vbInliers,nInliers);    
 }
 
-cv::Mat PnPsolver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers)
+cv::Mat PnPsolver::iterate(int nIterations, bool &bNoMore, std::deque<bool> &vbInliers, int &nInliers)
 {
     bNoMore = false;
     vbInliers.clear();
@@ -170,7 +170,7 @@ cv::Mat PnPsolver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vb
             if(Refine())
             {
                 nInliers = mnRefinedInliers;
-                vbInliers = std::vector<bool>(mvpMapPointMatches.size(),false);
+                vbInliers = std::deque<bool>(mvpMapPointMatches.size(),false);
                 for(int i=0; i<N; i++)
                 {
                     if(mvbRefinedInliers[i])
@@ -188,7 +188,7 @@ cv::Mat PnPsolver::iterate(int nIterations, bool &bNoMore, std::vector<bool> &vb
         if(mnBestInliers>=mRansacMinInliers)
         {
             nInliers=mnBestInliers;
-            vbInliers = std::vector<bool>(mvpMapPointMatches.size(),false);
+            vbInliers = std::deque<bool>(mvpMapPointMatches.size(),false);
             for(int i=0; i<N; i++)
             {
                 if(mvbBestInliers[i])

@@ -336,7 +336,7 @@ void Tracker::MonocularInitialization() {
 
     cv::Mat Rcw; // Current Camera Rotation
     cv::Mat tcw; // Current Camera Translation
-    std::vector<bool> vbTriangulated; // Triangulated Correspondences (init_matches_) // TODO boolvector
+    std::deque<bool> vbTriangulated; // Triangulated Correspondences (init_matches_) // TODO boolvector
 
     const bool init_success = mpInitializer->Initialize(current_frame_, 
                                                         init_matches_,
@@ -516,7 +516,7 @@ void Tracker::Track() {
           bool bOKMM = false;
           bool bOKReloc = false;
           std::vector<MapPoint*> vpMPsMM;
-          std::vector<bool> vbOutMM;
+          std::deque<bool> vbOutMM;
           cv::Mat TcwMM;
           if (!velocity_.empty()) {
             bOKMM = TrackWithMotionModel();
@@ -848,7 +848,7 @@ bool Tracker::Relocalization() {
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
   vvpMapPointMatches.resize(nKFs);
 
-  std::vector<bool> vbDiscarded; // TODO bool of vectors
+  std::deque<bool> vbDiscarded; // TODO bool of vectors
   vbDiscarded.resize(nKFs);
 
   int nCandidates = 0;
@@ -891,7 +891,7 @@ bool Tracker::Relocalization() {
       }
 
       // Perform 5 Ransac Iterations
-      std::vector<bool> vbInliers; // TODO vector of bools
+      std::deque<bool> vbInliers; // TODO vector of bools
       int nInliers;
       bool bNoMore;
 

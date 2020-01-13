@@ -824,7 +824,7 @@ void ORBextractor::ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint>>& a
 
         vector<vector<int> > nToRetain(levelRows,vector<int>(levelCols,0));
         vector<vector<int> > nTotal(levelRows,vector<int>(levelCols,0));
-        vector<vector<bool> > bNoMore(levelRows,vector<bool>(levelCols,false));
+        vector<deque<bool> > bNoMore(levelRows,deque<bool>(levelCols,false));
         vector<int> iniXCol(levelCols);
         vector<int> iniYRow(levelRows);
         int nNoMore = 0;

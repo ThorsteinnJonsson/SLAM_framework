@@ -141,11 +141,11 @@ void Sim3Solver::SetRansacParameters(double probability, int minInliers, int max
 
 cv::Mat Sim3Solver::iterate(int nIterations, 
                             bool& bNoMore, 
-                            std::vector<bool>& vbInliers, 
+                            std::deque<bool>& vbInliers, 
                             int& nInliers)
 {
   bNoMore = false;
-  vbInliers = std::vector<bool>(mN1,false);
+  vbInliers = std::deque<bool>(mN1,false);
   nInliers=0;
 
   if (N < mRansacMinInliers) {
@@ -210,7 +210,7 @@ cv::Mat Sim3Solver::iterate(int nIterations,
   return cv::Mat();
 }
 
-cv::Mat Sim3Solver::find(std::vector<bool>& vbInliers12, 
+cv::Mat Sim3Solver::find(std::deque<bool>& vbInliers12, 
                          int& nInliers) {
     bool bFlag;
     return iterate(mRansacMaxIts,bFlag,vbInliers12,nInliers);

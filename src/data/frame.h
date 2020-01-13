@@ -11,6 +11,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <memory>
+#include <deque>
 
 // Forward declarations
 class MapPoint;
@@ -162,7 +163,7 @@ public:
   std::vector<MapPoint*> mvpMapPoints;
 
   // Flag to identify outlier associations.
-  std::vector<bool> mvbOutlier; // TODO vector of bools is not good, replace
+  std::deque<bool> mvbOutlier; // TODO vector of bools is not good, replace
 
   // Keypoints are assigned to cells in a grid to reduce matching complexity 
   // when projecting MapPoints.
