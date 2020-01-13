@@ -239,7 +239,7 @@ bool LoopCloser::DetectLoop() {
   consistent_enough_candidates_.clear();
 
   std::vector<ConsistentGroup> current_consistent_groups;
-  std::deque<bool> is_visited_consistent_group(consistent_groups_.size(),false); // TODO vector of bool :(
+  std::deque<bool> is_visited_consistent_group(consistent_groups_.size(),false);
   
   for (KeyFrame* candidate_keyframe : candidate_keyframes) {
 
@@ -309,7 +309,7 @@ bool LoopCloser::ComputeSim3() {
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
   vvpMapPointMatches.resize(num_initial_candidates);
 
-  std::deque<bool> is_discarded(num_initial_candidates, false); //TODO vector of bool
+  std::deque<bool> is_discarded(num_initial_candidates, false);
 
   int num_candidates = 0; //candidates with enough matches
 
@@ -353,7 +353,7 @@ bool LoopCloser::ComputeSim3() {
       KeyFrame* keyframe = consistent_enough_candidates_[i];
 
       // Perform 5 Ransac Iterations
-      std::deque<bool> is_inlier; //TODO vector of bool
+      std::deque<bool> is_inlier;
       int num_inliers;
       bool no_more;
       cv::Mat Scm  = sim3_solvers[i]->iterate(5,

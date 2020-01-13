@@ -22,7 +22,7 @@ public:
                   cv::Mat& R21, 
                   cv::Mat& t21, 
                   std::vector<cv::Point3f>& vP3D, 
-                  std::deque<bool>& vbTriangulated); // TODO rip boolvec
+                  std::deque<bool>& vbTriangulated);
 
 private:
 

@@ -163,7 +163,7 @@ public:
   std::vector<MapPoint*> mvpMapPoints;
 
   // Flag to identify outlier associations.
-  std::deque<bool> mvbOutlier; // TODO vector of bools is not good, replace
+  std::deque<bool> mvbOutlier;
 
   // Keypoints are assigned to cells in a grid to reduce matching complexity 
   // when projecting MapPoints.

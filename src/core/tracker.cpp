@@ -336,7 +336,7 @@ void Tracker::MonocularInitialization() {
 
     cv::Mat Rcw; // Current Camera Rotation
     cv::Mat tcw; // Current Camera Translation
-    std::deque<bool> vbTriangulated; // Triangulated Correspondences (init_matches_) // TODO boolvector
+    std::deque<bool> vbTriangulated; // Triangulated Correspondences (init_matches_)
 
     const bool init_success = mpInitializer->Initialize(current_frame_, 
                                                         init_matches_,
@@ -891,7 +891,7 @@ bool Tracker::Relocalization() {
       }
 
       // Perform 5 Ransac Iterations
-      std::deque<bool> vbInliers; // TODO vector of bools
+      std::deque<bool> vbInliers;
       int nInliers;
       bool bNoMore;
 
