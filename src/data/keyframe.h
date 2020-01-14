@@ -220,9 +220,9 @@ protected:
 
   std::shared_ptr<Map> mpMap;
 
-  mutable std::mutex mMutexPose;
-  mutable std::mutex mMutexConnections;
-  mutable std::mutex mMutexFeatures;
+  mutable std::mutex pose_mutex_;
+  mutable std::mutex connection_mutex_;
+  mutable std::mutex feature_mutex_;
 
 
 };
