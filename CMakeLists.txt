@@ -84,50 +84,6 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 ## Internal libraries                   ##
 ##########################################
 add_subdirectory(src)
-# add_library(stone_slam SHARED
-            
-#             src/slam_system.cpp
-            
-#             src/core/tracker.cpp
-#             src/core/local_mapper.cpp
-#             src/core/loop_closer.cpp
-            
-#             src/data/map.cpp
-#             src/data/map_point.cpp
-#             src/data/frame.cpp
-#             src/data/keyframe.cpp
-#             src/data/keyframe_database.cpp
-
-#             src/solvers/sim3solver.cpp
-#             src/solvers/pnp_solver.cpp
-
-#             src/optimizer/optimizer.cpp
-
-#             src/orb_features/orb_extractor.cpp
-#             src/orb_features/orb_matcher.cpp
-
-#             src/util/initializer.cpp
-#             src/util/converter.cpp
-
-#             src/ros/ros_publisher.cpp
-# )
-
-# add_dependencies(stone_slam ${catkin_EXPORTED_TARGETS})
-
-# target_include_directories(stone_slam PUBLIC
-#                            ${PROJECT_SOURCE_DIR}/src
-#                            ${PROJECT_SOURCE_DIR}
-#                            ${EIGEN3_INCLUDE_DIR}
-#                            ${catkin_INCLUDE_DIRS}
-#                            ${PROJECT_SOURCE_DIR}/third_party/nlohmann
-# )
-
-# target_link_libraries(stone_slam PUBLIC
-#                       ${OpenCV_LIBS}
-#                       ${catkin_LIBRARIES}
-#                       DBoW2
-#                       g2o
-# )
 
 
 ##########################################
