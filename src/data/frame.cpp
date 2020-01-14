@@ -7,12 +7,16 @@
 
 // Define static variables with initial values
 long unsigned int Frame::nNextId = 0;
+
 bool Frame::mbInitialComputations = true;
+
 float Frame::cx, Frame::cy; 
 float Frame::fx, Frame::fy;
 float Frame::invfx, Frame::invfy;
+
 float Frame::mnMinX, Frame::mnMinY; 
 float Frame::mnMaxX, Frame::mnMaxY;
+
 float Frame::mfGridElementWidthInv;
 float Frame::mfGridElementHeightInv;
 
@@ -115,7 +119,7 @@ Frame::Frame(const cv::Mat& imLeft,
     invfx = 1.0f/fx;
     invfy = 1.0f/fy;
 
-    mbInitialComputations=false;
+    mbInitialComputations = false;
   }
 
   mb = mbf/fx;
@@ -278,10 +282,10 @@ void Frame::AssignFeaturesToGrid() {
 }
 
 void Frame::ExtractORB(int flag, const cv::Mat& im) {
-  if(flag==0) {
-    (*mpORBextractorLeft)(im, cv::Mat(), mvKeys, mDescriptors); // TODO unclear syntax, why do we need to overload the () operator??
+  if (flag == 0) {
+    mpORBextractorLeft->Compute(im, cv::Mat(), mvKeys, mDescriptors);
   } else {
-    (*mpORBextractorRight)(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
+    mpORBextractorRight->Compute(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
   }    
 }
 
@@ -405,7 +409,7 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
   for(int ix = nMinCellX; ix <= nMaxCellX; ++ix) {
     for(int iy = nMinCellY; iy <= nMaxCellY; ++iy) {
-      const std::vector<size_t>& vCell = grid_[ix][iy]; // TODO needless copying? changed to ref
+      const std::vector<size_t>& vCell = grid_[ix][iy];
       if(vCell.empty()) {
         continue;
       }
@@ -534,20 +538,21 @@ void Frame::ComputeStereoMatches() {
       IL.convertTo(IL, CV_32F);
       IL = IL - IL.at<float>(w,w) * cv::Mat::ones(IL.rows,IL.cols,CV_32F);
 
-      int bestDist = INT_MAX; // TODO replace with numeric limits
+      int bestDist = std::numeric_limits<int>::max();
       int bestincR = 0;
       const int L = 5;
       std::vector<float> vDists;
       vDists.resize(2*L+1);
 
-      const float iniu = scaleduR0+L-w; // TODO don't get this part 
+      const float iniu = scaleduR0+L-w;
       const float endu = scaleduR0+L+w+1;
-      if(iniu < 0 || endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols) {
+      if (iniu < 0 
+          || endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols) {
         continue;
       }
           
 
-      for(int incR=-L; incR  <= L; ++incR) {
+      for (int incR=-L; incR  <= L; ++incR) {
         cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
         IR.convertTo(IR,CV_32F);
         IR = IR - IR.at<float>(w,w) * cv::Mat::ones(IR.rows,IR.cols,CV_32F);
@@ -595,7 +600,7 @@ void Frame::ComputeStereoMatches() {
 
   sort(vDistIdx.begin(),vDistIdx.end());
   const float median = vDistIdx[vDistIdx.size()/2].first;
-  const float thDist = 1.5f*1.4f*median; // TODO Where do these numbers come from??
+  const float thDist = 1.5f*1.4f*median;
 
   for(int i=vDistIdx.size()-1; i >= 0; --i) {
     if(vDistIdx[i].first<thDist) {

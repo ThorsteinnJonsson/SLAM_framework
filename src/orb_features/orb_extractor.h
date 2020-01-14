@@ -32,9 +32,10 @@ public:
     // Compute the ORB features and descriptors on an image.
     // ORB are dispersed on the image using an octree.
     // Mask is ignored in the current implementation.
-    void operator()( cv::InputArray image, cv::InputArray mask,
-      std::vector<cv::KeyPoint>& keypoints,
-      cv::OutputArray descriptors);
+    void Compute(cv::InputArray image, 
+                 cv::InputArray mask,
+                 std::vector<cv::KeyPoint>& keypoints,
+                 cv::OutputArray descriptors);
 
     int inline GetLevels(){
         return nlevels;}

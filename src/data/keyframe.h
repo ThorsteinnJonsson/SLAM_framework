@@ -127,7 +127,23 @@ public:
   long unsigned int bundle_adj_global_for_keyframe_id;
 
   // Calibration parameters
-  const float fx, fy, cx, cy, invfx, invfy, mbf, mb, mThDepth; // TODO seems exessive to copy for every keyframe
+  static float fx;
+  static float fy;
+  static float cx;
+  static float cy;
+  static float invfx;
+  static float invfy;
+  static bool initial_computations;
+
+  // Stereo baseline multiplied by fx.
+  const float mbf;
+
+  // Stereo baseline in meters.
+  const float mb;
+
+  // Threshold close/far points. Close points are inserted from 1 view.
+  // Far points are inserted as in the monocular case from 2 views.
+  const float mThDepth;
 
   // Number of KeyPoints
   const int N;
@@ -154,15 +170,17 @@ public:
   const std::vector<float> mvLevelSigma2;
   const std::vector<float> mvInvLevelSigma2;
 
-  // Image bounds and calibration
-  const int mnMinX;
-  const int mnMinY;
-  const int mnMaxX;
-  const int mnMaxY;
+  // Calibration matrix
   const cv::Mat mK;  
 
 // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
+
+  // Image bounds
+  static int mnMinX;
+  static int mnMinY;
+  static int mnMaxX;
+  static int mnMaxY;
   // SE3 Pose and camera center
   cv::Mat Tcw;
   cv::Mat Twc;
@@ -178,8 +196,8 @@ protected:
   std::shared_ptr<OrbVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
-  const float mfGridElementWidthInv;
-  const float mfGridElementHeightInv;
+  static float mfGridElementWidthInv;
+  static float mfGridElementHeightInv;
 
   std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
 

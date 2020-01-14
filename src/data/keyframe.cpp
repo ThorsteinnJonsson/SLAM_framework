@@ -5,6 +5,19 @@
 // Define static variables with initial values
 long unsigned int KeyFrame::nNextId = 0;
 
+bool KeyFrame::initial_computations = true;
+
+float KeyFrame::cx, KeyFrame::cy; 
+float KeyFrame::fx, KeyFrame::fy;
+float KeyFrame::invfx, KeyFrame::invfy;
+
+int KeyFrame::mnMinX, KeyFrame::mnMinY; // TODO why int here but float in frame.h?
+int KeyFrame::mnMaxX, KeyFrame::mnMaxY;
+
+float KeyFrame::mfGridElementWidthInv;
+float KeyFrame::mfGridElementHeightInv;
+
+
 KeyFrame::KeyFrame(const Frame& frame, 
                    const std::shared_ptr<Map>& pMap, 
                    const std::shared_ptr<KeyframeDatabase>& pKFDB) 
@@ -19,12 +32,6 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mnRelocQuery(0)
       , mnRelocWords(0)
       , bundle_adj_global_for_keyframe_id(0)
-      , fx(frame.fx)
-      , fy(frame.fy)
-      , cx(frame.cx)
-      , cy(frame.cy)
-      , invfx(frame.invfx)
-      , invfy(frame.invfy)
       , mbf(frame.mbf)
       , mb(frame.mb)
       , mThDepth(frame.mThDepth)
@@ -42,16 +49,10 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mvScaleFactors(frame.mvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2)
-      , mnMinX(frame.mnMinX)
-      , mnMinY(frame.mnMinY)
-      , mnMaxX(frame.mnMaxX)
-      , mnMaxY(frame.mnMaxY)
       , mK(frame.mK)
       , mvpMapPoints(frame.mvpMapPoints)
       , mpKeyFrameDB(pKFDB)
       , mpORBvocabulary(frame.mpORBvocabulary)
-      , mfGridElementWidthInv(frame.mfGridElementWidthInv)
-      , mfGridElementHeightInv(frame.mfGridElementHeightInv)
       , mbFirstConnection(true)
       , mpParent(nullptr)
       , mbNotErase(false)
@@ -59,6 +60,25 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mbBad(false)
       , mHalfBaseline(frame.mb/2)
       , mpMap(pMap) {
+
+  if (initial_computations) {
+    fx = frame.fx;
+    fy = frame.fy;
+    cx = frame.cx;
+    cy = frame.cy;
+    invfx = frame.invfx;
+    invfy = frame.invfy;
+
+    mnMinX = frame.mnMinX;
+    mnMinY = frame.mnMinY;
+    mnMaxX = frame.mnMaxX;
+    mnMaxY = frame.mnMaxY;
+
+    mfGridElementWidthInv = frame.mfGridElementWidthInv;
+    mfGridElementHeightInv = frame.mfGridElementHeightInv;
+
+    initial_computations = false;
+  }
 
   mnId = nNextId++;
 
@@ -207,8 +227,6 @@ void KeyFrame::UpdateConnections() {
     }
   }
 
-  // This should not happen // TODO misleading comment?? I added the assertion
-  // assert(KFcounter.empty() == false);
   if (KFcounter.empty()) {
     return;
   }
