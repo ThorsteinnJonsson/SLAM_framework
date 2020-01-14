@@ -200,6 +200,8 @@ public:
   static bool mbInitialComputations;
 
 private:
+  void MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat);
+
   // Undistort keypoints given OpenCV distortion parameters.
   // Only for the RGB-D case. Stereo must be already rectified!
   // (called in the constructor).

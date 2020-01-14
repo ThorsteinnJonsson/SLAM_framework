@@ -107,18 +107,7 @@ Frame::Frame(const cv::Mat& imLeft,
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations)  {
-    ComputeImageBounds(imLeft);
-
-    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
+    MakeInitialComputations(imLeft, K);
     mbInitialComputations = false;
   }
 
@@ -175,18 +164,7 @@ Frame::Frame(const cv::Mat& imGray,
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations) {
-    ComputeImageBounds(imGray);
-
-    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
+    MakeInitialComputations(imGray, K);
     mbInitialComputations=false;
   }
 
@@ -244,18 +222,7 @@ Frame::Frame(const cv::Mat& imGray,
 
   // This is done only for the first Frame (or after a change in the calibration)
   if(mbInitialComputations) {
-    ComputeImageBounds(imGray);
-
-    mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
+    MakeInitialComputations(imGray, K);
     mbInitialComputations = false;
   }
 
@@ -264,6 +231,18 @@ Frame::Frame(const cv::Mat& imGray,
   AssignFeaturesToGrid();
 }
 
+void Frame::MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat) {
+  ComputeImageBounds(image);
+  mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
+  mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
+
+  fx = calibration_mat.at<float>(0,0);
+  fy = calibration_mat.at<float>(1,1);
+  cx = calibration_mat.at<float>(0,2);
+  cy = calibration_mat.at<float>(1,2);
+  invfx = 1.0f/fx;
+  invfy = 1.0f/fy;
+}
 
 void Frame::AssignFeaturesToGrid() {
   int nReserve = 0.5f * mN / (grid_cols * grid_rows);
