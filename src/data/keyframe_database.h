@@ -23,8 +23,8 @@ public:
   void erase(KeyFrame* pKF);
   void Clear();
 
-  std::vector<KeyFrame *> DetectLoopCandidates(KeyFrame* pKF, float minScore);
-  std::vector<KeyFrame*> DetectRelocalizationCandidates(Frame* F);// TODO this can probably be passed as a reference
+  std::vector<KeyFrame*> DetectLoopCandidates(KeyFrame* pKF, float minScore);
+  std::vector<KeyFrame*> DetectRelocalizationCandidates(const Frame& frame);
 
 protected:
   const std::shared_ptr<OrbVocabulary> mpVoc;

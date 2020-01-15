@@ -59,7 +59,7 @@ public:
                   KeyFrame* pKF2, 
                   std::vector<MapPoint*> &vpMatches12);
 
-  // Matching for the Map Initialization (only used in the monocular case) //TODO might not need this then
+  // Matching for the Map Initialization (only used in the monocular case)
   int SearchForInitialization(Frame& F1, 
                               Frame& F2, 
                               std::vector<cv::Point2f>& vbPrevMatched, 

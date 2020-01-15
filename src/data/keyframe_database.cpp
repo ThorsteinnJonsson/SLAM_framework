@@ -95,7 +95,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
     }
   }
 
-  const int minCommonWords = maxCommonWords * 0.8f; //TODO static cast?
+  const int minCommonWords = static_cast<int>(maxCommonWords * 0.8f);
 
   // Compute similarity score. Retain the matches whose score is higher than minScore
   int nscores = 0;
@@ -176,15 +176,15 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
 }
 
 
-std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(Frame* F) {
+std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Frame& frame) {
   std::list<KeyFrame*> lKFsSharingWords;
 
   // Search all keyframes that share a word with current frame
   {
     std::unique_lock<std::mutex> lock(mMutex);
 
-    for (DBoW2::BowVector::const_iterator vit = F->mBowVec.begin(); 
-                                          vit != F->mBowVec.end(); 
+    for (DBoW2::BowVector::const_iterator vit = frame.mBowVec.begin(); 
+                                          vit != frame.mBowVec.end(); 
                                           ++vit) 
     {
       std::list<KeyFrame*>& lKFs = mvInvertedFile[vit->first];
@@ -193,9 +193,9 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(Frame* F
                 ++lit)
       {
         KeyFrame* pKFi = *lit;
-        if (pKFi->mnRelocQuery != F->mnId) {
+        if (pKFi->mnRelocQuery != frame.mnId) {
           pKFi->mnRelocWords = 0;
-          pKFi->mnRelocQuery = F->mnId;
+          pKFi->mnRelocQuery = frame.mnId;
           lKFsSharingWords.push_back(pKFi);
         }
         ++pKFi->mnRelocWords;
@@ -219,7 +219,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(Frame* F
     }
   }
 
-  const int minCommonWords = maxCommonWords * 0.8f;
+  const int minCommonWords = static_cast<int>(maxCommonWords * 0.8f);
 
   // Compute similarity score.
   int nscores = 0;
@@ -231,7 +231,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(Frame* F
     KeyFrame* pKFi = *lit;
     if (pKFi->mnRelocWords > minCommonWords) {
       ++nscores;
-      pKFi->mRelocScore = mpVoc->score(F->mBowVec,
+      pKFi->mRelocScore = mpVoc->score(frame.mBowVec,
                                        pKFi->mBowVec);
       lScoreAndMatch.push_back(std::make_pair(pKFi->mRelocScore, pKFi));
     }
@@ -261,7 +261,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(Frame* F
               ++vit)
     {
       KeyFrame* pKF2 = *vit;
-      if (pKF2->mnRelocQuery != F->mnId) {
+      if (pKF2->mnRelocQuery != frame.mnId) {
         continue;
       }
 

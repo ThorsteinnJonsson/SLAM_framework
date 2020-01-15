@@ -33,7 +33,6 @@ void Map::EraseKeyFrame(KeyFrame* pKF) {
 }
 
 void Map::SetReferenceMapPoints(const std::vector<MapPoint*>& vpMPs) {
-  // TODO only for visualization??
   std::unique_lock<std::mutex> lock(map_mutex_);
   reference_map_points_ = vpMPs;
 }

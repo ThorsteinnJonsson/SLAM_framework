@@ -51,7 +51,6 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   DistCoef.copyTo(dist_coeff_);
 
   scaled_baseline_ = config["camera"]["bf"];
-  scaled_baseline_ = 386.1448f; // TODO just used from kitti00-02
   
 
   float fps = config["camera"]["fps"];
@@ -685,9 +684,8 @@ bool Tracker::TrackReferenceKeyFrame() {
         current_frame_.mvbOutlier[i] = false;
         pMP->track_is_in_view = false;
         pMP->last_frame_id_seen = current_frame_.mnId;
-        --nmatches; // TODO never seem to use  this again
       } else if (current_frame_.mvpMapPoints[i]->NumObservations() > 0) {
-        nmatchesMap++;
+        ++nmatchesMap;
       }
     }
   }
@@ -830,7 +828,7 @@ bool Tracker::Relocalization() {
 
   // Relocalization is performed when tracking is lost
   // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
-  std::vector<KeyFrame*> vpCandidateKFs = keyframe_db_->DetectRelocalizationCandidates(&current_frame_);
+  std::vector<KeyFrame*> vpCandidateKFs = keyframe_db_->DetectRelocalizationCandidates(current_frame_);
 
   if (vpCandidateKFs.empty()) {
     return false;
@@ -848,7 +846,7 @@ bool Tracker::Relocalization() {
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
   vvpMapPointMatches.resize(nKFs);
 
-  std::deque<bool> vbDiscarded; // TODO bool of vectors
+  std::deque<bool> vbDiscarded;
   vbDiscarded.resize(nKFs);
 
   int nCandidates = 0;

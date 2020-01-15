@@ -75,7 +75,8 @@ nav_msgs::Path RosPublisher::GetCameraTrajectory() {
   if (keyframes.empty()) {
     return camera_path;
   }
-  std::sort(keyframes.begin(),keyframes.end(),KeyFrame::lId); // TODO enough to just get the first?
+  // std::sort(keyframes.begin(),keyframes.end(),KeyFrame::lId); // TODO enough to just get the first?
+  std::nth_element(keyframes.begin(), keyframes.begin(), keyframes.end(), KeyFrame::lId);
   cv::Mat T_world_to_origin = keyframes[0]->GetPoseInverse();
 
   auto ref_keyframe_it = tracker_->GetReferenceKeyframes().begin();

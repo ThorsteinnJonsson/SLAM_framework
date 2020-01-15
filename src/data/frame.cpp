@@ -424,7 +424,7 @@ void Frame::ComputeStereoMatches() {
 
   const int thOrbDist = (OrbMatcher::TH_HIGH + OrbMatcher::TH_LOW)/2;
 
-  const int nRows = mpORBextractorLeft->mvImagePyramid[0].rows;
+  const int nRows = mpORBextractorLeft->GetImagePyramid()[0].rows;
 
   //Assign keypoints to row table
   std::vector<std::vector<size_t>> vRowIndices(nRows, std::vector<size_t>());
@@ -513,7 +513,7 @@ void Frame::ComputeStereoMatches() {
 
       // sliding window search
       const int w = 5;
-      cv::Mat IL = mpORBextractorLeft->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
+      cv::Mat IL = mpORBextractorLeft->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
       IL.convertTo(IL, CV_32F);
       IL = IL - IL.at<float>(w,w) * cv::Mat::ones(IL.rows,IL.cols,CV_32F);
 
@@ -526,13 +526,13 @@ void Frame::ComputeStereoMatches() {
       const float iniu = scaleduR0+L-w;
       const float endu = scaleduR0+L+w+1;
       if (iniu < 0 
-          || endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols) {
+          || endu >= mpORBextractorRight->GetImagePyramid()[kpL.octave].cols) {
         continue;
       }
           
 
       for (int incR=-L; incR  <= L; ++incR) {
-        cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
+        cv::Mat IR = mpORBextractorRight->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
         IR.convertTo(IR,CV_32F);
         IR = IR - IR.at<float>(w,w) * cv::Mat::ones(IR.rows,IR.cols,CV_32F);
 

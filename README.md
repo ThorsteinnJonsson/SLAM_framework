@@ -4,6 +4,8 @@ SLAM framework based on [ORB-SLAM2](https://github.com/raulmur/ORB_SLAM2).
 
 Works with monocular, stereo and RGB-D cameras.
 
+TODO add better description
+
 ## Building
 ```bash
 sh scripts/build_release.sh
