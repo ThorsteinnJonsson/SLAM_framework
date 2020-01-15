@@ -514,6 +514,7 @@ void LoopCloser::CorrectLoop() {
 
     if (global_bundle_adjustment_thread_) {
       global_bundle_adjustment_thread_->detach();
+      global_bundle_adjustment_thread_.reset(nullptr);
     }
   }
 
@@ -674,6 +675,13 @@ void LoopCloser::CorrectLoop() {
   current_keyframe_->AddLoopEdge(matched_keyframe_);
 
   // Launch a new thread to perform Global Bundle Adjustment
+  { // Need to set thread to nullptr if it isn't already. Should be handled above but isn't always, need to figure out why
+    std::unique_lock<std::mutex> lock(global_bundle_adj_mutex_);
+    if (global_bundle_adjustment_thread_) {
+      global_bundle_adjustment_thread_->detach();
+      global_bundle_adjustment_thread_.reset(nullptr);
+    }
+  }
   is_running_global_budle_adj_ = true;
   is_finished_global_budle_adj_ = false;
   stop_global_bundle_adj_ = false;
