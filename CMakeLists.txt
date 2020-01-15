@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(stone_slam)
+project(slam_project)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -95,7 +95,7 @@ add_executable(main_stereo examples/main_stereo.cpp)
 target_link_libraries(main_stereo 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stone_slam
+                      slam_framework
 )
 
 ## Monocular
@@ -104,5 +104,5 @@ add_executable(main_mono examples/main_mono.cpp)
 target_link_libraries(main_mono 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stone_slam
+                      slam_framework
 )

@@ -1,7 +1,7 @@
 ##################
 ## SLAM library ##
 ##################
-add_library(stone_slam SHARED
+add_library(slam_framework SHARED
             
             slam_system.cpp
             
@@ -29,9 +29,9 @@ add_library(stone_slam SHARED
             ros/ros_publisher.cpp
 )
 
-add_dependencies(stone_slam ${catkin_EXPORTED_TARGETS})
+add_dependencies(slam_framework ${catkin_EXPORTED_TARGETS})
 
-target_include_directories(stone_slam PUBLIC
+target_include_directories(slam_framework PUBLIC
                            ${PROJECT_SOURCE_DIR}/src
                            ${PROJECT_SOURCE_DIR}
                            ${EIGEN3_INCLUDE_DIR}
@@ -39,7 +39,7 @@ target_include_directories(stone_slam PUBLIC
                            ${PROJECT_SOURCE_DIR}/third_party/nlohmann
 )
 
-target_link_libraries(stone_slam PUBLIC
+target_link_libraries(slam_framework PUBLIC
                       ${OpenCV_LIBS}
                       ${catkin_LIBRARIES}
                       DBoW2
