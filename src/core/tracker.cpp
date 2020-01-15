@@ -51,7 +51,6 @@ Tracker::Tracker(const std::shared_ptr<OrbVocabulary>& orb_vocabulary,
   DistCoef.copyTo(dist_coeff_);
 
   scaled_baseline_ = config["camera"]["bf"];
-  scaled_baseline_ = 386.1448f; // TODO just used from kitti00-02
   
 
   float fps = config["camera"]["fps"];
@@ -336,7 +335,7 @@ void Tracker::MonocularInitialization() {
 
     cv::Mat Rcw; // Current Camera Rotation
     cv::Mat tcw; // Current Camera Translation
-    std::vector<bool> vbTriangulated; // Triangulated Correspondences (init_matches_) // TODO boolvector
+    std::deque<bool> vbTriangulated; // Triangulated Correspondences (init_matches_)
 
     const bool init_success = mpInitializer->Initialize(current_frame_, 
                                                         init_matches_,
@@ -516,7 +515,7 @@ void Tracker::Track() {
           bool bOKMM = false;
           bool bOKReloc = false;
           std::vector<MapPoint*> vpMPsMM;
-          std::vector<bool> vbOutMM;
+          std::deque<bool> vbOutMM;
           cv::Mat TcwMM;
           if (!velocity_.empty()) {
             bOKMM = TrackWithMotionModel();
@@ -685,9 +684,8 @@ bool Tracker::TrackReferenceKeyFrame() {
         current_frame_.mvbOutlier[i] = false;
         pMP->track_is_in_view = false;
         pMP->last_frame_id_seen = current_frame_.mnId;
-        --nmatches; // TODO never seem to use  this again
       } else if (current_frame_.mvpMapPoints[i]->NumObservations() > 0) {
-        nmatchesMap++;
+        ++nmatchesMap;
       }
     }
   }
@@ -830,7 +828,7 @@ bool Tracker::Relocalization() {
 
   // Relocalization is performed when tracking is lost
   // Track Lost: Query KeyFrame Database for keyframe candidates for relocalisation
-  std::vector<KeyFrame*> vpCandidateKFs = keyframe_db_->DetectRelocalizationCandidates(&current_frame_);
+  std::vector<KeyFrame*> vpCandidateKFs = keyframe_db_->DetectRelocalizationCandidates(current_frame_);
 
   if (vpCandidateKFs.empty()) {
     return false;
@@ -848,7 +846,7 @@ bool Tracker::Relocalization() {
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
   vvpMapPointMatches.resize(nKFs);
 
-  std::vector<bool> vbDiscarded; // TODO bool of vectors
+  std::deque<bool> vbDiscarded;
   vbDiscarded.resize(nKFs);
 
   int nCandidates = 0;
@@ -891,7 +889,7 @@ bool Tracker::Relocalization() {
       }
 
       // Perform 5 Ransac Iterations
-      std::vector<bool> vbInliers; // TODO vector of bools
+      std::deque<bool> vbInliers;
       int nInliers;
       bool bNoMore;
 

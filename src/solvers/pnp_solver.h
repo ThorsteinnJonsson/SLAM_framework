@@ -15,9 +15,9 @@ class PnPsolver {
   void SetRansacParameters(double probability = 0.99, int minInliers = 8 , int maxIterations = 300, int minSet = 4, float epsilon = 0.4,
                            float th2 = 5.991);
 
-  cv::Mat find(std::vector<bool> &vbInliers, int &nInliers);
+  cv::Mat find(std::deque<bool> &vbInliers, int &nInliers);
 
-  cv::Mat iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers);
+  cv::Mat iterate(int nIterations, bool &bNoMore, std::deque<bool> &vbInliers, int &nInliers);
 
  private:
 
@@ -98,18 +98,18 @@ class PnPsolver {
   double mRi[3][3];
   double mti[3];
   cv::Mat mTcwi;
-  std::vector<bool> mvbInliersi;
+  std::deque<bool> mvbInliersi;
   int mnInliersi;
 
   // Current Ransac State
   int mnIterations;
-  std::vector<bool> mvbBestInliers;
+  std::deque<bool> mvbBestInliers;
   int mnBestInliers;
   cv::Mat mBestTcw;
 
   // Refined
   cv::Mat mRefinedTcw;
-  std::vector<bool> mvbRefinedInliers;
+  std::deque<bool> mvbRefinedInliers;
   int mnRefinedInliers;
 
   // Number of Correspondences

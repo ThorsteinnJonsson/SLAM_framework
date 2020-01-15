@@ -284,13 +284,13 @@ void MapPoint::ComputeDistinctiveDescriptors() {
   }
 
   // Take the descriptor with least median distance to the rest
-  int best_median = std::numeric_limits<int>::max(); // TODO stl algorithm
+  int best_median = std::numeric_limits<int>::max();
   int best_idx = 0;
+  const int halfway_idx = 0.5*(N-1);
   for (size_t i = 0; i < N; ++i) {
     std::vector<int> dists(distances[i].begin(), distances[i].end());
-    const int halfway_idx = 0.5*(N-1);
     std::nth_element(dists.begin(), dists.begin()+halfway_idx, dists.end());
-    int median = dists[halfway_idx];
+    const int median = dists[halfway_idx];
     if (median < best_median) {
       best_median = median;
       best_idx = i;

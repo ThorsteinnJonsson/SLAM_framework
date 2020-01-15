@@ -1,4 +1,5 @@
 {
+  "use_ros": false,
   "orb_vocabulary": "vocabulary/ORBvoc.txt",
   "camera": {
     "fx": 718.856,

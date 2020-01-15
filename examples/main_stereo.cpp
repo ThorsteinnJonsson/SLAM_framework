@@ -13,16 +13,16 @@
 
 #include <ros/ros.h>
 
-// #pragma GCC optimize ("O0") //TODO remove
-
 void LoadKittiImages(const std::string& kitti_path, 
                      std::vector<std::string>& left_image_paths,
                      std::vector<std::string>& right_image_paths, 
                      std::vector<double>& timestamps) {
-  // TODO check if file exists
   std::string time_file = kitti_path + "/times.txt";
   std::ifstream time_stream;
   time_stream.open(time_file);
+  if (!time_stream.is_open()) {
+    std::cerr << "Error opening " << time_file << "\n";
+  }
   while (time_stream.good()) {
     std::string s;
     getline(time_stream,s);
@@ -48,20 +48,37 @@ void LoadKittiImages(const std::string& kitti_path,
   }
 }
 
-int main(int argc, char **argv) {
-
-  if (argv[1] == nullptr){
-		std::cout << "No path specified for config json-file." << std::endl;
-		return 0;
+bool ParseArguments(int argc, char** argv,
+                    std::string& config_path,
+                    std::string& dataset_path) {
+  if (argc < 1){
+		std::cerr << "No path specified for config json-file.\n";
+		return false;
 	}
-  const std::string config_file = argv[1];
+  config_path = argv[1];
+  std::cout << "Config path (JSON): " << config_path << "\n";
 
-  std::cout << "STEREO SLAM\n";
+  if (argc < 2) {
+    std::cerr << "No path specified for dataset-folder.\n";
+    return false;
+  }
+  dataset_path = argv[2];
+  std::cout << "Dataset path: " << dataset_path << "\n";
+  
+  return true;
+}
+
+int main(int argc, char** argv) {
+
+  std::string config_path;
+  std::string kitti_path;
+  if (!ParseArguments(argc, argv, config_path, kitti_path)) {
+    return 0;
+  }
+
+  std::cout << "\nSTEREO SLAM EXAMPLE\n";
 
   ros::init(argc, argv, "stereo_slam");
-
-  // Input TODO: change to actual input 
-  std::string kitti_path = "/home/steini/Dataset/kitti/dataset/sequences/03";
 
   // Get paths for images
   std::vector<std::string> left_image_paths;
@@ -75,7 +92,7 @@ int main(int argc, char **argv) {
 
   // Set up SLAM system
   SENSOR_TYPE sensor = SENSOR_TYPE::STEREO;
-  SlamSystem slam_system(config_file, sensor);
+  SlamSystem slam_system(config_path, sensor);
   
   // For tracking statistics
   std::vector<double> tracked_times(timestamps.size(), -1.0);
@@ -129,7 +146,6 @@ int main(int argc, char **argv) {
 
   std::cout << "Done\n";
   
-  // TODO print post-processing stuff
   slam_system.SaveTrajectoryKITTI("tmp/positions.txt");
 
 }

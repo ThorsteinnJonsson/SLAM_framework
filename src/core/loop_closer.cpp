@@ -239,7 +239,7 @@ bool LoopCloser::DetectLoop() {
   consistent_enough_candidates_.clear();
 
   std::vector<ConsistentGroup> current_consistent_groups;
-  std::vector<bool> is_visited_consistent_group(consistent_groups_.size(),false); // TODO vector of bool :(
+  std::deque<bool> is_visited_consistent_group(consistent_groups_.size(),false);
   
   for (KeyFrame* candidate_keyframe : candidate_keyframes) {
 
@@ -309,7 +309,7 @@ bool LoopCloser::ComputeSim3() {
   std::vector<std::vector<MapPoint*>> vvpMapPointMatches;
   vvpMapPointMatches.resize(num_initial_candidates);
 
-  std::vector<bool> is_discarded(num_initial_candidates, false); //TODO vector of bool
+  std::deque<bool> is_discarded(num_initial_candidates, false);
 
   int num_candidates = 0; //candidates with enough matches
 
@@ -353,7 +353,7 @@ bool LoopCloser::ComputeSim3() {
       KeyFrame* keyframe = consistent_enough_candidates_[i];
 
       // Perform 5 Ransac Iterations
-      std::vector<bool> is_inlier; //TODO vector of bool
+      std::deque<bool> is_inlier;
       int num_inliers;
       bool no_more;
       cv::Mat Scm  = sim3_solvers[i]->iterate(5,
@@ -514,6 +514,7 @@ void LoopCloser::CorrectLoop() {
 
     if (global_bundle_adjustment_thread_) {
       global_bundle_adjustment_thread_->detach();
+      global_bundle_adjustment_thread_.reset(nullptr);
     }
   }
 
@@ -674,6 +675,13 @@ void LoopCloser::CorrectLoop() {
   current_keyframe_->AddLoopEdge(matched_keyframe_);
 
   // Launch a new thread to perform Global Bundle Adjustment
+  { // Need to set thread to nullptr if it isn't already. Should be handled above but isn't always, need to figure out why
+    std::unique_lock<std::mutex> lock(global_bundle_adj_mutex_);
+    if (global_bundle_adjustment_thread_) {
+      global_bundle_adjustment_thread_->detach();
+      global_bundle_adjustment_thread_.reset(nullptr);
+    }
+  }
   is_running_global_budle_adj_ = true;
   is_finished_global_budle_adj_ = false;
   stop_global_bundle_adj_ = false;

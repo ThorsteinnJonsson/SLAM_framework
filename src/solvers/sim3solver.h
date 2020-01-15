@@ -36,9 +36,9 @@ public:
 
   void SetRansacParameters(double probability = 0.99, int minInliers = 6 , int maxIterations = 300);
 
-  cv::Mat find(std::vector<bool> &vbInliers12, int &nInliers);
+  cv::Mat find(std::deque<bool> &vbInliers12, int &nInliers);
 
-  cv::Mat iterate(int nIterations, bool &bNoMore, std::vector<bool> &vbInliers, int &nInliers);
+  cv::Mat iterate(int nIterations, bool &bNoMore, std::deque<bool> &vbInliers, int &nInliers);
 
   cv::Mat GetEstimatedRotation();
   cv::Mat GetEstimatedTranslation();
@@ -83,12 +83,12 @@ protected:
   float ms12i;
   cv::Mat mT12i;
   cv::Mat mT21i;
-  std::vector<bool> mvbInliersi;
+  std::deque<bool> mvbInliersi;
   int mnInliersi;
 
   // Current Ransac State
   int mnIterations;
-  std::vector<bool> mvbBestInliers;
+  std::deque<bool> mvbBestInliers;
   int mnBestInliers;
   cv::Mat mBestT12;
   cv::Mat mBestRotation;

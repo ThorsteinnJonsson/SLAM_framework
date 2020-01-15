@@ -11,9 +11,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <memory>
-
-#define FRAME_GRID_ROWS 48 // TODO not good to use macros
-#define FRAME_GRID_COLS 64
+#include <deque>
 
 // Forward declarations
 class MapPoint;
@@ -105,6 +103,9 @@ public:
   cv::Mat UnprojectStereo(const int i);
 
 public:
+  static constexpr int grid_rows = 48;
+  static constexpr int grid_cols = 64;
+
   // Vocabulary used for relocalization.
   std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
 
@@ -162,14 +163,14 @@ public:
   std::vector<MapPoint*> mvpMapPoints;
 
   // Flag to identify outlier associations.
-  std::vector<bool> mvbOutlier; // TODO vector of bools is not good, replace
+  std::deque<bool> mvbOutlier;
 
   // Keypoints are assigned to cells in a grid to reduce matching complexity 
   // when projecting MapPoints.
   static float mfGridElementWidthInv;
   static float mfGridElementHeightInv;
-  std::vector<std::size_t> mGrid[FRAME_GRID_COLS][FRAME_GRID_ROWS]; 
-  // TODO above line have more clear syntax. This creates a double array of std::vectors
+
+  const std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols>& GetGrid() const { return grid_; }
 
   // Camera pose.
   cv::Mat mTcw;
@@ -199,15 +200,18 @@ public:
   static bool mbInitialComputations;
 
 private:
+  void MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat);
+
   // Undistort keypoints given OpenCV distortion parameters.
   // Only for the RGB-D case. Stereo must be already rectified!
   // (called in the constructor).
-  void UndistortKeyPoints(); // TODO probably redundant for only stereo camera
+  void UndistortKeyPoints();
 
   // Computes image bounds for the undistorted image (called in the constructor).
   void ComputeImageBounds(const cv::Mat& imLeft);
 
   // Assign keypoints to the grid for speed up feature matching (called in the constructor).
+  std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
   void AssignFeaturesToGrid();
 
   // Rotation, translation and camera center

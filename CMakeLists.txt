@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(stereo_slam)
+project(slam_project)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -83,77 +83,26 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
 ##########################################
 ## Internal libraries                   ##
 ##########################################
-add_library(stereo_slam SHARED
-            
-            src/slam_system.cpp
-            
-            src/core/tracker.cpp
-            src/core/local_mapper.cpp
-            src/core/loop_closer.cpp
-            
-            src/data/map.cpp
-            src/data/map_point.cpp
-            src/data/frame.cpp
-            src/data/keyframe.cpp
-            src/data/keyframe_database.cpp
-
-            src/solvers/sim3solver.cpp
-            src/solvers/pnp_solver.cpp
-
-            src/optimizer/optimizer.cpp
-
-            src/orb_features/orb_extractor.cpp
-            src/orb_features/orb_matcher.cpp
-
-            src/util/initializer.cpp
-            src/util/converter.cpp
-
-            src/ros/ros_publisher.cpp
-)
-
-add_dependencies(stereo_slam ${catkin_EXPORTED_TARGETS})
-
-target_include_directories(stereo_slam PUBLIC
-                           ${PROJECT_SOURCE_DIR}/src
-                           ${PROJECT_SOURCE_DIR}
-                           ${EIGEN3_INCLUDE_DIR}
-                           ${catkin_INCLUDE_DIRS}
-                           ${PROJECT_SOURCE_DIR}/third_party/nlohmann
-)
-
-target_link_libraries(stereo_slam PUBLIC
-                      ${OpenCV_LIBS}
-                      ${catkin_LIBRARIES}
-                      DBoW2
-                      g2o
-)
+add_subdirectory(src)
 
 
 ##########################################
 ## Executables                          ##
 ##########################################
 ## STEREO
-add_executable(main_stereo main_stereo.cpp)
-
-# target_include_directories(main_stereo PUBLIC 
-#                            # ${OpenCV_INCLUDE_DIRS}
-# )
+add_executable(main_stereo examples/main_stereo.cpp)
 
 target_link_libraries(main_stereo 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stereo_slam
+                      slam_framework
 )
 
 ## Monocular
-add_executable(main_mono main_mono.cpp)
-
-# target_include_directories(main_mono PUBLIC 
-#                            # ${OpenCV_INCLUDE_DIRS}
-# )
+add_executable(main_mono examples/main_mono.cpp)
 
 target_link_libraries(main_mono 
                       ${OpenCV_LIBS}
                       ${EIGEN3_LIBS}
-                      stereo_slam
+                      slam_framework
 )

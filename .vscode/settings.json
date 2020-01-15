@@ -58,7 +58,8 @@
     "string": "cpp",
     "random": "cpp",
     "csignal": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "forward_list": "cpp"
   },
   "workbench.colorCustomizations": {
     "activityBar.background": "#273112",

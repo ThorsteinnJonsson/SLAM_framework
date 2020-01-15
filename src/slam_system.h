@@ -1,5 +1,5 @@
-#ifndef SRC_STEREO_SLAM_H_
-#define SRC_STEREO_SLAM_H_
+#ifndef SRC_SLAM_SYSTEM_H_
+#define SRC_SLAM_SYSTEM_H_
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -92,7 +92,7 @@ private:
   std::shared_ptr<LoopCloser> loop_closer_ = nullptr;
 
   // ROS publisher for visualization
-  std::shared_ptr<RosPublisher> ros_publisher_ = nullptr; // TODO maybe change to unique
+  std::shared_ptr<RosPublisher> ros_publisher_ = nullptr;
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
@@ -112,8 +112,8 @@ private:
   mutable std::mutex state_mutex_;
 
   // ROS
-  bool ros_output_enabled = false;
+  bool ros_output_enabled_ = false;
  
 };
 
-# endif //SRC_STEREO_SLAM_H_
+# endif //SRC_SLAM_SYSTEM_H_

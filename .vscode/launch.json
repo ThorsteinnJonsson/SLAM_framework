@@ -9,7 +9,7 @@
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/main_stereo",
-      "args": ["/home/steini/Dev/stereo_slam/config/kitti_config_stereo.json"],
+      "args": ["/home/steini/Dev/stereo_slam/config/kitti_config_stereo.json", "/home/steini/Dataset/kitti/dataset/sequences/03"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],

@@ -824,7 +824,7 @@ void ORBextractor::ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint>>& a
 
         vector<vector<int> > nToRetain(levelRows,vector<int>(levelCols,0));
         vector<vector<int> > nTotal(levelRows,vector<int>(levelCols,0));
-        vector<vector<bool> > bNoMore(levelRows,vector<bool>(levelCols,false));
+        vector<deque<bool> > bNoMore(levelRows,deque<bool>(levelCols,false));
         vector<int> iniXCol(levelCols);
         vector<int> iniYRow(levelRows);
         int nNoMore = 0;
@@ -982,9 +982,10 @@ static void computeDescriptors(const cv::Mat& image, vector<cv::KeyPoint>& keypo
         computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
 }
 
-void ORBextractor::operator()(cv::InputArray _image, 
-                              cv::InputArray _mask, vector<cv::KeyPoint>& _keypoints,
-                              cv::OutputArray _descriptors)
+void ORBextractor::Compute(cv::InputArray _image, 
+                           cv::InputArray _mask, 
+                           std::vector<cv::KeyPoint>& _keypoints,
+                           cv::OutputArray _descriptors)
 { 
     if(_image.empty())
         return;

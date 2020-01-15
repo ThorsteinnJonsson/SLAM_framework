@@ -7,12 +7,16 @@
 
 // Define static variables with initial values
 long unsigned int Frame::nNextId = 0;
+
 bool Frame::mbInitialComputations = true;
+
 float Frame::cx, Frame::cy; 
 float Frame::fx, Frame::fy;
 float Frame::invfx, Frame::invfy;
+
 float Frame::mnMinX, Frame::mnMinY; 
 float Frame::mnMaxX, Frame::mnMaxY;
+
 float Frame::mfGridElementWidthInv;
 float Frame::mfGridElementHeightInv;
 
@@ -47,11 +51,7 @@ Frame::Frame(const Frame& frame)
       , mvInvScaleFactors(frame.mvInvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2) {
-  for (int i = 0; i < FRAME_GRID_COLS; ++i) {
-    for (int j = 0; j < FRAME_GRID_ROWS; ++j) {
-      mGrid[i][j] = frame.mGrid[i][j];
-    }
-  }
+  grid_ = frame.GetGrid();
   if (!frame.mTcw.empty()) {
     SetPose(frame.mTcw);
   }
@@ -103,23 +103,12 @@ Frame::Frame(const cv::Mat& imLeft,
   ComputeStereoMatches();
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);    
-  mvbOutlier = std::vector<bool>(mN, false); // vector of bools is bad
+  mvbOutlier = std::deque<bool>(mN, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations)  {
-    ComputeImageBounds(imLeft);
-
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
-    mbInitialComputations=false;
+    MakeInitialComputations(imLeft, K);
+    mbInitialComputations = false;
   }
 
   mb = mbf/fx;
@@ -171,22 +160,11 @@ Frame::Frame(const cv::Mat& imGray,
   ComputeStereoFromRGBD(imDepth);
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::vector<bool>(mN, false);
+  mvbOutlier = std::deque<bool>(mN, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations) {
-    ComputeImageBounds(imGray);
-
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
+    MakeInitialComputations(imGray, K);
     mbInitialComputations=false;
   }
 
@@ -240,22 +218,11 @@ Frame::Frame(const cv::Mat& imGray,
   mvDepth = std::vector<float>(mN,-1);
 
   mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::vector<bool>(mN, false);
+  mvbOutlier = std::deque<bool>(mN, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if(mbInitialComputations) {
-    ComputeImageBounds(imGray);
-
-    mfGridElementWidthInv = static_cast<float>(FRAME_GRID_COLS)/(mnMaxX-mnMinX);
-    mfGridElementHeightInv = static_cast<float>(FRAME_GRID_ROWS)/(mnMaxY-mnMinY);
-
-    fx = K.at<float>(0,0);
-    fy = K.at<float>(1,1);
-    cx = K.at<float>(0,2);
-    cy = K.at<float>(1,2);
-    invfx = 1.0f/fx;
-    invfy = 1.0f/fy;
-
+    MakeInitialComputations(imGray, K);
     mbInitialComputations = false;
   }
 
@@ -264,28 +231,40 @@ Frame::Frame(const cv::Mat& imGray,
   AssignFeaturesToGrid();
 }
 
+void Frame::MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat) {
+  ComputeImageBounds(image);
+  mfGridElementWidthInv = static_cast<float>(grid_cols)/(mnMaxX-mnMinX);
+  mfGridElementHeightInv = static_cast<float>(grid_rows)/(mnMaxY-mnMinY);
+
+  fx = calibration_mat.at<float>(0,0);
+  fy = calibration_mat.at<float>(1,1);
+  cx = calibration_mat.at<float>(0,2);
+  cy = calibration_mat.at<float>(1,2);
+  invfx = 1.0f/fx;
+  invfy = 1.0f/fy;
+}
 
 void Frame::AssignFeaturesToGrid() {
-  int nReserve = 0.5f * mN / (FRAME_GRID_COLS * FRAME_GRID_ROWS);
-  for(unsigned int i=0; i < FRAME_GRID_COLS; ++i) {
-    for (unsigned int j=0; j < FRAME_GRID_ROWS; ++j) {
-      mGrid[i][j].reserve(nReserve);
+  int nReserve = 0.5f * mN / (grid_cols * grid_rows);
+  for(unsigned int i=0; i < grid_cols; ++i) {
+    for (unsigned int j=0; j < grid_rows; ++j) {
+      grid_[i][j].reserve(nReserve);
     }
   }
   for (int i=0; i < mN; ++i) {
     const cv::KeyPoint& kp = mvKeysUn[i];
     int nGridPosX, nGridPosY;
     if(PosInGrid(kp, nGridPosX, nGridPosY)) {
-      mGrid[nGridPosX][nGridPosY].push_back(i);
+      grid_[nGridPosX][nGridPosY].push_back(i);
     }
   }
 }
 
 void Frame::ExtractORB(int flag, const cv::Mat& im) {
-  if(flag==0) {
-    (*mpORBextractorLeft)(im, cv::Mat(), mvKeys, mDescriptors); // TODO unclear syntax, why do we need to overload the () operator??
+  if (flag == 0) {
+    mpORBextractorLeft->Compute(im, cv::Mat(), mvKeys, mDescriptors);
   } else {
-    (*mpORBextractorRight)(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
+    mpORBextractorRight->Compute(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
   }    
 }
 
@@ -375,7 +354,7 @@ bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
   posY = round( (kp.pt.y - mnMinY) * mfGridElementHeightInv);
 
   //Keypoint's coordinates are undistorted, which could cause to go out of the image
-  if( posX < 0 || posX >= FRAME_GRID_COLS || posY < 0 || posY >= FRAME_GRID_ROWS ) {
+  if( posX < 0 || posX >= grid_cols || posY < 0 || posY >= grid_rows ) {
     return false;
   }
   return true;
@@ -391,17 +370,17 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
   const int nMinCellX = std::max(0, 
                                   static_cast<int>(std::floor((x-mnMinX-r) * mfGridElementWidthInv)));
-  const int nMaxCellX = std::min(static_cast<int>(FRAME_GRID_COLS-1),
+  const int nMaxCellX = std::min(static_cast<int>(grid_cols-1),
                                   static_cast<int>(std::ceil((x-mnMinX+r) * mfGridElementWidthInv)));
-  if( nMaxCellX < 0 || nMinCellX >= FRAME_GRID_COLS ) {
+  if( nMaxCellX < 0 || nMinCellX >= grid_cols ) {
     return vIndices;
   }
 
   const int nMinCellY = std::max(0,
                                   static_cast<int>(std::floor((y-mnMinY-r) * mfGridElementHeightInv)));
-  const int nMaxCellY = std::min(static_cast<int>(FRAME_GRID_ROWS-1),
+  const int nMaxCellY = std::min(static_cast<int>(grid_rows-1),
                                   static_cast<int>(std::ceil((y-mnMinY+r) * mfGridElementHeightInv)));
-  if(nMaxCellY < 0 || nMinCellY >= FRAME_GRID_ROWS) {
+  if(nMaxCellY < 0 || nMinCellY >= grid_rows) {
     return vIndices;
   }
 
@@ -409,7 +388,7 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
   for(int ix = nMinCellX; ix <= nMaxCellX; ++ix) {
     for(int iy = nMinCellY; iy <= nMaxCellY; ++iy) {
-      const std::vector<size_t> vCell = mGrid[ix][iy]; // TODO needless copying?
+      const std::vector<size_t>& vCell = grid_[ix][iy];
       if(vCell.empty()) {
         continue;
       }
@@ -445,7 +424,7 @@ void Frame::ComputeStereoMatches() {
 
   const int thOrbDist = (OrbMatcher::TH_HIGH + OrbMatcher::TH_LOW)/2;
 
-  const int nRows = mpORBextractorLeft->mvImagePyramid[0].rows;
+  const int nRows = mpORBextractorLeft->GetImagePyramid()[0].rows;
 
   //Assign keypoints to row table
   std::vector<std::vector<size_t>> vRowIndices(nRows, std::vector<size_t>());
@@ -534,25 +513,26 @@ void Frame::ComputeStereoMatches() {
 
       // sliding window search
       const int w = 5;
-      cv::Mat IL = mpORBextractorLeft->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
+      cv::Mat IL = mpORBextractorLeft->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
       IL.convertTo(IL, CV_32F);
       IL = IL - IL.at<float>(w,w) * cv::Mat::ones(IL.rows,IL.cols,CV_32F);
 
-      int bestDist = INT_MAX; // TODO replace with numeric limits
+      int bestDist = std::numeric_limits<int>::max();
       int bestincR = 0;
       const int L = 5;
       std::vector<float> vDists;
       vDists.resize(2*L+1);
 
-      const float iniu = scaleduR0+L-w; // TODO don't get this part 
+      const float iniu = scaleduR0+L-w;
       const float endu = scaleduR0+L+w+1;
-      if(iniu < 0 || endu >= mpORBextractorRight->mvImagePyramid[kpL.octave].cols) {
+      if (iniu < 0 
+          || endu >= mpORBextractorRight->GetImagePyramid()[kpL.octave].cols) {
         continue;
       }
           
 
-      for(int incR=-L; incR  <= L; ++incR) {
-        cv::Mat IR = mpORBextractorRight->mvImagePyramid[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
+      for (int incR=-L; incR  <= L; ++incR) {
+        cv::Mat IR = mpORBextractorRight->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
         IR.convertTo(IR,CV_32F);
         IR = IR - IR.at<float>(w,w) * cv::Mat::ones(IR.rows,IR.cols,CV_32F);
 
@@ -599,7 +579,7 @@ void Frame::ComputeStereoMatches() {
 
   sort(vDistIdx.begin(),vDistIdx.end());
   const float median = vDistIdx[vDistIdx.size()/2].first;
-  const float thDist = 1.5f*1.4f*median; // TODO Where do these numbers come from??
+  const float thDist = 1.5f*1.4f*median;
 
   for(int i=vDistIdx.size()-1; i >= 0; --i) {
     if(vDistIdx[i].first<thDist) {

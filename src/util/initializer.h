@@ -22,14 +22,14 @@ public:
                   cv::Mat& R21, 
                   cv::Mat& t21, 
                   std::vector<cv::Point3f>& vP3D, 
-                  std::vector<bool>& vbTriangulated); // TODO rip boolvec
+                  std::deque<bool>& vbTriangulated);
 
 private:
 
-  void FindHomography(std::vector<bool>& vbMatchesInliers, 
+  void FindHomography(std::deque<bool>& vbMatchesInliers, 
                       float& score, 
                       cv::Mat& H21);
-  void FindFundamental(std::vector<bool>& vbInliers, 
+  void FindFundamental(std::deque<bool>& vbInliers, 
                        float& score, 
                        cv::Mat& F21);
 
@@ -40,30 +40,30 @@ private:
 
   float CheckHomography(const cv::Mat& H21, 
                         const cv::Mat& H12, 
-                        std::vector<bool>& vbMatchesInliers, 
+                        std::deque<bool>& vbMatchesInliers, 
                         const float sigma);
 
   float CheckFundamental(const cv::Mat& F21, 
-                         std::vector<bool>& vbMatchesInliers, 
+                         std::deque<bool>& vbMatchesInliers, 
                          const float sigma);
 
-  bool ReconstructF(std::vector<bool>& vbMatchesInliers, 
+  bool ReconstructF(std::deque<bool>& vbMatchesInliers, 
                     cv::Mat& F21, 
                     cv::Mat& K,
                     cv::Mat& R21, 
                     cv::Mat& t21, 
                     std::vector<cv::Point3f>& vP3D, 
-                    std::vector<bool>& vbTriangulated, 
+                    std::deque<bool>& vbTriangulated, 
                     float minParallax, 
                     int minTriangulated);
 
-  bool ReconstructH(std::vector<bool> &vbMatchesInliers, 
+  bool ReconstructH(std::deque<bool> &vbMatchesInliers, 
                     cv::Mat& H21, 
                     cv::Mat& K,
                     cv::Mat& R21, 
                     cv::Mat& t21, 
                     std::vector<cv::Point3f>& vP3D, 
-                    std::vector<bool>& vbTriangulated, 
+                    std::deque<bool>& vbTriangulated, 
                     float minParallax, 
                     int minTriangulated);
 
@@ -82,11 +82,11 @@ private:
               const std::vector<cv::KeyPoint>& vKeys1, 
               const std::vector<cv::KeyPoint>& vKeys2,
               const std::vector<Match>& vMatches12, 
-              std::vector<bool>& vbInliers,
+              std::deque<bool>& vbInliers,
               const cv::Mat& K, 
               std::vector<cv::Point3f>& vP3D, 
               float th2, 
-              std::vector<bool>& vbGood, 
+              std::deque<bool>& vbGood, 
               float& parallax);
 
   void DecomposeE(const cv::Mat& E, 
@@ -103,7 +103,7 @@ private:
 
   // Current Matches from Reference to Current
   std::vector<Match> mvMatches12;
-  std::vector<bool> mvbMatched1;
+  std::deque<bool> mvbMatched1;
 
   // Calibration
   cv::Mat mK;

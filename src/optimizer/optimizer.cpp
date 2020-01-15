@@ -37,7 +37,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
                                  bool* stop_flag, 
                                  const unsigned long loop_kf_index, 
                                  const bool is_robust) {
-  std::vector<bool> is_not_included_map_points(map_points.size(), false); //TODO vector of bool
+  std::deque<bool> is_not_included_map_points(map_points.size(), false);
 
   // These pointers are deleted in the optimizer destructor
   g2o::BlockSolver_6_3::LinearSolverType* linearSolver 
