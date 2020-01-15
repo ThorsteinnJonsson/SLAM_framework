@@ -92,7 +92,7 @@ private:
   std::shared_ptr<LoopCloser> loop_closer_ = nullptr;
 
   // ROS publisher for visualization
-  std::shared_ptr<RosPublisher> ros_publisher_ = nullptr; // TODO maybe change to unique
+  std::shared_ptr<RosPublisher> ros_publisher_ = nullptr;
 
   // System threads: Local Mapping, Loop Closing.
   // The Tracking thread "lives" in the main execution thread that creates the System object.
