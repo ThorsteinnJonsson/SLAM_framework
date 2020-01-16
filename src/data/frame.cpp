@@ -26,13 +26,6 @@ Frame::Frame(const Frame& frame)
       , mbf(frame.mbf)
       , mb(frame.mb)
       , mThDepth(frame.mThDepth)
-      , mvKeys(frame.mvKeys)
-      , mvKeysRight(frame.mvKeysRight)
-      , mvKeysUn(frame.mvKeysUn)
-      , mvuRight(frame.mvuRight)
-      , mvDepth(frame.mvDepth)
-      , mBowVec(frame.mBowVec)
-      , mFeatVec(frame.mFeatVec)
       , mDescriptors(frame.mDescriptors.clone())
       , mDescriptorsRight(frame.mDescriptorsRight.clone())
       , mvpMapPoints(frame.mvpMapPoints)
@@ -50,7 +43,15 @@ Frame::Frame(const Frame& frame)
       , left_orb_extractor_(frame.GetLeftOrbExtractor())
       , right_orb_extractor_(frame.GetRightOrbExtractor())
       , timestamp_(frame.GetTimestamp())
-      , num_keypoints_(frame.num_keypoints_) {
+      , num_keypoints_(frame.num_keypoints_)
+      , mvKeys(frame.GetKeys())
+      , mvKeysRight(frame.GetRightKeys())
+      , mvKeysUn(frame.GetUndistortedKeys())
+      , mvuRight(frame.StereoCoordRight())
+      , mvDepth(frame.StereoDepth()) 
+      , mBowVec(frame.GetBowVector())
+      , mFeatVec(frame.GetFeatureVector()) {
+
   grid_ = frame.GetGrid();
   if (!frame.mTcw.empty()) {
     SetPose(frame.mTcw);

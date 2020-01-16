@@ -183,8 +183,8 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Fr
   {
     std::unique_lock<std::mutex> lock(mMutex);
 
-    for (DBoW2::BowVector::const_iterator vit = frame.mBowVec.begin(); 
-                                          vit != frame.mBowVec.end(); 
+    for (DBoW2::BowVector::const_iterator vit = frame.GetBowVector().begin(); 
+                                          vit != frame.GetBowVector().end(); 
                                           ++vit) 
     {
       std::list<KeyFrame*>& lKFs = mvInvertedFile[vit->first];
@@ -231,7 +231,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Fr
     KeyFrame* pKFi = *lit;
     if (pKFi->mnRelocWords > minCommonWords) {
       ++nscores;
-      pKFi->mRelocScore = mpVoc->score(frame.mBowVec,
+      pKFi->mRelocScore = mpVoc->score(frame.GetBowVector(),
                                        pKFi->mBowVec);
       lScoreAndMatch.push_back(std::make_pair(pKFi->mRelocScore, pKFi));
     }

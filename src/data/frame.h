@@ -106,11 +106,6 @@ public:
   static constexpr int grid_rows = 48;
   static constexpr int grid_cols = 64;
 
-  const std::shared_ptr<OrbVocabulary>& GetVocabulary() const { return orb_vocabulary_; } 
-  const std::shared_ptr<ORBextractor>& GetLeftOrbExtractor() const {return left_orb_extractor_; } 
-  const std::shared_ptr<ORBextractor>& GetRightOrbExtractor() const {return right_orb_extractor_; } 
-  const double GetTimestamp() const { return timestamp_; } 
-
   // Calibration matrix and OpenCV distortion parameters.
   cv::Mat mK;
   static float fx;
@@ -134,21 +129,19 @@ public:
   // Number of KeyPoints.
   const int NumKeypoints() const { return num_keypoints_; }
 
-  // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
-  // In the stereo case, mvKeysUn is redundant as images must be rectified.
-  // In the RGB-D case, RGB images can be distorted.
+  const std::shared_ptr<OrbVocabulary>& GetVocabulary() const { return orb_vocabulary_; } 
+  const std::shared_ptr<ORBextractor>& GetLeftOrbExtractor() const {return left_orb_extractor_; } 
+  const std::shared_ptr<ORBextractor>& GetRightOrbExtractor() const {return right_orb_extractor_; } 
+  const double GetTimestamp() const { return timestamp_; } 
+
   const std::vector<cv::KeyPoint>& GetKeys() const { return mvKeys; }
   const std::vector<cv::KeyPoint>& GetRightKeys() const { return mvKeysRight; }
-  const std::vector<cv::KeyPoint>& GetUndistortedKeys() { return mvKeysUn; }
+  const std::vector<cv::KeyPoint>& GetUndistortedKeys() const { return mvKeysUn; }
+  const std::vector<float>& StereoCoordRight() const {return mvuRight; }
+  const std::vector<float>& StereoDepth() const {return mvDepth; }
 
-  // Corresponding stereo coordinate and depth for each keypoint.
-  // "Monocular" keypoints have a negative value.
-  std::vector<float> mvuRight;
-  std::vector<float> mvDepth;
-
-  // Bag of Words Vector structures.
-  DBoW2::BowVector mBowVec;
-  DBoW2::FeatureVector mFeatVec;
+  const DBoW2::BowVector& GetBowVector() const { return mBowVec; }
+  const DBoW2::FeatureVector& GetFeatureVector() const { return mFeatVec; }
 
   // ORB descriptor, each row associated to a keypoint.
   cv::Mat mDescriptors;
@@ -224,9 +217,21 @@ private:
 
   int num_keypoints_;
 
+  // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
+  // In the stereo case, mvKeysUn is redundant as images must be rectified.
+  // In the RGB-D case, RGB images can be distorted.
   std::vector<cv::KeyPoint> mvKeys;
   std::vector<cv::KeyPoint> mvKeysRight;
   std::vector<cv::KeyPoint> mvKeysUn;
+
+  // Corresponding stereo coordinate and depth for each keypoint.
+  // "Monocular" keypoints have a negative value.
+  std::vector<float> mvuRight;
+  std::vector<float> mvDepth;
+
+  // Bag of Words Vector structures.
+  DBoW2::BowVector mBowVec;
+  DBoW2::FeatureVector mFeatVec;
 
 };
 

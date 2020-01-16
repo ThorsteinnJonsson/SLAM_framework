@@ -28,7 +28,7 @@ PnPsolver::PnPsolver(const Frame &F, const std::vector<MapPoint*> &vpMapPointMat
         {
             if(!pMP->isBad())
             {
-                const cv::KeyPoint &kp = F.mvKeysUn[i];
+                const cv::KeyPoint &kp = F.GetUndistortedKeys()[i];
 
                 mvP2D.push_back(kp.pt);
                 mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);
