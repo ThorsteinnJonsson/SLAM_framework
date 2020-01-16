@@ -99,7 +99,7 @@ public:
   long unsigned int mnId;
   const long unsigned int mnFrameId;
 
-  const double mTimeStamp;
+  const double timestamp_;
 
   // Grid (to speed up feature matching)
   static constexpr int grid_rows = 48;

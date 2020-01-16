@@ -132,7 +132,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 {
     const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
-    vpMapPointMatches = vector<MapPoint*>(F.mN,static_cast<MapPoint*>(nullptr));
+    vpMapPointMatches = std::vector<MapPoint*>(F.NumKeypoints(),nullptr);
 
     const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
 
@@ -1330,8 +1330,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
     const bool bForward = tlc.at<float>(2)>CurrentFrame.mb && !bMono;
     const bool bBackward = -tlc.at<float>(2)>CurrentFrame.mb && !bMono;
 
-    for(int i=0; i<LastFrame.mN; i++)
-    {
+    for (int i = 0; i < LastFrame.NumKeypoints(); ++i) {
         MapPoint* pMP = LastFrame.mvpMapPoints[i];
 
         if(pMP)

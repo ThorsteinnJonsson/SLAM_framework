@@ -26,37 +26,37 @@ public:
   Frame(const Frame& frame);
 
   // Constructor for stereo cameras.
-  Frame(const cv::Mat& imLeft, 
-        const cv::Mat& imRight, 
-        const double timeStamp, 
-        const std::shared_ptr<ORBextractor>& extractorLeft, 
-        const std::shared_ptr<ORBextractor>& extractorRight, 
-        const std::shared_ptr<OrbVocabulary>& voc, 
+  Frame(const cv::Mat& left_image, 
+        const cv::Mat& right_image, 
+        const double timestamp, 
+        const std::shared_ptr<ORBextractor>& left_extractor, 
+        const std::shared_ptr<ORBextractor>& right_extractor, 
+        const std::shared_ptr<OrbVocabulary>& vocabulary, 
         cv::Mat& K, 
-        cv::Mat& distCoef, 
+        cv::Mat& dist_coeff, 
         const float bf, 
-        const float thDepth);
+        const float depth_threshold);
 
   // Constructor for RGB-D cameras.
-  Frame(const cv::Mat& imGray, 
-        const cv::Mat& imDepth, 
-        const double timeStamp, 
+  Frame(const cv::Mat& gray_image, 
+        const cv::Mat& depth_image, 
+        const double timestamp, 
         const std::shared_ptr<ORBextractor>& extractor,
-        const std::shared_ptr<OrbVocabulary>& voc, 
+        const std::shared_ptr<OrbVocabulary>& vocabulary, 
         cv::Mat& K, 
-        cv::Mat& distCoef, 
+        cv::Mat& dist_coeff, 
         const float bf, 
-        const float thDepth);
+        const float depth_threshold);
 
   // Constructor for Monocular cameras.
-  Frame(const cv::Mat& imGray, 
-        const double timeStamp, 
+  Frame(const cv::Mat& gray_image, 
+        const double timestamp, 
         const std::shared_ptr<ORBextractor>& extractor,
-        const std::shared_ptr<OrbVocabulary>& voc, 
+        const std::shared_ptr<OrbVocabulary>& vocabulary,
         cv::Mat& K, 
-        cv::Mat& distCoef, 
+        cv::Mat& dist_coeff, 
         const float bf, 
-        const float thDepth);
+        const float depth_threshold);
 
   // Extract ORB on the image. 0 for left image and 1 for right image.
   void ExtractORB(int flag, const cv::Mat& im);
@@ -106,15 +106,10 @@ public:
   static constexpr int grid_rows = 48;
   static constexpr int grid_cols = 64;
 
-  // Vocabulary used for relocalization.
-  std::shared_ptr<OrbVocabulary> mpORBvocabulary = nullptr;
-
-  // Feature extractor. The right is used only in the stereo case.
-  std::shared_ptr<ORBextractor> mpORBextractorLeft;
-  std::shared_ptr<ORBextractor> mpORBextractorRight;
-
-  // Frame timestamp.
-  double mTimeStamp;
+  const std::shared_ptr<OrbVocabulary>& GetVocabulary() const { return orb_vocabulary_; } 
+  const std::shared_ptr<ORBextractor>& GetLeftOrbExtractor() const {return left_orb_extractor_; } 
+  const std::shared_ptr<ORBextractor>& GetRightOrbExtractor() const {return right_orb_extractor_; } 
+  const double GetTimestamp() const { return timestamp_; } 
 
   // Calibration matrix and OpenCV distortion parameters.
   cv::Mat mK;
@@ -137,14 +132,14 @@ public:
   float mThDepth;
 
   // Number of KeyPoints.
-  int mN;
+  const int NumKeypoints() const { return num_keypoints_; }
 
   // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
   // In the stereo case, mvKeysUn is redundant as images must be rectified.
   // In the RGB-D case, RGB images can be distorted.
-  std::vector<cv::KeyPoint> mvKeys;
-  std::vector<cv::KeyPoint> mvKeysRight;
-  std::vector<cv::KeyPoint> mvKeysUn;
+  const std::vector<cv::KeyPoint>& GetKeys() const { return mvKeys; }
+  const std::vector<cv::KeyPoint>& GetRightKeys() const { return mvKeysRight; }
+  const std::vector<cv::KeyPoint>& GetUndistortedKeys() { return mvKeysUn; }
 
   // Corresponding stereo coordinate and depth for each keypoint.
   // "Monocular" keypoints have a negative value.
@@ -170,7 +165,7 @@ public:
   static float mfGridElementWidthInv;
   static float mfGridElementHeightInv;
 
-  const std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols>& GetGrid() const { return grid_; }
+  const std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>& GetGrid() const { return grid_; }
 
   // Camera pose.
   cv::Mat mTcw;
@@ -200,7 +195,8 @@ public:
   static bool mbInitialComputations;
 
 private:
-  void MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat);
+  void MakeInitialComputations(const cv::Mat& image, 
+                               cv::Mat& calibration_mat);
 
   // Undistort keypoints given OpenCV distortion parameters.
   // Only for the RGB-D case. Stereo must be already rectified!
@@ -211,7 +207,7 @@ private:
   void ComputeImageBounds(const cv::Mat& imLeft);
 
   // Assign keypoints to the grid for speed up feature matching (called in the constructor).
-  std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
+  std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols> grid_;
   void AssignFeaturesToGrid();
 
   // Rotation, translation and camera center
@@ -219,6 +215,18 @@ private:
   cv::Mat mtcw;
   cv::Mat mRwc;
   cv::Mat mOw; //==mtwc
+
+  std::shared_ptr<OrbVocabulary> orb_vocabulary_ = nullptr;
+  std::shared_ptr<ORBextractor> left_orb_extractor_;
+  std::shared_ptr<ORBextractor> right_orb_extractor_;
+  
+  double timestamp_;
+
+  int num_keypoints_;
+
+  std::vector<cv::KeyPoint> mvKeys;
+  std::vector<cv::KeyPoint> mvKeysRight;
+  std::vector<cv::KeyPoint> mvKeysUn;
 
 };
 

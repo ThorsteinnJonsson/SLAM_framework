@@ -229,7 +229,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
   optimizer.addVertex(vSE3);
 
   // Set MapPoint vertices
-  const int N = frame.mN;
+  const int N = frame.NumKeypoints();
 
   std::vector<g2o::EdgeSE3ProjectXYZOnlyPose*> vpEdgesMono;
   std::vector<size_t> vnIndexEdgeMono;
