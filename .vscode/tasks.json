@@ -6,7 +6,8 @@
     {
       "label": "build_command",
       "type": "shell",
-      "command": "sh scripts/build_relwithdebinfo.sh",
+      // "command": "sh scripts/build.sh Release",
+      "command": "sh scripts/build.sh RelWithDebInfo",
       "group": {
         "kind": "build",
         "isDefault": true
