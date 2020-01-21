@@ -247,7 +247,7 @@ void Tracker::Reset() {
 
 
 void Tracker::StereoInitialization() {
-  if (current_frame_.mN > 500) {
+  if (current_frame_.NumKeypoints() > 500) {
     // Set Frame pose to the origin
     current_frame_.SetPose(cv::Mat::eye(4,4,CV_32F));
 
@@ -258,8 +258,8 @@ void Tracker::StereoInitialization() {
     map_->AddKeyFrame(pKFini);
 
     // Create MapPoints and asscoiate to KeyFrame
-    for (int i=0; i < current_frame_.mN; ++i) {
-      float z = current_frame_.mvDepth[i];
+    for (int i=0; i < current_frame_.NumKeypoints(); ++i) {
+      float z = current_frame_.StereoDepth()[i];
       if (z > 0) {
         cv::Mat x3D = current_frame_.UnprojectStereo(i);
         MapPoint* pNewMP = new MapPoint(x3D, pKFini, map_);
@@ -298,13 +298,13 @@ void Tracker::MonocularInitialization() {
 
   if (!mpInitializer) {
     // Set Reference Frame
-    if (current_frame_.mvKeys.size() > 100) {
+    if (current_frame_.GetKeys().size() > 100) {
       initial_frame_ = Frame(current_frame_);
       last_frame_ = Frame(current_frame_);
 
-      prev_matched_.resize(current_frame_.mvKeysUn.size());
-      for (size_t i = 0; i < current_frame_.mvKeysUn.size(); ++i) {
-        prev_matched_[i] = current_frame_.mvKeysUn[i].pt;
+      prev_matched_.resize(current_frame_.GetUndistortedKeys().size());
+      for (size_t i = 0; i < current_frame_.GetUndistortedKeys().size(); ++i) {
+        prev_matched_[i] = current_frame_.GetUndistortedKeys()[i].pt;
       }
 
       mpInitializer.reset(new Initializer(current_frame_, 1.0, 200));
@@ -313,7 +313,7 @@ void Tracker::MonocularInitialization() {
     }
   } else {
     // Try to initialize
-    if (current_frame_.mvKeys.size() <= 100u) {
+    if (current_frame_.GetKeys().size() <= 100u) {
       mpInitializer.reset(nullptr);
       std::fill(init_matches_.begin(), init_matches_.end(), -1);
       return;
@@ -531,7 +531,7 @@ void Tracker::Track() {
             current_frame_.mvbOutlier = vbOutMM;
 
             if (use_visual_odometry_) {
-              for (int i = 0; i < current_frame_.mN; ++i) {
+              for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
                 if (current_frame_.mvpMapPoints[i] && !current_frame_.mvbOutlier[i]) {
                   current_frame_.mvpMapPoints[i]->IncreaseFound();
                 }
@@ -586,7 +586,7 @@ void Tracker::Track() {
       }
 
       // Clean VO matches
-      for (int i=0; i < current_frame_.mN; ++i) {
+      for (int i=0; i < current_frame_.NumKeypoints(); ++i) {
         MapPoint* pMP = current_frame_.mvpMapPoints[i];
         if (pMP && pMP->NumObservations() < 1) {
           current_frame_.mvbOutlier[i] = false; 
@@ -603,7 +603,7 @@ void Tracker::Track() {
       // to pass to the new keyframe, so that bundle adjustment will finally decide
       // if they are outliers or not. We don't want next frame to estimate its position
       // with those points so we discard them in the frame.
-      for (int i=0; i < current_frame_.mN; ++i) {
+      for (int i=0; i < current_frame_.NumKeypoints(); ++i) {
         if (current_frame_.mvpMapPoints[i] && current_frame_.mvbOutlier[i]) {
           current_frame_.mvpMapPoints[i] = nullptr;
         }
@@ -631,7 +631,7 @@ void Tracker::Track() {
     cv::Mat Tcr = current_frame_.mTcw * current_frame_.mpReferenceKF->GetPoseInverse();
     relative_frame_poses_.push_back(Tcr);
     reference_keyframes_.push_back(reference_keyframe_);
-    frame_times_.push_back(current_frame_.mTimeStamp);
+    frame_times_.push_back(current_frame_.GetTimestamp());
     is_lost_.push_back( state_ == TrackingState::LOST );
   } else {
     // This can happen if tracking is lost
@@ -643,7 +643,7 @@ void Tracker::Track() {
 }
 
 void Tracker::ReplaceInLastFrame() {
-  for (int i = 0; i < last_frame_.mN; ++i) {
+  for (int i = 0; i < last_frame_.NumKeypoints(); ++i) {
     MapPoint* pMP = last_frame_.mvpMapPoints[i];
     if (pMP) {
       MapPoint* pRep = pMP->GetReplaced();
@@ -675,7 +675,7 @@ bool Tracker::TrackReferenceKeyFrame() {
 
   // Discard outliers
   int nmatchesMap = 0;
-  for (int i = 0; i < current_frame_.mN; ++i) {
+  for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
     if (current_frame_.mvpMapPoints[i]) {
       if (current_frame_.mvbOutlier[i]) {
         MapPoint* pMP = current_frame_.mvpMapPoints[i];
@@ -709,9 +709,9 @@ void Tracker::UpdateLastFrame() {
   // Create "visual odometry" MapPoints
   // We sort points according to their measured depth by the stereo/RGB-D sensor
   std::vector<std::pair<float,int>> vDepthIdx;
-  vDepthIdx.reserve(last_frame_.mN);
-  for (int i = 0; i < last_frame_.mN; ++i) {
-    float z = last_frame_.mvDepth[i];
+  vDepthIdx.reserve(last_frame_.NumKeypoints());
+  for (int i = 0; i < last_frame_.NumKeypoints(); ++i) {
+    float z = last_frame_.StereoDepth()[i];
     if(z > 0) {
       vDepthIdx.push_back(std::make_pair(z,i));
     }
@@ -798,7 +798,7 @@ bool Tracker::TrackWithMotionModel() {
 
   // Discard outliers
   int nmatchesMap = 0;
-  for (int i = 0; i < current_frame_.mN; ++i) {
+  for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
     if (current_frame_.mvpMapPoints[i]) {
       if (current_frame_.mvbOutlier[i]) {
         MapPoint* pMP = current_frame_.mvpMapPoints[i];
@@ -926,7 +926,7 @@ bool Tracker::Relocalization() {
           continue;
         }
 
-        for (int io = 0; io < current_frame_.mN; ++io) {
+        for (int io = 0; io < current_frame_.NumKeypoints(); ++io) {
           if (current_frame_.mvbOutlier[io]) {
             current_frame_.mvpMapPoints[io] = nullptr;
           }
@@ -947,7 +947,7 @@ bool Tracker::Relocalization() {
             // the camera has been already optimized with many points
             if (nGood > 30 && nGood < 50) {
               sFound.clear();
-              for (int ip = 0; ip < current_frame_.mN; ++ip) {
+              for (int ip = 0; ip < current_frame_.NumKeypoints(); ++ip) {
                 if (current_frame_.mvpMapPoints[ip]) {
                   sFound.insert(current_frame_.mvpMapPoints[ip]);
                 }
@@ -962,7 +962,7 @@ bool Tracker::Relocalization() {
               if (nGood + nadditional >= 50) {
                 nGood = Optimizer::PoseOptimization(current_frame_);
 
-                for (int io = 0; io < current_frame_.mN; ++io) {
+                for (int io = 0; io < current_frame_.NumKeypoints(); ++io) {
                   if (current_frame_.mvbOutlier[io]) {
                     current_frame_.mvpMapPoints[io] = nullptr;
                   }
@@ -1028,7 +1028,7 @@ void Tracker::UpdateLocalPoints() {
 void Tracker::UpdateLocalKeyFrames() {
   // Each map point vote for the keyframes in which it has been observed
   std::map<KeyFrame*,int> keyframeCounter;
-  for (int i = 0; i < current_frame_.mN; ++i) {
+  for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
     if (current_frame_.mvpMapPoints[i]) {
       MapPoint* pMP = current_frame_.mvpMapPoints[i];
       if (!pMP->isBad()) {
@@ -1144,7 +1144,7 @@ bool Tracker::TrackLocalMap() {
   num_inlier_matches_ = 0;
 
   // Update MapPoints Statistics
-  for (int i = 0; i < current_frame_.mN; ++i) {
+  for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
     if (current_frame_.mvpMapPoints[i]) {
       if (!current_frame_.mvbOutlier[i]) {
         current_frame_.mvpMapPoints[i]->IncreaseFound();
@@ -1253,8 +1253,8 @@ bool Tracker::NeedNewKeyFrame() {
   int nNonTrackedClose = 0;
   int nTrackedClose = 0;
   if (sensor_type_ != SENSOR_TYPE::MONOCULAR) {
-    for (int i = 0; i < current_frame_.mN; ++i) {
-      if (current_frame_.mvDepth[i] > 0 && current_frame_.mvDepth[i] < depth_threshold_) {
+    for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
+      if (current_frame_.StereoDepth()[i] > 0 && current_frame_.StereoDepth()[i] < depth_threshold_) {
         if (current_frame_.mvpMapPoints[i] && !current_frame_.mvbOutlier[i]) {
           ++nTrackedClose;
         } else {
@@ -1325,9 +1325,9 @@ void Tracker::CreateNewKeyFrame() {
     // We create all those MapPoints whose depth < depth_threshold_.
     // If there are less than 100 close points we create the 100 closest.
     std::vector<std::pair<float,int>> vDepthIdx;
-    vDepthIdx.reserve(current_frame_.mN);
-    for (int i = 0; i < current_frame_.mN; ++i) {
-      float z = current_frame_.mvDepth[i];
+    vDepthIdx.reserve(current_frame_.NumKeypoints());
+    for (int i = 0; i < current_frame_.NumKeypoints(); ++i) {
+      float z = current_frame_.StereoDepth()[i];
       if (z > 0) {
         vDepthIdx.push_back(std::make_pair(z,i));
       }

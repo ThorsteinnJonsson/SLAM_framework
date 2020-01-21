@@ -21,23 +21,11 @@ float Frame::mfGridElementWidthInv;
 float Frame::mfGridElementHeightInv;
 
 Frame::Frame(const Frame& frame)
-      : mpORBvocabulary(frame.mpORBvocabulary)
-      , mpORBextractorLeft(frame.mpORBextractorLeft)
-      , mpORBextractorRight(frame.mpORBextractorRight)
-      , mTimeStamp(frame.mTimeStamp)
-      , mK(frame.mK.clone())
+      : mK(frame.mK.clone())
       , mDistCoef(frame.mDistCoef.clone())
       , mbf(frame.mbf)
       , mb(frame.mb)
       , mThDepth(frame.mThDepth)
-      , mN(frame.mN)
-      , mvKeys(frame.mvKeys)
-      , mvKeysRight(frame.mvKeysRight)
-      , mvKeysUn(frame.mvKeysUn)
-      , mvuRight(frame.mvuRight)
-      , mvDepth(frame.mvDepth)
-      , mBowVec(frame.mBowVec)
-      , mFeatVec(frame.mFeatVec)
       , mDescriptors(frame.mDescriptors.clone())
       , mDescriptorsRight(frame.mDescriptorsRight.clone())
       , mvpMapPoints(frame.mvpMapPoints)
@@ -50,7 +38,20 @@ Frame::Frame(const Frame& frame)
       , mvScaleFactors(frame.mvScaleFactors)
       , mvInvScaleFactors(frame.mvInvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
-      , mvInvLevelSigma2(frame.mvInvLevelSigma2) {
+      , mvInvLevelSigma2(frame.mvInvLevelSigma2)
+      , orb_vocabulary_(frame.GetVocabulary())
+      , left_orb_extractor_(frame.GetLeftOrbExtractor())
+      , right_orb_extractor_(frame.GetRightOrbExtractor())
+      , timestamp_(frame.GetTimestamp())
+      , num_keypoints_(frame.num_keypoints_)
+      , mvKeys(frame.GetKeys())
+      , mvKeysRight(frame.GetRightKeys())
+      , mvKeysUn(frame.GetUndistortedKeys())
+      , mvuRight(frame.StereoCoordRight())
+      , mvDepth(frame.StereoDepth()) 
+      , mBowVec(frame.GetBowVector())
+      , mFeatVec(frame.GetFeatureVector()) {
+
   grid_ = frame.GetGrid();
   if (!frame.mTcw.empty()) {
     SetPose(frame.mTcw);
@@ -59,7 +60,7 @@ Frame::Frame(const Frame& frame)
 
 Frame::Frame(const cv::Mat& imLeft, 
              const cv::Mat& imRight, 
-             const double timeStamp, 
+             const double timestamp, 
              const std::shared_ptr<ORBextractor>& extractorLeft, 
              const std::shared_ptr<ORBextractor>& extractorRight, 
              const std::shared_ptr<OrbVocabulary>& voc, 
@@ -67,26 +68,26 @@ Frame::Frame(const cv::Mat& imLeft,
              cv::Mat& distCoef, 
              const float bf, 
              const float thDepth)
-    : mpORBvocabulary(voc)
-    , mpORBextractorLeft(extractorLeft)
-    , mpORBextractorRight(extractorRight)
-    , mTimeStamp(timeStamp)
-    , mK(K.clone())
+    : mK(K.clone())
     , mDistCoef(distCoef.clone())
     , mbf(bf)
     , mThDepth(thDepth)
-    , mpReferenceKF(nullptr) {
+    , mpReferenceKF(nullptr) 
+    , orb_vocabulary_(voc)
+    , left_orb_extractor_(extractorLeft)
+    , right_orb_extractor_(extractorRight)
+    , timestamp_(timestamp) {
   // Frame ID
   mnId = nNextId++;
 
   // Scale Level Info
-  mnScaleLevels = mpORBextractorLeft->GetLevels();
-  mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+  mnScaleLevels = left_orb_extractor_->GetLevels();
+  mfScaleFactor = left_orb_extractor_->GetScaleFactor();
   mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-  mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-  mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
+  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
+  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
+  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
 
   // ORB extraction
   std::thread thread_left(&Frame::ExtractORB, this, 0, imLeft);
@@ -94,7 +95,7 @@ Frame::Frame(const cv::Mat& imLeft,
   thread_left.join();
   thread_right.join();
 
-  mN = mvKeys.size();
+  num_keypoints_ = mvKeys.size();
   if(mvKeys.empty()) {
     return;
   }
@@ -102,8 +103,8 @@ Frame::Frame(const cv::Mat& imLeft,
   UndistortKeyPoints();
   ComputeStereoMatches();
 
-  mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);    
-  mvbOutlier = std::deque<bool>(mN, false);
+  mvpMapPoints = std::vector<MapPoint*>(num_keypoints_, nullptr);    
+  mvbOutlier = std::deque<bool>(num_keypoints_, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations)  {
@@ -119,37 +120,37 @@ Frame::Frame(const cv::Mat& imLeft,
 
 Frame::Frame(const cv::Mat& imGray, 
              const cv::Mat& imDepth, 
-             const double timeStamp, 
+             const double timestamp, 
              const std::shared_ptr<ORBextractor>& extractor,
              const std::shared_ptr<OrbVocabulary>& voc, 
              cv::Mat& K, 
              cv::Mat& distCoef, 
              const float bf, 
              const float thDepth)
-      : mpORBvocabulary(voc)
-      , mpORBextractorLeft(extractor)
-      , mpORBextractorRight(nullptr)
-      , mTimeStamp(timeStamp)
-      , mK(K.clone())
+      : mK(K.clone())
       , mDistCoef(distCoef.clone())
       , mbf(bf)
-      , mThDepth(thDepth) {
+      , mThDepth(thDepth) 
+      , orb_vocabulary_(voc)
+      , left_orb_extractor_(extractor)
+      , right_orb_extractor_(nullptr) 
+      , timestamp_(timestamp) {
   // Frame ID
   mnId = nNextId++;
 
   // Scale Level Info
-  mnScaleLevels = mpORBextractorLeft->GetLevels();
-  mfScaleFactor = mpORBextractorLeft->GetScaleFactor();    
+  mnScaleLevels = left_orb_extractor_->GetLevels();
+  mfScaleFactor = left_orb_extractor_->GetScaleFactor();    
   mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-  mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-  mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
+  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
+  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
+  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
 
   // ORB extraction
   ExtractORB(0,imGray);
 
-  mN = mvKeys.size();
+  num_keypoints_ = mvKeys.size();
 
   if(mvKeys.empty()) {
     return;
@@ -159,8 +160,8 @@ Frame::Frame(const cv::Mat& imGray,
 
   ComputeStereoFromRGBD(imDepth);
 
-  mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::deque<bool>(mN, false);
+  mvpMapPoints = std::vector<MapPoint*>(num_keypoints_, nullptr);
+  mvbOutlier = std::deque<bool>(num_keypoints_, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if (mbInitialComputations) {
@@ -182,30 +183,30 @@ Frame::Frame(const cv::Mat& imGray,
              cv::Mat& distCoef, 
              const float bf, 
              const float thDepth)
-      : mpORBvocabulary(voc)
-      , mpORBextractorLeft(extractor)
-      , mpORBextractorRight(nullptr)
-      , mTimeStamp(timeStamp)
-      , mK(K.clone())
+      : mK(K.clone())
       , mDistCoef(distCoef.clone())
       , mbf(bf)
-      , mThDepth(thDepth) {
+      , mThDepth(thDepth)
+      , orb_vocabulary_(voc)
+      , left_orb_extractor_(extractor)
+      , right_orb_extractor_(nullptr) 
+      , timestamp_(timeStamp){
     // Frame ID
   mnId = nNextId++;
 
   // Scale Level Info
-  mnScaleLevels = mpORBextractorLeft->GetLevels();
-  mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+  mnScaleLevels = left_orb_extractor_->GetLevels();
+  mfScaleFactor = left_orb_extractor_->GetScaleFactor();
   mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-  mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-  mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
+  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
+  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
+  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
 
   // ORB extraction
   ExtractORB(0,imGray);
 
-  mN = mvKeys.size();
+  num_keypoints_ = mvKeys.size();
 
   if(mvKeys.empty()) {
     return;
@@ -214,11 +215,11 @@ Frame::Frame(const cv::Mat& imGray,
   UndistortKeyPoints();
 
   // Set no stereo information
-  mvuRight = std::vector<float>(mN,-1);
-  mvDepth = std::vector<float>(mN,-1);
+  mvuRight = std::vector<float>(num_keypoints_,-1);
+  mvDepth = std::vector<float>(num_keypoints_,-1);
 
-  mvpMapPoints = std::vector<MapPoint*>(mN, nullptr);
-  mvbOutlier = std::deque<bool>(mN, false);
+  mvpMapPoints = std::vector<MapPoint*>(num_keypoints_, nullptr);
+  mvbOutlier = std::deque<bool>(num_keypoints_, false);
 
   // This is done only for the first Frame (or after a change in the calibration)
   if(mbInitialComputations) {
@@ -245,13 +246,13 @@ void Frame::MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_m
 }
 
 void Frame::AssignFeaturesToGrid() {
-  int nReserve = 0.5f * mN / (grid_cols * grid_rows);
+  int nReserve = 0.5f * num_keypoints_ / (grid_cols * grid_rows);
   for(unsigned int i=0; i < grid_cols; ++i) {
     for (unsigned int j=0; j < grid_rows; ++j) {
       grid_[i][j].reserve(nReserve);
     }
   }
-  for (int i=0; i < mN; ++i) {
+  for (int i=0; i < num_keypoints_; ++i) {
     const cv::KeyPoint& kp = mvKeysUn[i];
     int nGridPosX, nGridPosY;
     if(PosInGrid(kp, nGridPosX, nGridPosY)) {
@@ -262,16 +263,16 @@ void Frame::AssignFeaturesToGrid() {
 
 void Frame::ExtractORB(int flag, const cv::Mat& im) {
   if (flag == 0) {
-    mpORBextractorLeft->Compute(im, cv::Mat(), mvKeys, mDescriptors);
+    left_orb_extractor_->Compute(im, cv::Mat(), mvKeys, mDescriptors);
   } else {
-    mpORBextractorRight->Compute(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
+    right_orb_extractor_->Compute(im, cv::Mat(), mvKeysRight, mDescriptorsRight);
   }    
 }
 
 void Frame::ComputeBoW() {
   if(mBowVec.empty()) {
     std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
-    mpORBvocabulary->transform(vCurrentDesc, mBowVec, mFeatVec, 4);
+    orb_vocabulary_->transform(vCurrentDesc, mBowVec, mFeatVec, 4);
   }
 }
 
@@ -366,7 +367,7 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
                                              const int minLevel, 
                                              const int maxLevel) const {
   std::vector<size_t> vIndices;
-  vIndices.reserve(mN);
+  vIndices.reserve(num_keypoints_);
 
   const int nMinCellX = std::max(0, 
                                   static_cast<int>(std::floor((x-mnMinX-r) * mfGridElementWidthInv)));
@@ -419,12 +420,12 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
 
 
 void Frame::ComputeStereoMatches() {
-  mvuRight = std::vector<float>(mN,-1.0f);
-  mvDepth = std::vector<float>(mN,-1.0f);
+  mvuRight = std::vector<float>(num_keypoints_,-1.0f);
+  mvDepth = std::vector<float>(num_keypoints_,-1.0f);
 
   const int thOrbDist = (OrbMatcher::TH_HIGH + OrbMatcher::TH_LOW)/2;
 
-  const int nRows = mpORBextractorLeft->GetImagePyramid()[0].rows;
+  const int nRows = left_orb_extractor_->GetImagePyramid()[0].rows;
 
   //Assign keypoints to row table
   std::vector<std::vector<size_t>> vRowIndices(nRows, std::vector<size_t>());
@@ -454,9 +455,9 @@ void Frame::ComputeStereoMatches() {
 
   // For each left keypoint search a match in the right image
   std::vector<std::pair<int,int>> vDistIdx;
-  vDistIdx.reserve(mN);
+  vDistIdx.reserve(num_keypoints_);
 
-  for (int iL = 0; iL < mN; ++iL) {
+  for (int iL = 0; iL < num_keypoints_; ++iL) {
     const cv::KeyPoint& kpL = mvKeys[iL];
     const int levelL = kpL.octave;
     const float vL = kpL.pt.y;
@@ -513,7 +514,7 @@ void Frame::ComputeStereoMatches() {
 
       // sliding window search
       const int w = 5;
-      cv::Mat IL = mpORBextractorLeft->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
+      cv::Mat IL = left_orb_extractor_->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduL-w,scaleduL+w+1);
       IL.convertTo(IL, CV_32F);
       IL = IL - IL.at<float>(w,w) * cv::Mat::ones(IL.rows,IL.cols,CV_32F);
 
@@ -526,13 +527,13 @@ void Frame::ComputeStereoMatches() {
       const float iniu = scaleduR0+L-w;
       const float endu = scaleduR0+L+w+1;
       if (iniu < 0 
-          || endu >= mpORBextractorRight->GetImagePyramid()[kpL.octave].cols) {
+          || endu >= right_orb_extractor_->GetImagePyramid()[kpL.octave].cols) {
         continue;
       }
           
 
       for (int incR=-L; incR  <= L; ++incR) {
-        cv::Mat IR = mpORBextractorRight->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
+        cv::Mat IR = right_orb_extractor_->GetImagePyramid()[kpL.octave].rowRange(scaledvL-w,scaledvL+w+1).colRange(scaleduR0+incR-w,scaleduR0+incR+w+1);
         IR.convertTo(IR,CV_32F);
         IR = IR - IR.at<float>(w,w) * cv::Mat::ones(IR.rows,IR.cols,CV_32F);
 
@@ -592,10 +593,10 @@ void Frame::ComputeStereoMatches() {
 }
 
 void Frame::ComputeStereoFromRGBD(const cv::Mat& imDepth) {
-  mvuRight = std::vector<float>(mN,-1);
-  mvDepth = std::vector<float>(mN,-1);
+  mvuRight = std::vector<float>(num_keypoints_,-1);
+  mvDepth = std::vector<float>(num_keypoints_,-1);
 
-  for (int i = 0; i < mN; ++i) {
+  for (int i = 0; i < num_keypoints_; ++i) {
     const cv::KeyPoint& kp = mvKeys[i];
     const cv::KeyPoint& kpU = mvKeysUn[i];
 
@@ -634,8 +635,8 @@ void Frame::UndistortKeyPoints() {
   }
 
   // Fill matrix with points
-  cv::Mat mat(mN,2,CV_32F);
-  for(int i=0; i < mN; ++i) {
+  cv::Mat mat(num_keypoints_,2,CV_32F);
+  for(int i=0; i < num_keypoints_; ++i) {
     mat.at<float>(i,0) = mvKeys[i].pt.x;
     mat.at<float>(i,1) = mvKeys[i].pt.y;
   }
@@ -646,8 +647,8 @@ void Frame::UndistortKeyPoints() {
   mat = mat.reshape(1);
 
   // Fill undistorted keypoint vector
-  mvKeysUn.resize(mN);
-  for (int i = 0; i < mN; ++i) {
+  mvKeysUn.resize(num_keypoints_);
+  for (int i = 0; i < num_keypoints_; ++i) {
     cv::KeyPoint kp = mvKeys[i];
     kp.pt.x = mat.at<float>(i,0);
     kp.pt.y = mat.at<float>(i,1);

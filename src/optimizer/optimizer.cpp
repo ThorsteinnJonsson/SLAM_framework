@@ -229,7 +229,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
   optimizer.addVertex(vSE3);
 
   // Set MapPoint vertices
-  const int N = frame.mN;
+  const int N = frame.NumKeypoints();
 
   std::vector<g2o::EdgeSE3ProjectXYZOnlyPose*> vpEdgesMono;
   std::vector<size_t> vnIndexEdgeMono;
@@ -254,12 +254,12 @@ int Optimizer::PoseOptimization(Frame& frame) {
       }
 
       // Monocular observation
-      if (frame.mvuRight[i] < 0) {
+      if (frame.StereoCoordRight()[i] < 0) {
         ++num_initial_correspondences;
         frame.mvbOutlier[i] = false;
 
         Eigen::Vector2d obs;
-        const cv::KeyPoint& kpUn = frame.mvKeysUn[i];
+        const cv::KeyPoint& kpUn = frame.GetUndistortedKeys()[i];
         obs << kpUn.pt.x, kpUn.pt.y;
 
         g2o::EdgeSE3ProjectXYZOnlyPose* e = new g2o::EdgeSE3ProjectXYZOnlyPose();
@@ -292,8 +292,8 @@ int Optimizer::PoseOptimization(Frame& frame) {
 
         //SET EDGE
         Eigen::Vector3d obs;
-        const cv::KeyPoint &kpUn = frame.mvKeysUn[i];
-        const float &kp_ur = frame.mvuRight[i];
+        const cv::KeyPoint &kpUn = frame.GetUndistortedKeys()[i];
+        const float &kp_ur = frame.StereoCoordRight()[i];
         obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
         g2o::EdgeStereoSE3ProjectXYZOnlyPose* e 

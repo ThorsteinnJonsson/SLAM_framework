@@ -65,7 +65,7 @@ MapPoint::MapPoint(const cv::Mat& position,
 
   const cv::Mat PC = position - Ow;
   const float dist = cv::norm(PC);
-  const int level = frame->mvKeysUn[idxF].octave;
+  const int level = frame->GetUndistortedKeys()[idxF].octave;
   const float levelScaleFactor =  frame->mvScaleFactors[level];
   const int nLevels = frame->mnScaleLevels;
 

@@ -60,9 +60,9 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
                 if(F.mvpMapPoints[idx]->NumObservations()>0)
                     continue;
 
-            if(F.mvuRight[idx]>0)
+            if(F.StereoCoordRight()[idx]>0)
             {
-                const float er = fabs(pMP->track_projected_x_right-F.mvuRight[idx]);
+                const float er = fabs(pMP->track_projected_x_right-F.StereoCoordRight()[idx]);
                 if(er>r*F.mvScaleFactors[nPredictedLevel])
                     continue;
             }
@@ -76,12 +76,12 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
                 bestDist2=bestDist;
                 bestDist=dist;
                 bestLevel2 = bestLevel;
-                bestLevel = F.mvKeysUn[idx].octave;
+                bestLevel = F.GetUndistortedKeys()[idx].octave;
                 bestIdx=idx;
             }
             else if(dist<bestDist2)
             {
-                bestLevel2 = F.mvKeysUn[idx].octave;
+                bestLevel2 = F.GetUndistortedKeys()[idx].octave;
                 bestDist2=dist;
             }
         }
@@ -132,7 +132,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 {
     const vector<MapPoint*> vpMapPointsKF = pKF->GetMapPointMatches();
 
-    vpMapPointMatches = vector<MapPoint*>(F.mN,static_cast<MapPoint*>(nullptr));
+    vpMapPointMatches = std::vector<MapPoint*>(F.NumKeypoints(),nullptr);
 
     const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
 
@@ -145,9 +145,9 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 
     // We perform the matching over ORB that belong to the same vocabulary node (at a certain level)
     DBoW2::FeatureVector::const_iterator KFit = vFeatVecKF.begin();
-    DBoW2::FeatureVector::const_iterator Fit = F.mFeatVec.begin();
+    DBoW2::FeatureVector::const_iterator Fit = F.GetFeatureVector().begin();
     DBoW2::FeatureVector::const_iterator KFend = vFeatVecKF.end();
-    DBoW2::FeatureVector::const_iterator Fend = F.mFeatVec.end();
+    DBoW2::FeatureVector::const_iterator Fend = F.GetFeatureVector().end();
 
     while(KFit != KFend && Fit != Fend)
     {
@@ -207,7 +207,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 
                         if(mbCheckOrientation)
                         {
-                            float rot = kp.angle-F.mvKeys[bestIdxF].angle;
+                            float rot = kp.angle-F.GetKeys()[bestIdxF].angle;
                             if(rot<0.0)
                                 rot+=360.0f;
                             int bin = round(rot*factor);
@@ -231,7 +231,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
         }
         else
         {
-            Fit = F.mFeatVec.lower_bound(KFit->first);
+            Fit = F.GetFeatureVector().lower_bound(KFit->first);
         }
     }
 
@@ -265,19 +265,19 @@ int OrbMatcher::SearchForInitialization(Frame& F1,
                                         std::vector<int>& vnMatches12, 
                                         int windowSize) {
   int nmatches = 0;
-  vnMatches12 = std::vector<int>(F1.mvKeysUn.size(),-1);
+  vnMatches12 = std::vector<int>(F1.GetUndistortedKeys().size(),-1);
 
   vector<int> rotHist[HISTO_LENGTH];
   for(int i=0;i<HISTO_LENGTH;i++)
       rotHist[i].reserve(500);
   const float factor = 1.0f/HISTO_LENGTH;
 
-  vector<int> vMatchedDistance(F2.mvKeysUn.size(),INT_MAX);
-  vector<int> vnMatches21(F2.mvKeysUn.size(),-1);
+  vector<int> vMatchedDistance(F2.GetUndistortedKeys().size(),INT_MAX);
+  vector<int> vnMatches21(F2.GetUndistortedKeys().size(),-1);
 
-  for(size_t i1=0, iend1=F1.mvKeysUn.size(); i1<iend1; i1++)
+  for(size_t i1=0, iend1=F1.GetUndistortedKeys().size(); i1<iend1; i1++)
   {
-      cv::KeyPoint kp1 = F1.mvKeysUn[i1];
+      cv::KeyPoint kp1 = F1.GetUndistortedKeys()[i1];
       int level1 = kp1.octave;
       if(level1>0)
           continue;
@@ -332,7 +332,7 @@ int OrbMatcher::SearchForInitialization(Frame& F1,
 
               if(mbCheckOrientation)
               {
-                  float rot = F1.mvKeysUn[i1].angle-F2.mvKeysUn[bestIdx2].angle;
+                  float rot = F1.GetUndistortedKeys()[i1].angle-F2.GetUndistortedKeys()[bestIdx2].angle;
                   if(rot<0.0)
                       rot+=360.0f;
                   int bin = round(rot*factor);
@@ -374,7 +374,7 @@ int OrbMatcher::SearchForInitialization(Frame& F1,
   //Update prev matched
   for(size_t i1=0, iend1=vnMatches12.size(); i1<iend1; i1++)
       if(vnMatches12[i1]>=0)
-          vbPrevMatched[i1]=F2.mvKeysUn[vnMatches12[i1]].pt;
+          vbPrevMatched[i1]=F2.GetUndistortedKeys()[vnMatches12[i1]].pt;
 
   return nmatches;
 }
@@ -1330,8 +1330,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
     const bool bForward = tlc.at<float>(2)>CurrentFrame.mb && !bMono;
     const bool bBackward = -tlc.at<float>(2)>CurrentFrame.mb && !bMono;
 
-    for(int i=0; i<LastFrame.mN; i++)
-    {
+    for (int i = 0; i < LastFrame.NumKeypoints(); ++i) {
         MapPoint* pMP = LastFrame.mvpMapPoints[i];
 
         if(pMP)
@@ -1357,7 +1356,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 if(v<CurrentFrame.mnMinY || v>CurrentFrame.mnMaxY)
                     continue;
 
-                int nLastOctave = LastFrame.mvKeys[i].octave;
+                int nLastOctave = LastFrame.GetKeys()[i].octave;
 
                 // Search in a window. Size depends on scale
                 float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
@@ -1388,10 +1387,10 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                       }
                     }
 
-                    if(CurrentFrame.mvuRight[i2]>0)
+                    if(CurrentFrame.StereoCoordRight()[i2]>0)
                     {
                         const float ur = u - CurrentFrame.mbf*invzc;
-                        const float er = fabs(ur - CurrentFrame.mvuRight[i2]);
+                        const float er = fabs(ur - CurrentFrame.StereoCoordRight()[i2]);
                         if(er>radius)
                             continue;
                     }
@@ -1414,7 +1413,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
 
                     if(mbCheckOrientation)
                     {
-                        float rot = LastFrame.mvKeysUn[i].angle-CurrentFrame.mvKeysUn[bestIdx2].angle;
+                        float rot = LastFrame.GetUndistortedKeys()[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);
@@ -1543,7 +1542,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 
                     if(mbCheckOrientation)
                     {
-                        float rot = pKF->mvKeysUn[i].angle-CurrentFrame.mvKeysUn[bestIdx2].angle;
+                        float rot = pKF->mvKeysUn[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);

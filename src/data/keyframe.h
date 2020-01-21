@@ -99,7 +99,7 @@ public:
   long unsigned int mnId;
   const long unsigned int mnFrameId;
 
-  const double mTimeStamp;
+  const double timestamp_;
 
   // Grid (to speed up feature matching)
   static constexpr int grid_rows = 48;
@@ -151,6 +151,7 @@ public:
   // KeyPoints, stereo coordinate and descriptors (all associated by an index)
   const std::vector<cv::KeyPoint> mvKeys;
   const std::vector<cv::KeyPoint> mvKeysUn;
+  
   const std::vector<float> mvuRight; // negative value for monocular points
   const std::vector<float> mvDepth; // negative value for monocular points
   const cv::Mat mDescriptors;
