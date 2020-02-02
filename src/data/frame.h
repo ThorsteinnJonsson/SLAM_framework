@@ -71,10 +71,10 @@ public:
   void UpdatePoseMatrices();
 
   // Returns the camera center.
-  inline cv::Mat GetCameraCenter() { return mOw.clone(); }
+  inline cv::Mat GetCameraCenter() { return Ow_.clone(); }
 
   // Returns inverse of rotation
-  inline cv::Mat GetRotationInverse() { return mRwc.clone(); }
+  inline cv::Mat GetRotationInverse() { return Rwc_.clone(); }
 
   // Check if a MapPoint is in the frustum of the camera
   // and fill variables of the MapPoint to be used by the tracking
@@ -134,14 +134,14 @@ public:
   const std::shared_ptr<ORBextractor>& GetRightOrbExtractor() const {return right_orb_extractor_; } 
   const double GetTimestamp() const { return timestamp_; } 
 
-  const std::vector<cv::KeyPoint>& GetKeys() const { return mvKeys; }
-  const std::vector<cv::KeyPoint>& GetRightKeys() const { return mvKeysRight; }
-  const std::vector<cv::KeyPoint>& GetUndistortedKeys() const { return mvKeysUn; }
-  const std::vector<float>& StereoCoordRight() const {return mvuRight; }
-  const std::vector<float>& StereoDepth() const {return mvDepth; }
+  const std::vector<cv::KeyPoint>& GetKeys() const { return keypoints_; }
+  const std::vector<cv::KeyPoint>& GetRightKeys() const { return right_keypoints_; }
+  const std::vector<cv::KeyPoint>& GetUndistortedKeys() const { return undistorted_keypoints_; }
+  const std::vector<float>& StereoCoordRight() const {return stereo_coords_; }
+  const std::vector<float>& StereoDepth() const {return depths_; }
 
-  const DBoW2::BowVector& GetBowVector() const { return mBowVec; }
-  const DBoW2::FeatureVector& GetFeatureVector() const { return mFeatVec; }
+  const DBoW2::BowVector& GetBowVector() const { return bow_vec_; }
+  const DBoW2::FeatureVector& GetFeatureVector() const { return feature_vec_; }
 
   // ORB descriptor, each row associated to a keypoint.
   cv::Mat mDescriptors;
@@ -179,15 +179,20 @@ public:
   std::vector<float> mvLevelSigma2;
   std::vector<float> mvInvLevelSigma2;
 
+  const float GetMinX() const { return mnMinX; }
+  const float GetMaxX() const { return mnMaxX; }
+  const float GetMinY() const { return mnMinY; }
+  const float GetMaxY() const { return mnMaxY; }
+
+private:
+  static bool mbInitialComputations;
+
   // Undistorted Image Bounds (computed once).
   static float mnMinX;
   static float mnMaxX;
   static float mnMinY;
   static float mnMaxY;
 
-  static bool mbInitialComputations;
-
-private:
   void MakeInitialComputations(const cv::Mat& image, 
                                cv::Mat& calibration_mat);
 
@@ -204,10 +209,10 @@ private:
   void AssignFeaturesToGrid();
 
   // Rotation, translation and camera center
-  cv::Mat mRcw;
-  cv::Mat mtcw;
-  cv::Mat mRwc;
-  cv::Mat mOw; //==mtwc
+  cv::Mat Rcw_;
+  cv::Mat tcw_;
+  cv::Mat Rwc_;
+  cv::Mat Ow_; // same as twc_
 
   std::shared_ptr<OrbVocabulary> orb_vocabulary_ = nullptr;
   std::shared_ptr<ORBextractor> left_orb_extractor_;
@@ -218,20 +223,20 @@ private:
   int num_keypoints_;
 
   // Vector of keypoints (original for visualization) and undistorted (actually used by the system).
-  // In the stereo case, mvKeysUn is redundant as images must be rectified.
+  // In the stereo case, undistorted_keypoints_ is redundant as images must be rectified.
   // In the RGB-D case, RGB images can be distorted.
-  std::vector<cv::KeyPoint> mvKeys;
-  std::vector<cv::KeyPoint> mvKeysRight;
-  std::vector<cv::KeyPoint> mvKeysUn;
+  std::vector<cv::KeyPoint> keypoints_;
+  std::vector<cv::KeyPoint> right_keypoints_;
+  std::vector<cv::KeyPoint> undistorted_keypoints_;
 
   // Corresponding stereo coordinate and depth for each keypoint.
   // "Monocular" keypoints have a negative value.
-  std::vector<float> mvuRight;
-  std::vector<float> mvDepth;
+  std::vector<float> stereo_coords_;
+  std::vector<float> depths_;
 
   // Bag of Words Vector structures.
-  DBoW2::BowVector mBowVec;
-  DBoW2::FeatureVector mFeatVec;
+  DBoW2::BowVector bow_vec_;
+  DBoW2::FeatureVector feature_vec_;
 
 };
 

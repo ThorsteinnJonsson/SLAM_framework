@@ -1351,10 +1351,13 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 float u = CurrentFrame.fx*xc*invzc+CurrentFrame.cx;
                 float v = CurrentFrame.fy*yc*invzc+CurrentFrame.cy;
 
-                if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
-                    continue;
-                if(v<CurrentFrame.mnMinY || v>CurrentFrame.mnMaxY)
-                    continue;
+                if (u < CurrentFrame.GetMinX() || u > CurrentFrame.GetMaxX()) {
+                  continue;
+                }
+
+                if (v < CurrentFrame.GetMinY() || v > CurrentFrame.GetMaxY()) {
+                  continue;
+                }
 
                 int nLastOctave = LastFrame.GetKeys()[i].octave;
 
@@ -1487,10 +1490,12 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
                 const float u = CurrentFrame.fx*xc*invzc+CurrentFrame.cx;
                 const float v = CurrentFrame.fy*yc*invzc+CurrentFrame.cy;
 
-                if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
-                    continue;
-                if(v<CurrentFrame.mnMinY || v>CurrentFrame.mnMaxY)
-                    continue;
+                if(u < CurrentFrame.GetMinX() || u > CurrentFrame.GetMaxX()) {
+                  continue;
+                }
+                if(v < CurrentFrame.GetMinY() || v > CurrentFrame.GetMaxY()) {
+                  continue;
+                }
 
                 // Compute predicted scale level
                 cv::Mat PO = x3Dw-Ow;

@@ -69,10 +69,10 @@ KeyFrame::KeyFrame(const Frame& frame,
     invfx = frame.invfx;
     invfy = frame.invfy;
 
-    mnMinX = frame.mnMinX;
-    mnMinY = frame.mnMinY;
-    mnMaxX = frame.mnMaxX;
-    mnMaxY = frame.mnMaxY;
+    mnMinX = frame.GetMinX();
+    mnMinY = frame.GetMinY();
+    mnMaxX = frame.GetMaxX();
+    mnMaxY = frame.GetMaxY();
 
     mfGridElementWidthInv = frame.mfGridElementWidthInv;
     mfGridElementHeightInv = frame.mfGridElementHeightInv;
