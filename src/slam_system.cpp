@@ -123,7 +123,7 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }
@@ -166,7 +166,7 @@ cv::Mat SlamSystem::TrackRGBD(const cv::Mat& im,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }
@@ -208,7 +208,7 @@ cv::Mat SlamSystem::TrackMonocular(const cv::Mat& im,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }

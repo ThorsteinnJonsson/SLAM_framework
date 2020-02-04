@@ -107,24 +107,23 @@ public:
   static constexpr int grid_cols = 64;
 
   // Calibration matrix and OpenCV distortion parameters.
-  cv::Mat mK;
-  static float fx;
-  static float fy;
-  static float cx;
-  static float cy;
-  static float invfx;
-  static float invfy;
-  cv::Mat mDistCoef;
+  const cv::Mat& GetCalibMat() const { return calib_mat_; }
+  const float GetFx() const { return fx_; }
+  const float GetFy() const { return fy_; }
+  const float GetCx() const { return cx_; }
+  const float GetCy() const { return cy_; }
+  const float GetInvFx() const { return invfx_; } 
+  const float GetInvFy() const { return invfy_; } 
 
-  // Stereo baseline multiplied by fx.
-  float mbf;
+  // // Stereo baseline multiplied by fx.
+  const float GetBaselineFx() const { return baseline_fx_; }
 
   // Stereo baseline in meters.
-  float mb;
+  const float GetBaseline() const { return baseline_; }
 
   // Threshold close/far points. Close points are inserted from 1 view.
   // Far points are inserted as in the monocular case from 2 views.
-  float mThDepth;
+  const float GetDepthThrehold() const { return thresh_depth_; }
 
   // Number of KeyPoints.
   const int NumKeypoints() const { return num_keypoints_; }
@@ -143,15 +142,22 @@ public:
   const DBoW2::BowVector& GetBowVector() const { return bow_vec_; }
   const DBoW2::FeatureVector& GetFeatureVector() const { return feature_vec_; }
 
-  // ORB descriptor, each row associated to a keypoint.
-  cv::Mat mDescriptors;
-  cv::Mat mDescriptorsRight;
+  // // ORB descriptor, each row associated to a keypoint.
+  const cv::Mat& GetDescriptors() const { return descriptors_; }
+  const cv::Mat& GetRightDescriptors() const { return right_descriptors_; }
 
-  // MapPoints associated to keypoints, NULL pointer if no association.
-  std::vector<MapPoint*> mvpMapPoints;
+  // // MapPoints associated to keypoints, NULL pointer if no association.
+  const std::vector<MapPoint*>& GetMapPoints() const {return map_points_; }
+  std::vector<MapPoint*>& GetMapPoints() {return map_points_; }
+  void SetMapPoints(const std::vector<MapPoint*>& pts) { map_points_ = pts; }
+  MapPoint* GetMapPoint(int idx) const {return map_points_[idx]; };
+  void SetMapPoint(int idx, MapPoint* pt) { map_points_[idx] = pt; }
 
-  // Flag to identify outlier associations.
-  std::deque<bool> mvbOutlier;
+  // // Flag to identify outlier associations.
+  const std::deque<bool>& GetOutliers() const {return is_outlier_; }
+  void SetOutliers(const std::deque<bool>& is_outlier) { is_outlier_ = is_outlier; }
+  void SetOutlier(int idx, bool val) { is_outlier_[idx] = val; }
+  bool IsOutlier(int idx) const { return is_outlier_[idx]; }
 
   // Keypoints are assigned to cells in a grid to reduce matching complexity 
   // when projecting MapPoints.
@@ -179,20 +185,41 @@ public:
   std::vector<float> mvLevelSigma2;
   std::vector<float> mvInvLevelSigma2;
 
-  const float GetMinX() const { return mnMinX; }
-  const float GetMaxX() const { return mnMaxX; }
-  const float GetMinY() const { return mnMinY; }
-  const float GetMaxY() const { return mnMaxY; }
+  const float GetMinX() const { return min_x_; }
+  const float GetMaxX() const { return max_x_; }
+  const float GetMinY() const { return min_y_; }
+  const float GetMaxY() const { return max_y_; }
 
 private:
   static bool mbInitialComputations;
 
   // Undistorted Image Bounds (computed once).
-  static float mnMinX;
-  static float mnMaxX;
-  static float mnMinY;
-  static float mnMaxY;
+  static float min_x_;
+  static float max_x_;
+  static float min_y_;
+  static float max_y_;
 
+  // Calibration matrix and OpenCV distortion parameters.
+  cv::Mat calib_mat_;
+  static float fx_;
+  static float fy_;
+  static float cx_;
+  static float cy_;
+  static float invfx_;
+  static float invfy_;
+  cv::Mat dist_coeff_;
+
+    // Stereo baseline multiplied by fx.
+  float baseline_fx_;
+
+  // Stereo baseline in meters.
+  float baseline_;
+
+  // Threshold close/far points. Close points are inserted from 1 view.
+  // Far points are inserted as in the monocular case from 2 views.
+  float thresh_depth_;
+
+private:
   void MakeInitialComputations(const cv::Mat& image, 
                                cv::Mat& calibration_mat);
 
@@ -237,6 +264,16 @@ private:
   // Bag of Words Vector structures.
   DBoW2::BowVector bow_vec_;
   DBoW2::FeatureVector feature_vec_;
+
+  // ORB descriptor, each row associated to a keypoint.
+  cv::Mat descriptors_;
+  cv::Mat right_descriptors_;
+
+  // MapPoints associated to keypoints, NULL pointer if no association.
+  std::vector<MapPoint*> map_points_;
+
+  // Flag to identify outlier associations.
+  std::deque<bool> is_outlier_;
 
 };
 

@@ -72,7 +72,7 @@ MapPoint::MapPoint(const cv::Mat& position,
   max_dist_ = dist*levelScaleFactor;
   min_dist_ = max_dist_/frame->mvScaleFactors[nLevels-1];
 
-  frame->mDescriptors.row(idxF).copyTo(descriptor_);
+  frame->GetDescriptors().row(idxF).copyTo(descriptor_);
 
   // MapPoints can be created from Tracking and Local Mapping. 
   //This mutex avoid conflicts with ID.

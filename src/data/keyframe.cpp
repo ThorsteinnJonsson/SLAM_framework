@@ -32,15 +32,15 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mnRelocQuery(0)
       , mnRelocWords(0)
       , bundle_adj_global_for_keyframe_id(0)
-      , mbf(frame.mbf)
-      , mb(frame.mb)
-      , mThDepth(frame.mThDepth)
+      , mbf(frame.GetBaselineFx())
+      , mb(frame.GetBaseline())
+      , mThDepth(frame.GetDepthThrehold())
       , N(frame.NumKeypoints())
       , mvKeys(frame.GetKeys())
       , mvKeysUn(frame.GetUndistortedKeys())
       , mvuRight(frame.StereoCoordRight())
       , mvDepth(frame.StereoDepth())
-      , mDescriptors(frame.mDescriptors.clone())
+      , mDescriptors(frame.GetDescriptors().clone())
       , mBowVec(frame.GetBowVector())
       , mFeatVec(frame.GetFeatureVector())
       , mnScaleLevels(frame.mnScaleLevels)
@@ -49,8 +49,8 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mvScaleFactors(frame.mvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2)
-      , mK(frame.mK)
-      , mvpMapPoints(frame.mvpMapPoints)
+      , mK(frame.GetCalibMat())
+      , mvpMapPoints(frame.GetMapPoints())
       , mpKeyFrameDB(pKFDB)
       , mpORBvocabulary(frame.GetVocabulary())
       , mbFirstConnection(true)
@@ -58,16 +58,16 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mbNotErase(false)
       , mbToBeErased(false)
       , mbBad(false)
-      , mHalfBaseline(frame.mb/2)
+      , mHalfBaseline(frame.GetBaseline() / 2)
       , mpMap(pMap) {
 
   if (initial_computations) {
-    fx = frame.fx;
-    fy = frame.fy;
-    cx = frame.cx;
-    cy = frame.cy;
-    invfx = frame.invfx;
-    invfy = frame.invfy;
+    fx = frame.GetFx();
+    fy = frame.GetFy();
+    cx = frame.GetCx();
+    cy = frame.GetCy();
+    invfx = frame.GetInvFx();
+    invfy = frame.GetInvFy();
 
     mnMinX = frame.GetMinX();
     mnMinY = frame.GetMinY();

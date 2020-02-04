@@ -248,7 +248,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
     std::unique_lock<std::mutex> lock(MapPoint::global_mutex);
 
     for (int i = 0; i < N; ++i) {
-      MapPoint* pMP = frame.mvpMapPoints[i];
+      MapPoint* pMP = frame.GetMapPoint(i);
       if (!pMP) {
         continue;
       }
@@ -256,7 +256,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
       // Monocular observation
       if (frame.StereoCoordRight()[i] < 0) {
         ++num_initial_correspondences;
-        frame.mvbOutlier[i] = false;
+        frame.SetOutlier(i, false);
 
         Eigen::Vector2d obs;
         const cv::KeyPoint& kpUn = frame.GetUndistortedKeys()[i];
@@ -273,10 +273,10 @@ int Optimizer::PoseOptimization(Frame& frame) {
         rk->setDelta(delta_mono);
         e->setRobustKernel(rk);
 
-        e->fx = frame.fx;
-        e->fy = frame.fy;
-        e->cx = frame.cx;
-        e->cy = frame.cy;
+        e->fx = frame.GetFx();
+        e->fy = frame.GetFy();
+        e->cx = frame.GetCx();
+        e->cy = frame.GetCy();
         const cv::Mat Xw = pMP->GetWorldPos();
         e->Xw[0] = Xw.at<float>(0);
         e->Xw[1] = Xw.at<float>(1);
@@ -288,7 +288,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
         vnIndexEdgeMono.push_back(i);
       } else { // Stereo observation
         ++num_initial_correspondences;
-        frame.mvbOutlier[i] = false;
+        frame.SetOutlier(i, false);
 
         //SET EDGE
         Eigen::Vector3d obs;
@@ -308,11 +308,11 @@ int Optimizer::PoseOptimization(Frame& frame) {
         rk->setDelta(delta_stereo);
         e->setRobustKernel(rk);
 
-        e->fx = frame.fx;
-        e->fy = frame.fy;
-        e->cx = frame.cx;
-        e->cy = frame.cy;
-        e->bf = frame.mbf;
+        e->fx = frame.GetFx();
+        e->fy = frame.GetFy();
+        e->cx = frame.GetCx();
+        e->cy = frame.GetCy();
+        e->bf = frame.GetBaselineFx();
         const cv::Mat Xw = pMP->GetWorldPos();
         e->Xw[0] = Xw.at<float>(0);
         e->Xw[1] = Xw.at<float>(1);
@@ -351,18 +351,18 @@ int Optimizer::PoseOptimization(Frame& frame) {
 
       const size_t idx = vnIndexEdgeMono[i];
 
-      if(frame.mvbOutlier[idx]) {
+      if (frame.IsOutlier(idx)) {
         e->computeError();
       }
 
       const float chi2 = e->chi2();
 
       if (chi2>chi2Mono[it]) {                
-        frame.mvbOutlier[idx] = true;
+        frame.SetOutlier(idx, true);
         e->setLevel(1);
         ++is_bad;
       } else {
-        frame.mvbOutlier[idx] = false;
+        frame.SetOutlier(idx, false);
         e->setLevel(0);
       }
 
@@ -376,22 +376,22 @@ int Optimizer::PoseOptimization(Frame& frame) {
 
       const size_t idx = vnIndexEdgeStereo[i];
 
-      if (frame.mvbOutlier[idx]) {
+      if (frame.IsOutlier(idx)) {
         e->computeError();
       }
 
       const float chi2 = e->chi2();
 
       if (chi2 > chi2Stereo[it]) {
-        frame.mvbOutlier[idx] = true;
+        frame.SetOutlier(idx, true);
         e->setLevel(1);
         ++is_bad;
       } else {                
         e->setLevel(0);
-        frame.mvbOutlier[idx] = false;
+        frame.SetOutlier(idx, false);
       }
 
-      if(it==2) {
+      if (it==2) {
         e->setRobustKernel(0);
       }
     }

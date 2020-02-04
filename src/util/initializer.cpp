@@ -12,10 +12,8 @@
 Initializer::Initializer(const Frame& ReferenceFrame, 
                          float sigma, 
                          int iterations) {
-  mK = ReferenceFrame.mK.clone();
-
+  mK = ReferenceFrame.GetCalibMat().clone();
   mvKeys1 = ReferenceFrame.GetUndistortedKeys();
-
   mSigma = sigma;
   mSigma2 = sigma*sigma;
   mMaxIterations = iterations;
