@@ -232,7 +232,6 @@ void LocalMapper::ProcessNewKeyFrame() {
 void LocalMapper::MapPointCulling() {
   // Check Recent Added MapPoints
   
-  // const int current_keyframe_id = static_cast<int>(current_keyframe_->mnId);
   const long current_keyframe_id = static_cast<long>(current_keyframe_->mnId);
   const int min_observations_thresh = is_monocular_? 2 : 3;
 

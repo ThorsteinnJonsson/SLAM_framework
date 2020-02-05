@@ -166,14 +166,14 @@ public:
 
   const std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>& GetGrid() const { return grid_; }
 
-  const cv::Mat& GetPose() const { return mTcw; }
+  const cv::Mat& GetPose() const { return mTcw; } // TODO rename variable
 
-  // Current and Next Frame id.
-  static long unsigned int nNextId;
-  long unsigned int mnId;
-
+  long unsigned int Id() const { return mnId; } // TODO rename variable
+  void SetId(long unsigned int id) { mnId = id; }
+  static void ResetId() { next_id_ = 0;}
+  
   // Reference Keyframe.
-  KeyFrame* mpReferenceKF;
+  KeyFrame* mpReferenceKF; // TODO
 
   // Scale pyramid info.
   int mnScaleLevels;
@@ -188,8 +188,12 @@ public:
   const float GetMaxX() const { return max_x_; }
   const float GetMinY() const { return min_y_; }
   const float GetMaxY() const { return max_y_; }
-
+  
 private:
+  // Current and Next Frame id.
+  static long unsigned int next_id_;
+  long unsigned int mnId;
+
   static bool mbInitialComputations;
 
   // Undistorted Image Bounds (computed once).

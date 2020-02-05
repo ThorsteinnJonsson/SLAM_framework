@@ -6,7 +6,7 @@
 #include "orb_features/orb_matcher.h"
 
 // Define static variables with initial values
-long unsigned int Frame::nNextId = 0;
+long unsigned int Frame::next_id_ = 0;
 
 bool Frame::mbInitialComputations = true;
 
@@ -21,8 +21,7 @@ float Frame::grid_element_width_;
 float Frame::grid_element_height_;
 
 Frame::Frame(const Frame& frame)
-      : mnId(frame.mnId)
-      , mpReferenceKF(frame.mpReferenceKF)
+      : mpReferenceKF(frame.mpReferenceKF)
       , mnScaleLevels(frame.mnScaleLevels)
       , mfScaleFactor(frame.mfScaleFactor)
       , mfLogScaleFactor(frame.mfLogScaleFactor)
@@ -30,6 +29,7 @@ Frame::Frame(const Frame& frame)
       , mvInvScaleFactors(frame.mvInvScaleFactors)
       , mvLevelSigma2(frame.mvLevelSigma2)
       , mvInvLevelSigma2(frame.mvInvLevelSigma2)
+      , mnId(frame.Id())
       , calib_mat_(frame.calib_mat_.clone())
       , dist_coeff_(frame.dist_coeff_.clone())
       , baseline_fx_(frame.GetBaselineFx())
@@ -78,7 +78,7 @@ Frame::Frame(const cv::Mat& imLeft,
     , right_orb_extractor_(extractorRight)
     , timestamp_(timestamp) {
   // Frame ID
-  mnId = nNextId++;
+  mnId = next_id_++;
 
   // Scale Level Info
   mnScaleLevels = left_orb_extractor_->GetLevels();
@@ -136,7 +136,7 @@ Frame::Frame(const cv::Mat& imGray,
       , right_orb_extractor_(nullptr) 
       , timestamp_(timestamp) {
   // Frame ID
-  mnId = nNextId++;
+  mnId = next_id_++;
 
   // Scale Level Info
   mnScaleLevels = left_orb_extractor_->GetLevels();
@@ -191,7 +191,7 @@ Frame::Frame(const cv::Mat& imGray,
       , right_orb_extractor_(nullptr) 
       , timestamp_(timeStamp){
     // Frame ID
-  mnId = nNextId++;
+  mnId = next_id_++;
 
   // Scale Level Info
   mnScaleLevels = left_orb_extractor_->GetLevels();

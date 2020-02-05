@@ -50,7 +50,7 @@ MapPoint::MapPoint(const cv::Mat& position,
       , corrected_reference(0)
       , bundle_adj_global_for_keyframe_id(0)
       , first_keyframe_id_(-1)
-      , first_frame_id_(frame->mnId)
+      , first_frame_id_(frame->Id())
       , num_observations_(0)
       , reference_keyframe_(nullptr)
       , num_visible_(1)

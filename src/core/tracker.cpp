@@ -233,7 +233,7 @@ void Tracker::Reset() {
   map_->Clear();
 
   KeyFrame::nNextId = 0;
-  Frame::nNextId = 0;
+  Frame::ResetId();
   state_ = TrackingState::NO_IMAGES_YET;
 
   mpInitializer.reset(nullptr);
@@ -278,7 +278,7 @@ void Tracker::StereoInitialization() {
     local_mapper_->InsertKeyFrame(pKFini);
 
     last_frame_ = Frame(current_frame_);
-    last_keyframe_id_ = current_frame_.mnId;
+    last_keyframe_id_ = current_frame_.Id();
     last_keyframe_ = pKFini;
 
     local_keyframes_.push_back(pKFini);
@@ -441,7 +441,7 @@ void Tracker::CreateInitialMapMonocular() {
   local_mapper_->InsertKeyFrame(pKFcur);
 
   current_frame_.SetPose(pKFcur->GetPose());
-  last_keyframe_id_ = current_frame_.mnId;
+  last_keyframe_id_ = current_frame_.Id();
   last_keyframe_ = pKFcur;
 
   local_keyframes_.push_back(pKFcur);
@@ -490,7 +490,7 @@ void Tracker::Track() {
         // Local Mapping might have changed some MapPoints tracked in last frame
         ReplaceInLastFrame();
 
-        if (velocity_.empty() || current_frame_.mnId < last_relocation_frame_id_ + 2) {
+        if (velocity_.empty() || current_frame_.Id() < last_relocation_frame_id_ + 2) {
           bOK = TrackReferenceKeyFrame();
         } else {
           bOK = TrackWithMotionModel();
@@ -683,7 +683,7 @@ bool Tracker::TrackReferenceKeyFrame() {
         current_frame_.SetMapPoint(i,nullptr);
         current_frame_.SetOutlier(i,false);
         pMP->track_is_in_view = false;
-        pMP->last_frame_id_seen = current_frame_.mnId;
+        pMP->last_frame_id_seen = current_frame_.Id();
       } else if (current_frame_.GetMapPoint(i)->NumObservations() > 0) {
         ++nmatchesMap;
       }
@@ -700,7 +700,7 @@ void Tracker::UpdateLastFrame() {
 
   last_frame_.SetPose(Tlr * pRef->GetPose());
 
-  if (last_keyframe_id_ == last_frame_.mnId 
+  if (last_keyframe_id_ == last_frame_.Id() 
       || sensor_type_==SENSOR_TYPE::MONOCULAR 
       || !is_only_tracking_) {
     return;
@@ -807,7 +807,7 @@ bool Tracker::TrackWithMotionModel() {
         current_frame_.SetMapPoint(i,nullptr);
         current_frame_.SetOutlier(i,false);
         pMP->track_is_in_view = false;
-        pMP->last_frame_id_seen = current_frame_.mnId;
+        pMP->last_frame_id_seen = current_frame_.Id();
         --nmatches;
       } else if (pMP->NumObservations() > 0) {
         ++nmatchesMap;
@@ -985,7 +985,7 @@ bool Tracker::Relocalization() {
   if (!bMatch) {
     return false;
   } else {
-    last_relocation_frame_id_ = current_frame_.mnId;
+    last_relocation_frame_id_ = current_frame_.Id();
     return true;
   }
 }
@@ -1014,13 +1014,13 @@ void Tracker::UpdateLocalPoints() {
                                                ++itMP)
     {
       MapPoint* pMP = *itMP;
-      if (!pMP || (pMP->track_reference_id_for_frame == current_frame_.mnId)) {
+      if (!pMP || (pMP->track_reference_id_for_frame == current_frame_.Id())) {
         continue;
       }
 
       if (!pMP->isBad()) {
         local_map_points_.push_back(pMP);
-        pMP->track_reference_id_for_frame = current_frame_.mnId;
+        pMP->track_reference_id_for_frame = current_frame_.Id();
       }
     }
   }
@@ -1073,7 +1073,7 @@ void Tracker::UpdateLocalKeyFrames() {
       }
 
       local_keyframes_.push_back(it->first);
-      pKF->mnTrackReferenceForFrame = current_frame_.mnId;
+      pKF->mnTrackReferenceForFrame = current_frame_.Id();
   }
 
 
@@ -1097,9 +1097,9 @@ void Tracker::UpdateLocalKeyFrames() {
     {
       KeyFrame* pNeighKF = *itNeighKF;
       if (!pNeighKF->isBad() 
-          && pNeighKF->mnTrackReferenceForFrame != current_frame_.mnId) {
+          && pNeighKF->mnTrackReferenceForFrame != current_frame_.Id()) {
         local_keyframes_.push_back(pNeighKF);
-        pNeighKF->mnTrackReferenceForFrame = current_frame_.mnId;
+        pNeighKF->mnTrackReferenceForFrame = current_frame_.Id();
         break;
       }
     }
@@ -1111,18 +1111,18 @@ void Tracker::UpdateLocalKeyFrames() {
     {
       KeyFrame* pChildKF = *sit;
       if (!pChildKF->isBad() 
-          && pChildKF->mnTrackReferenceForFrame != current_frame_.mnId) {
+          && pChildKF->mnTrackReferenceForFrame != current_frame_.Id()) {
         local_keyframes_.push_back(pChildKF);
-        pChildKF->mnTrackReferenceForFrame = current_frame_.mnId;
+        pChildKF->mnTrackReferenceForFrame = current_frame_.Id();
         break;
       }
     }
 
     KeyFrame* pParent = pKF->GetParent();
     if (pParent
-        && pParent->mnTrackReferenceForFrame != current_frame_.mnId) {
+        && pParent->mnTrackReferenceForFrame != current_frame_.Id()) {
       local_keyframes_.push_back(pParent);
-      pParent->mnTrackReferenceForFrame = current_frame_.mnId;
+      pParent->mnTrackReferenceForFrame = current_frame_.Id();
       break;
     }
   }
@@ -1163,7 +1163,7 @@ bool Tracker::TrackLocalMap() {
   }
   // Decide if the tracking was succesful
   // More restrictive if there was a relocalization recently
-  if (current_frame_.mnId < last_relocation_frame_id_ + max_frames_ 
+  if (current_frame_.Id() < last_relocation_frame_id_ + max_frames_ 
       && num_inlier_matches_ < 50) {
     return false;
   }
@@ -1186,7 +1186,7 @@ void Tracker::SearchLocalPoints() {
         // pMP = nullptr;
       } else {
         pMP->IncreaseVisible();
-        pMP->last_frame_id_seen = current_frame_.mnId;
+        pMP->last_frame_id_seen = current_frame_.Id();
         pMP->track_is_in_view = false;
       }
     }
@@ -1199,7 +1199,7 @@ void Tracker::SearchLocalPoints() {
                                         ++vit)
   {
     MapPoint* pMP = *vit;
-    if (pMP->last_frame_id_seen == current_frame_.mnId
+    if (pMP->last_frame_id_seen == current_frame_.Id()
         || pMP->isBad()) {
       continue;
     }
@@ -1217,7 +1217,7 @@ void Tracker::SearchLocalPoints() {
       th = 3;
     }
     // If the camera has been relocalised recently, perform a coarser search
-    if (current_frame_.mnId < last_relocation_frame_id_+2) {
+    if (current_frame_.Id() < last_relocation_frame_id_+2) {
       th = 5;
     }
     matcher.SearchByProjection(current_frame_,
@@ -1239,7 +1239,7 @@ bool Tracker::NeedNewKeyFrame() {
   const int nKFs = map_->NumKeyFramesInMap();
 
   // Do not insert keyframes if not enough frames have passed from last relocalisation
-  if (current_frame_.mnId < last_relocation_frame_id_ + max_frames_ && nKFs > max_frames_) {
+  if (current_frame_.Id() < last_relocation_frame_id_ + max_frames_ && nKFs > max_frames_) {
     return false;
   }
 
@@ -1278,9 +1278,9 @@ bool Tracker::NeedNewKeyFrame() {
   }
 
   // Condition 1a: More than "MaxFrames" have passed from last keyframe insertion
-  const bool c1a = current_frame_.mnId >= last_keyframe_id_ + max_frames_;
+  const bool c1a = current_frame_.Id() >= last_keyframe_id_ + max_frames_;
   // Condition 1b: More than "MinFrames" have passed and Local Mapping is idle
-  const bool c1b = (current_frame_.mnId >= last_keyframe_id_ + min_frames_ && bLocalMappingIdle);
+  const bool c1b = (current_frame_.Id() >= last_keyframe_id_ + min_frames_ && bLocalMappingIdle);
   //Condition 1c: tracking is weak
   const bool c1c =  sensor_type_ != SENSOR_TYPE::MONOCULAR && (num_inlier_matches_ < 0.25*nRefMatches || bNeedToInsertClose);
   // Condition 2: Few tracked points compared to reference keyframe. Lots of visual odometry compared to map matches.
@@ -1374,7 +1374,7 @@ void Tracker::CreateNewKeyFrame() {
   local_mapper_->InsertKeyFrame(pKF);
   local_mapper_->SetNotStop(false);
 
-  last_keyframe_id_ = current_frame_.mnId;
+  last_keyframe_id_ = current_frame_.Id();
   last_keyframe_ = pKF;
 }
 

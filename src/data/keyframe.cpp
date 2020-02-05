@@ -21,7 +21,7 @@ float KeyFrame::grid_element_height_;
 KeyFrame::KeyFrame(const Frame& frame, 
                    const std::shared_ptr<Map>& pMap, 
                    const std::shared_ptr<KeyframeDatabase>& pKFDB) 
-      : mnFrameId(frame.mnId)
+      : mnFrameId(frame.Id())
       , timestamp_(frame.GetTimestamp())
       , mnTrackReferenceForFrame(0)
       , mnFuseTargetForKF(0)

@@ -193,9 +193,9 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Fr
                 ++lit)
       {
         KeyFrame* pKFi = *lit;
-        if (pKFi->mnRelocQuery != frame.mnId) {
+        if (pKFi->mnRelocQuery != frame.Id()) {
           pKFi->mnRelocWords = 0;
-          pKFi->mnRelocQuery = frame.mnId;
+          pKFi->mnRelocQuery = frame.Id();
           lKFsSharingWords.push_back(pKFi);
         }
         ++pKFi->mnRelocWords;
@@ -261,7 +261,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Fr
               ++vit)
     {
       KeyFrame* pKF2 = *vit;
-      if (pKF2->mnRelocQuery != frame.mnId) {
+      if (pKF2->mnRelocQuery != frame.Id()) {
         continue;
       }
 
