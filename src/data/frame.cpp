@@ -17,8 +17,8 @@ float Frame::invfx_, Frame::invfy_;
 float Frame::min_x_, Frame::min_y_; 
 float Frame::max_x_, Frame::max_y_;
 
-float Frame::mfGridElementWidthInv;
-float Frame::mfGridElementHeightInv;
+float Frame::grid_element_width_;
+float Frame::grid_element_height_;
 
 Frame::Frame(const Frame& frame)
       : mnId(frame.mnId)
@@ -232,8 +232,8 @@ Frame::Frame(const cv::Mat& imGray,
 
 void Frame::MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat) {
   ComputeImageBounds(image);
-  mfGridElementWidthInv = static_cast<float>(grid_cols)/(max_x_-min_x_);
-  mfGridElementHeightInv = static_cast<float>(grid_rows)/(max_y_-min_y_);
+  grid_element_width_ = static_cast<float>(max_x_-min_x_)/(grid_cols);
+  grid_element_height_ = static_cast<float>(max_y_-min_y_)/(grid_rows);
 
   fx_ = calibration_mat.at<float>(0,0);
   fy_ = calibration_mat.at<float>(1,1);
@@ -349,8 +349,8 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
 }
 
 bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
-  posX = round( (kp.pt.x - min_x_) * mfGridElementWidthInv);
-  posY = round( (kp.pt.y - min_y_) * mfGridElementHeightInv);
+  posX = round( (kp.pt.x - min_x_) / grid_element_width_);
+  posY = round( (kp.pt.y - min_y_) / grid_element_height_);
 
   //Keypoint's coordinates are undistorted, which could cause to go out of the image
   if( posX < 0 || posX >= grid_cols || posY < 0 || posY >= grid_rows ) {
@@ -368,17 +368,17 @@ std::vector<size_t> Frame::GetFeaturesInArea(const float x,
   vIndices.reserve(num_keypoints_);
 
   const int nMinCellX = std::max(0, 
-                                  static_cast<int>(std::floor((x-min_x_-r) * mfGridElementWidthInv)));
+                                  static_cast<int>(std::floor((x-min_x_-r) / grid_element_width_)));
   const int nMaxCellX = std::min(static_cast<int>(grid_cols-1),
-                                  static_cast<int>(std::ceil((x-min_x_+r) * mfGridElementWidthInv)));
+                                  static_cast<int>(std::ceil((x-min_x_+r) / grid_element_width_)));
   if( nMaxCellX < 0 || nMinCellX >= grid_cols ) {
     return vIndices;
   }
 
   const int nMinCellY = std::max(0,
-                                  static_cast<int>(std::floor((y-min_y_-r) * mfGridElementHeightInv)));
+                                  static_cast<int>(std::floor((y-min_y_-r) / grid_element_height_)));
   const int nMaxCellY = std::min(static_cast<int>(grid_rows-1),
-                                  static_cast<int>(std::ceil((y-min_y_+r) * mfGridElementHeightInv)));
+                                  static_cast<int>(std::ceil((y-min_y_+r) / grid_element_height_)));
   if(nMaxCellY < 0 || nMinCellY >= grid_rows) {
     return vIndices;
   }

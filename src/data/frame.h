@@ -161,8 +161,8 @@ public:
 
   // Keypoints are assigned to cells in a grid to reduce matching complexity 
   // when projecting MapPoints.
-  static float mfGridElementWidthInv;
-  static float mfGridElementHeightInv;
+  const float GridElementWidth() const { return grid_element_width_; }
+  const float GridElementHeight() const { return grid_element_height_; }
 
   const std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>& GetGrid() const { return grid_; }
 
@@ -218,6 +218,11 @@ private:
   // Threshold close/far points. Close points are inserted from 1 view.
   // Far points are inserted as in the monocular case from 2 views.
   float thresh_depth_;
+
+  // Keypoints are assigned to cells in a grid to reduce matching complexity 
+  // when projecting MapPoints.
+  static float grid_element_width_;
+  static float grid_element_height_;
 
 private:
   void MakeInitialComputations(const cv::Mat& image, 

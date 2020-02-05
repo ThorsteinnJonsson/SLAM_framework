@@ -14,8 +14,8 @@ float KeyFrame::invfx, KeyFrame::invfy;
 int KeyFrame::mnMinX, KeyFrame::mnMinY;
 int KeyFrame::mnMaxX, KeyFrame::mnMaxY;
 
-float KeyFrame::mfGridElementWidthInv;
-float KeyFrame::mfGridElementHeightInv;
+float KeyFrame::grid_element_width_;
+float KeyFrame::grid_element_height_;
 
 
 KeyFrame::KeyFrame(const Frame& frame, 
@@ -74,8 +74,8 @@ KeyFrame::KeyFrame(const Frame& frame,
     mnMaxX = frame.GetMaxX();
     mnMaxY = frame.GetMaxY();
 
-    mfGridElementWidthInv = frame.mfGridElementWidthInv;
-    mfGridElementHeightInv = frame.mfGridElementHeightInv;
+    grid_element_width_ = frame.GridElementWidth();
+    grid_element_height_ = frame.GridElementHeight();
 
     initial_computations = false;
   }
@@ -455,13 +455,13 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
   vIndices.reserve(N);
 
   const int nMinCellX = std::max(0,
-                                 static_cast<int>(std::floor((x-mnMinX-r) * mfGridElementWidthInv)));
+                                 static_cast<int>(std::floor((x-mnMinX-r) / grid_element_width_)));
   const int nMaxCellX = std::min(grid_cols-1, 
-                                 static_cast<int>(std::ceil((x-mnMinX+r)*mfGridElementWidthInv)));
+                                 static_cast<int>(std::ceil((x-mnMinX+r) / grid_element_width_)));
   const int nMinCellY = std::max(0,
-                                 static_cast<int>(std::floor((y-mnMinY-r) * mfGridElementHeightInv)));
+                                 static_cast<int>(std::floor((y-mnMinY-r) / grid_element_height_)));
   const int nMaxCellY = std::min(grid_rows-1, 
-                                 static_cast<int>(std::ceil((y-mnMinY+r)*mfGridElementHeightInv)));
+                                 static_cast<int>(std::ceil((y-mnMinY+r) / grid_element_height_)));
   if (   nMaxCellX < 0 || nMinCellX >= grid_cols
       || nMaxCellY < 0 || nMinCellY >= grid_rows) {
     return vIndices;

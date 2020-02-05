@@ -197,8 +197,8 @@ protected:
   std::shared_ptr<OrbVocabulary> mpORBvocabulary;
 
   // Grid over the image to speed up feature matching
-  static float mfGridElementWidthInv;
-  static float mfGridElementHeightInv;
+  static float grid_element_width_;
+  static float grid_element_height_;
 
   std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
 
