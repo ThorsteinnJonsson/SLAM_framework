@@ -1321,13 +1321,13 @@ int OrbMatcher::SearchByProjection(Frame& CurrentFrame,
         rotHist[i].reserve(500);
     const float factor = 1.0f/HISTO_LENGTH;
 
-    const cv::Mat Rcw = CurrentFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tcw = CurrentFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rcw = CurrentFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tcw = CurrentFrame.GetPose().rowRange(0,3).col(3);
 
     const cv::Mat twc = -Rcw.t()*tcw;
 
-    const cv::Mat Rlw = LastFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tlw = LastFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rlw = LastFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tlw = LastFrame.GetPose().rowRange(0,3).col(3);
 
     const cv::Mat tlc = Rlw*twc+tlw;
 
@@ -1456,8 +1456,8 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 {
     int nmatches = 0;
 
-    const cv::Mat Rcw = CurrentFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tcw = CurrentFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rcw = CurrentFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tcw = CurrentFrame.GetPose().rowRange(0,3).col(3);
     const cv::Mat Ow = -Rcw.t()*tcw;
 
     // Rotation Histogram (to check rotation consistency)

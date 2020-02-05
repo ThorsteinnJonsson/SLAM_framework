@@ -53,8 +53,8 @@ Frame::Frame(const Frame& frame)
       , is_outlier_(frame.GetOutliers()) {
 
   grid_ = frame.GetGrid();
-  if (!frame.mTcw.empty()) {
-    SetPose(frame.mTcw);
+  if (!frame.GetPose().empty()) {
+    SetPose(frame.GetPose());
   }
 }
 

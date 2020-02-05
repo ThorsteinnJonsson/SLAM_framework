@@ -137,7 +137,7 @@ cv::Mat Tracker::GrabImageStereo(const cv::Mat& left_image,
                          scaled_baseline_,
                          depth_threshold_);
   Track();
-  return current_frame_.mTcw.clone();
+  return current_frame_.GetPose().clone();
 }
 
 cv::Mat Tracker::GrabImageRGBD(const cv::Mat& rgbd_image,
@@ -174,7 +174,7 @@ cv::Mat Tracker::GrabImageRGBD(const cv::Mat& rgbd_image,
                          scaled_baseline_,
                          depth_threshold_);
   Track();
-  return current_frame_.mTcw.clone();                      
+  return current_frame_.GetPose().clone();                      
 }
 
 cv::Mat Tracker::GrabImageMonocular(const cv::Mat& image, 
@@ -215,7 +215,7 @@ cv::Mat Tracker::GrabImageMonocular(const cv::Mat& image,
                            depth_threshold_);
   }
   Track();
-  return current_frame_.mTcw.clone();
+  return current_frame_.GetPose().clone();
 }
 
 bool Tracker::NeedSystemReset() const {
@@ -521,7 +521,7 @@ void Tracker::Track() {
             bOKMM = TrackWithMotionModel();
             vpMPsMM = current_frame_.GetMapPoints();
             vbOutMM = current_frame_.GetOutliers();
-            TcwMM = current_frame_.mTcw.clone();
+            TcwMM = current_frame_.GetPose().clone();
           }
           bOKReloc = Relocalization();
 
@@ -576,11 +576,11 @@ void Tracker::Track() {
     // If tracking was good, check if we insert a keyframe
     if (bOK) {
       // Update motion model
-      if (!last_frame_.mTcw.empty()) {
+      if (!last_frame_.GetPose().empty()) {
         cv::Mat LastTwc = cv::Mat::eye(4,4,CV_32F);
         last_frame_.GetRotationInverse().copyTo(LastTwc.rowRange(0,3).colRange(0,3));
         last_frame_.GetCameraCenter().copyTo(LastTwc.rowRange(0,3).col(3));
-        velocity_ = current_frame_.mTcw*LastTwc;
+        velocity_ = current_frame_.GetPose() * LastTwc;
       } else {
         velocity_ = cv::Mat();
       }
@@ -627,8 +627,8 @@ void Tracker::Track() {
   }
 
   // Store frame pose information to retrieve the complete camera trajectory afterwards.
-  if (!current_frame_.mTcw.empty()) {
-    cv::Mat Tcr = current_frame_.mTcw * current_frame_.mpReferenceKF->GetPoseInverse();
+  if (!current_frame_.GetPose().empty()) {
+    cv::Mat Tcr = current_frame_.GetPose() * current_frame_.mpReferenceKF->GetPoseInverse();
     relative_frame_poses_.push_back(Tcr);
     reference_keyframes_.push_back(reference_keyframe_);
     frame_times_.push_back(current_frame_.GetTimestamp());
@@ -669,7 +669,7 @@ bool Tracker::TrackReferenceKeyFrame() {
   }
 
   current_frame_.SetMapPoints(vpMapPointMatches);
-  current_frame_.SetPose(last_frame_.mTcw);
+  current_frame_.SetPose(last_frame_.GetPose());
 
   Optimizer::PoseOptimization(current_frame_);
 
@@ -760,7 +760,7 @@ bool Tracker::TrackWithMotionModel() {
   // Create "visual odometry" points if in Localization Mode
   UpdateLastFrame();
 
-  current_frame_.SetPose(velocity_ * last_frame_.mTcw);
+  current_frame_.SetPose(velocity_ * last_frame_.GetPose());
 
   std::fill(current_frame_.GetMapPoints().begin(),
             current_frame_.GetMapPoints().end(),
@@ -908,7 +908,7 @@ bool Tracker::Relocalization() {
 
       // If a Camera Pose is computed, optimize
       if(!Tcw.empty()) {
-        Tcw.copyTo(current_frame_.mTcw);
+        Tcw.copyTo(current_frame_.GetPose());
 
         std::set<MapPoint*> sFound;
 

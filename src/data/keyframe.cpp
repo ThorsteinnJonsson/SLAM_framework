@@ -84,7 +84,7 @@ KeyFrame::KeyFrame(const Frame& frame,
 
   grid_ = frame.GetGrid();
 
-  SetPose(frame.mTcw);  
+  SetPose(frame.GetPose());  
 }
 
 void KeyFrame::SetPose(const cv::Mat& input_Tcw) {

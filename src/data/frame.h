@@ -166,8 +166,7 @@ public:
 
   const std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>& GetGrid() const { return grid_; }
 
-  // Camera pose.
-  cv::Mat mTcw;
+  const cv::Mat& GetPose() const { return mTcw; }
 
   // Current and Next Frame id.
   static long unsigned int nNextId;
@@ -239,6 +238,9 @@ private:
   // Assign keypoints to the grid for speed up feature matching (called in the constructor).
   std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols> grid_;
   void AssignFeaturesToGrid();
+
+  // Camera pose.
+  cv::Mat mTcw;
 
   // Rotation, translation and camera center
   cv::Mat Rcw_;
