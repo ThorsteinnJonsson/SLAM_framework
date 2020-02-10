@@ -285,7 +285,7 @@ void Tracker::StereoInitialization() {
     local_map_points_ = map_->GetAllMapPoints();
 
     reference_keyframe_ = pKFini;
-    current_frame_.mpReferenceKF = pKFini;
+    current_frame_.SetReferenceKeyframe(pKFini);
 
     map_->SetReferenceMapPoints(local_map_points_);
     map_->AddOrigin(pKFini);
@@ -448,7 +448,7 @@ void Tracker::CreateInitialMapMonocular() {
   local_keyframes_.push_back(pKFini);
   local_map_points_ = map_->GetAllMapPoints();
   reference_keyframe_ = pKFcur;
-  current_frame_.mpReferenceKF = pKFcur;
+  current_frame_.SetReferenceKeyframe(pKFcur);
 
   last_frame_ = Frame(current_frame_);
 
@@ -551,7 +551,7 @@ void Tracker::Track() {
         }
       }
     }
-    current_frame_.mpReferenceKF = reference_keyframe_;
+    current_frame_.SetReferenceKeyframe(reference_keyframe_);
 
     // If we have an initial estimation of the camera pose and matching. Track the local map.
     if (!is_only_tracking_) {
@@ -619,8 +619,8 @@ void Tracker::Track() {
       }
     }
 
-    if (!current_frame_.mpReferenceKF) {
-      current_frame_.mpReferenceKF = reference_keyframe_;
+    if (!current_frame_.GetReferenceKeyframe()) {
+      current_frame_.SetReferenceKeyframe(reference_keyframe_);
     }
 
     last_frame_ = Frame(current_frame_);
@@ -628,7 +628,7 @@ void Tracker::Track() {
 
   // Store frame pose information to retrieve the complete camera trajectory afterwards.
   if (!current_frame_.GetPose().empty()) {
-    cv::Mat Tcr = current_frame_.GetPose() * current_frame_.mpReferenceKF->GetPoseInverse();
+    cv::Mat Tcr = current_frame_.GetPose() * current_frame_.GetReferenceKeyframe()->GetPoseInverse();
     relative_frame_poses_.push_back(Tcr);
     reference_keyframes_.push_back(reference_keyframe_);
     frame_times_.push_back(current_frame_.GetTimestamp());
@@ -695,7 +695,7 @@ bool Tracker::TrackReferenceKeyFrame() {
 
 void Tracker::UpdateLastFrame() {
   // Update pose according to reference keyframe
-  KeyFrame* pRef = last_frame_.mpReferenceKF;
+  KeyFrame* pRef = last_frame_.GetReferenceKeyframe();
   cv::Mat Tlr = relative_frame_poses_.back();
 
   last_frame_.SetPose(Tlr * pRef->GetPose());
@@ -1129,7 +1129,7 @@ void Tracker::UpdateLocalKeyFrames() {
 
   if (pKFmax) {
     reference_keyframe_ = pKFmax;
-    current_frame_.mpReferenceKF = reference_keyframe_;
+    current_frame_.SetReferenceKeyframe(reference_keyframe_);
   }
 }
 
@@ -1317,7 +1317,7 @@ void Tracker::CreateNewKeyFrame() {
   KeyFrame* pKF = new KeyFrame(current_frame_, map_, keyframe_db_);
 
   reference_keyframe_ = pKF;
-  current_frame_.mpReferenceKF = pKF;
+  current_frame_.SetReferenceKeyframe(pKF);
 
   if (sensor_type_ != SENSOR_TYPE::MONOCULAR) {
     current_frame_.UpdatePoseMatrices();

@@ -173,7 +173,8 @@ public:
   static void ResetId() { next_id_ = 0;}
   
   // Reference Keyframe.
-  KeyFrame* mpReferenceKF; // TODO
+  void SetReferenceKeyframe(KeyFrame* kf) { reference_keyframe_ = kf; }
+  KeyFrame* GetReferenceKeyframe() const { return reference_keyframe_; }
 
   // Scale pyramid info.
   int mnScaleLevels;
@@ -285,6 +286,8 @@ private:
 
   // Flag to identify outlier associations.
   std::deque<bool> is_outlier_;
+
+  KeyFrame* reference_keyframe_;
 
 };
 

@@ -21,8 +21,7 @@ float Frame::grid_element_width_;
 float Frame::grid_element_height_;
 
 Frame::Frame(const Frame& frame)
-      : mpReferenceKF(frame.mpReferenceKF)
-      , mnScaleLevels(frame.mnScaleLevels)
+      : mnScaleLevels(frame.mnScaleLevels)
       , mfScaleFactor(frame.mfScaleFactor)
       , mfLogScaleFactor(frame.mfLogScaleFactor)
       , mvScaleFactors(frame.mvScaleFactors)
@@ -50,7 +49,8 @@ Frame::Frame(const Frame& frame)
       , descriptors_(frame.GetDescriptors().clone())
       , right_descriptors_(frame.GetRightDescriptors().clone())
       , map_points_(frame.GetMapPoints())
-      , is_outlier_(frame.GetOutliers()) {
+      , is_outlier_(frame.GetOutliers())
+      , reference_keyframe_(frame.GetReferenceKeyframe()) {
 
   grid_ = frame.GetGrid();
   if (!frame.GetPose().empty()) {
@@ -68,15 +68,15 @@ Frame::Frame(const cv::Mat& imLeft,
              cv::Mat& dist_coeff, 
              const float bf, 
              const float thDepth)
-    : mpReferenceKF(nullptr) 
-    , calib_mat_(K.clone())
+    : calib_mat_(K.clone())
     , dist_coeff_(dist_coeff.clone())
     , baseline_fx_(bf)
     , thresh_depth_(thDepth)
     , orb_vocabulary_(voc)
     , left_orb_extractor_(extractorLeft)
     , right_orb_extractor_(extractorRight)
-    , timestamp_(timestamp) {
+    , timestamp_(timestamp)
+    , reference_keyframe_(nullptr)  {
   // Frame ID
   mnId = next_id_++;
 
