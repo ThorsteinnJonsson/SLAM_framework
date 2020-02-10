@@ -40,7 +40,7 @@ PnPsolver::PnPsolver(const Frame& F,
                 const cv::KeyPoint &kp = F.GetUndistortedKeys()[i];
 
                 mvP2D.push_back(kp.pt);
-                mvSigma2.push_back(F.mvLevelSigma2[kp.octave]);
+                mvSigma2.push_back(F.LevelSigma2()[kp.octave]);
 
                 cv::Mat Pos = pMP->GetWorldPos();
                 mvP3Dw.push_back(cv::Point3f(Pos.at<float>(0),Pos.at<float>(1), Pos.at<float>(2)));

@@ -21,14 +21,7 @@ float Frame::grid_element_width_;
 float Frame::grid_element_height_;
 
 Frame::Frame(const Frame& frame)
-      : mnScaleLevels(frame.mnScaleLevels)
-      , mfScaleFactor(frame.mfScaleFactor)
-      , mfLogScaleFactor(frame.mfLogScaleFactor)
-      , mvScaleFactors(frame.mvScaleFactors)
-      , mvInvScaleFactors(frame.mvInvScaleFactors)
-      , mvLevelSigma2(frame.mvLevelSigma2)
-      , mvInvLevelSigma2(frame.mvInvLevelSigma2)
-      , mnId(frame.Id())
+      : mnId(frame.Id())
       , calib_mat_(frame.calib_mat_.clone())
       , dist_coeff_(frame.dist_coeff_.clone())
       , baseline_fx_(frame.GetBaselineFx())
@@ -50,7 +43,14 @@ Frame::Frame(const Frame& frame)
       , right_descriptors_(frame.GetRightDescriptors().clone())
       , map_points_(frame.GetMapPoints())
       , is_outlier_(frame.GetOutliers())
-      , reference_keyframe_(frame.GetReferenceKeyframe()) {
+      , reference_keyframe_(frame.GetReferenceKeyframe())
+      , scale_levels_(frame.GetScaleLevel())
+      , scale_factor_(frame.GetScaleFactor())
+      , log_scale_factor_(frame.GetLogScaleFactor())
+      , scale_factors_(frame.ScaleFactors())
+      , inv_scale_factors_(frame.InvScaleFactors())
+      , level_sigma_sq_(frame.LevelSigma2())
+      , inv_level_sigma_sq_(frame.InvLevelSigma2()) {
 
   grid_ = frame.GetGrid();
   if (!frame.GetPose().empty()) {
@@ -77,17 +77,10 @@ Frame::Frame(const cv::Mat& imLeft,
     , right_orb_extractor_(extractorRight)
     , timestamp_(timestamp)
     , reference_keyframe_(nullptr)  {
-  // Frame ID
+  
   mnId = next_id_++;
 
-  // Scale Level Info
-  mnScaleLevels = left_orb_extractor_->GetLevels();
-  mfScaleFactor = left_orb_extractor_->GetScaleFactor();
-  mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
-  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
-  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
+  ComputueScaleInfo();
 
   // ORB extraction
   std::thread thread_left(&Frame::ExtractORB, this, 0, imLeft);
@@ -135,17 +128,10 @@ Frame::Frame(const cv::Mat& imGray,
       , left_orb_extractor_(extractor)
       , right_orb_extractor_(nullptr) 
       , timestamp_(timestamp) {
-  // Frame ID
+
   mnId = next_id_++;
 
-  // Scale Level Info
-  mnScaleLevels = left_orb_extractor_->GetLevels();
-  mfScaleFactor = left_orb_extractor_->GetScaleFactor();    
-  mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
-  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
-  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
+  ComputueScaleInfo();
 
   // ORB extraction
   ExtractORB(0,imGray);
@@ -190,17 +176,10 @@ Frame::Frame(const cv::Mat& imGray,
       , left_orb_extractor_(extractor)
       , right_orb_extractor_(nullptr) 
       , timestamp_(timeStamp){
-    // Frame ID
+
   mnId = next_id_++;
 
-  // Scale Level Info
-  mnScaleLevels = left_orb_extractor_->GetLevels();
-  mfScaleFactor = left_orb_extractor_->GetScaleFactor();
-  mfLogScaleFactor = std::log(mfScaleFactor);
-  mvScaleFactors = left_orb_extractor_->GetScaleFactors();
-  mvInvScaleFactors = left_orb_extractor_->GetInverseScaleFactors();
-  mvLevelSigma2 = left_orb_extractor_->GetScaleSigmaSquares();
-  mvInvLevelSigma2 = left_orb_extractor_->GetInverseScaleSigmaSquares();
+  ComputueScaleInfo();
 
   // ORB extraction
   ExtractORB(0,imGray);
@@ -228,6 +207,16 @@ Frame::Frame(const cv::Mat& imGray,
   baseline_ = baseline_fx_ / fx_;
 
   AssignFeaturesToGrid();
+}
+
+void Frame::ComputueScaleInfo() {
+  scale_levels_ = left_orb_extractor_->GetLevels();
+  scale_factor_ = left_orb_extractor_->GetScaleFactor();
+  log_scale_factor_ = std::log(scale_factor_);
+  scale_factors_ = left_orb_extractor_->GetScaleFactors();
+  inv_scale_factors_ = left_orb_extractor_->GetInverseScaleFactors();
+  level_sigma_sq_ = left_orb_extractor_->GetScaleSigmaSquares();
+  inv_level_sigma_sq_ = left_orb_extractor_->GetInverseScaleSigmaSquares();
 }
 
 void Frame::MakeInitialComputations(const cv::Mat& image, cv::Mat& calibration_mat) {
@@ -437,7 +426,7 @@ void Frame::ComputeStereoMatches() {
   for(int iR=0; iR < Nr; iR++) {
     const cv::KeyPoint& kp = right_keypoints_[iR];
     const float kpY = kp.pt.y;
-    const float r = 2.0f * mvScaleFactors[right_keypoints_[iR].octave];
+    const float r = 2.0f * scale_factors_[right_keypoints_[iR].octave];
     const int maxr = std::ceil(kpY + r);
     const int minr = std::floor(kpY - r);
 
@@ -505,7 +494,7 @@ void Frame::ComputeStereoMatches() {
     if(bestDist < thOrbDist) {
       // coordinates in image pyramid at keypoint scale
       const float uR0 = right_keypoints_[bestIdxR].pt.x;
-      const float scaleFactor = mvInvScaleFactors[kpL.octave];
+      const float scaleFactor = inv_scale_factors_[kpL.octave];
       const float scaleduL = std::round(kpL.pt.x * scaleFactor);
       const float scaledvL = std::round(kpL.pt.y * scaleFactor);
       const float scaleduR0 = std::round(uR0 * scaleFactor);
@@ -560,7 +549,7 @@ void Frame::ComputeStereoMatches() {
       }
 
       // Re-scaled coordinate
-      float bestuR = mvScaleFactors[kpL.octave]*(static_cast<float>(scaleduR0) + static_cast<float>(bestincR) + deltaR);
+      float bestuR = scale_factors_[kpL.octave]*(static_cast<float>(scaleduR0) + static_cast<float>(bestincR) + deltaR);
 
       float disparity = (uL-bestuR);
 

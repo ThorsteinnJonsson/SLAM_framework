@@ -36,7 +36,7 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
         const vector<size_t> vIndices =
                 F.GetFeaturesInArea(pMP->track_projected_x,
                                     pMP->track_projected_y,
-                                    r*F.mvScaleFactors[nPredictedLevel],
+                                    r * F.ScaleFactors()[nPredictedLevel],
                                     nPredictedLevel-1,
                                     nPredictedLevel);
 
@@ -65,7 +65,7 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
             if(F.StereoCoordRight()[idx]>0)
             {
                 const float er = fabs(pMP->track_projected_x_right-F.StereoCoordRight()[idx]);
-                if(er>r*F.mvScaleFactors[nPredictedLevel])
+                if(er>r*F.ScaleFactors()[nPredictedLevel])
                     continue;
             }
 
@@ -451,7 +451,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
         int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -1364,7 +1364,7 @@ int OrbMatcher::SearchByProjection(Frame& CurrentFrame,
                 int nLastOctave = LastFrame.GetKeys()[i].octave;
 
                 // Search in a window. Size depends on scale
-                float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+                float radius = th * CurrentFrame.ScaleFactors()[nLastOctave];
 
                 vector<size_t> vIndices2;
 
@@ -1508,7 +1508,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
                 int nPredictedLevel = pMP->PredictScale(dist3D,&CurrentFrame);
 
                 // Search in a window
-                const float radius = th*CurrentFrame.mvScaleFactors[nPredictedLevel];
+                const float radius = th * CurrentFrame.ScaleFactors()[nPredictedLevel];
 
                 const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(u, v, radius, nPredictedLevel-1, nPredictedLevel+1);
 

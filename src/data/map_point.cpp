@@ -66,11 +66,11 @@ MapPoint::MapPoint(const cv::Mat& position,
   const cv::Mat PC = position - Ow;
   const float dist = cv::norm(PC);
   const int level = frame->GetUndistortedKeys()[idxF].octave;
-  const float levelScaleFactor =  frame->mvScaleFactors[level];
-  const int nLevels = frame->mnScaleLevels;
+  const float levelScaleFactor =  frame->ScaleFactors()[level];
+  const int nLevels = frame->GetScaleLevel();
 
   max_dist_ = dist*levelScaleFactor;
-  min_dist_ = max_dist_/frame->mvScaleFactors[nLevels-1];
+  min_dist_ = max_dist_/frame->ScaleFactors()[nLevels-1];
 
   frame->GetDescriptors().row(idxF).copyTo(descriptor_);
 
@@ -386,11 +386,11 @@ int MapPoint::PredictScale(const float dist, Frame* frame) const {
     ratio = max_dist_ / dist;
   }
 
-  int nScale = std::ceil(std::log(ratio) / frame->mfLogScaleFactor);
+  int nScale = std::ceil(std::log(ratio) / frame->GetLogScaleFactor());
   if (nScale < 0) {
     nScale = 0;
-  } else if (nScale >= frame->mnScaleLevels) {
-    nScale = frame->mnScaleLevels - 1;
+  } else if (nScale >= frame->GetScaleLevel()) {
+    nScale = frame->GetScaleLevel() - 1;
   }
   return nScale;
 }

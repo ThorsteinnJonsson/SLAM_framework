@@ -266,7 +266,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
 
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
         e->setMeasurement(obs);
-        const float invSigma2 = frame.mvInvLevelSigma2[kpUn.octave];
+        const float invSigma2 = frame.InvLevelSigma2()[kpUn.octave];
         e->setInformation(Eigen::Matrix2d::Identity() * invSigma2);
 
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
@@ -301,7 +301,7 @@ int Optimizer::PoseOptimization(Frame& frame) {
 
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
         e->setMeasurement(obs);
-        const float invSigma2 = frame.mvInvLevelSigma2[kpUn.octave];
+        const float invSigma2 = frame.InvLevelSigma2()[kpUn.octave];
         e->setInformation(Eigen::Matrix3d::Identity() * invSigma2);
 
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;

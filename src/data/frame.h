@@ -177,19 +177,40 @@ public:
   KeyFrame* GetReferenceKeyframe() const { return reference_keyframe_; }
 
   // Scale pyramid info.
-  int mnScaleLevels;
-  float mfScaleFactor;
-  float mfLogScaleFactor;
-  std::vector<float> mvScaleFactors;
-  std::vector<float> mvInvScaleFactors;
-  std::vector<float> mvLevelSigma2;
-  std::vector<float> mvInvLevelSigma2;
+  const int GetScaleLevel() const  { return scale_levels_; }
+  const float GetScaleFactor() const { return scale_factor_; }
+  const float GetLogScaleFactor() const { return log_scale_factor_; }
+  const std::vector<float>& ScaleFactors() const { return scale_factors_; }
+  const std::vector<float>& InvScaleFactors() const { return inv_scale_factors_; }
+  const std::vector<float>& LevelSigma2() const { return level_sigma_sq_; }
+  const std::vector<float>& InvLevelSigma2() const { return inv_level_sigma_sq_; }
+  std::vector<float>& ScaleFactors() { return scale_factors_; }
+  std::vector<float>& InvScaleFactors() { return inv_scale_factors_; }
+  std::vector<float>& LevelSigma2() { return level_sigma_sq_; }
+  std::vector<float>& InvLevelSigma2() { return inv_level_sigma_sq_; }
 
   const float GetMinX() const { return min_x_; }
   const float GetMaxX() const { return max_x_; }
   const float GetMinY() const { return min_y_; }
   const float GetMaxY() const { return max_y_; }
   
+private:
+  void ComputueScaleInfo();
+
+  void MakeInitialComputations(const cv::Mat& image, 
+                               cv::Mat& calibration_mat);
+
+  // Undistort keypoints given OpenCV distortion parameters.
+  // Only for the RGB-D case. Stereo must be already rectified!
+  // (called in the constructor).
+  void UndistortKeyPoints();
+
+  // Computes image bounds for the undistorted image (called in the constructor).
+  void ComputeImageBounds(const cv::Mat& imLeft);
+
+  // Assign keypoints to the grid for speed up feature matching (called in the constructor).
+  void AssignFeaturesToGrid();
+
 private:
   // Current and Next Frame id.
   static long unsigned int next_id_;
@@ -229,20 +250,7 @@ private:
   static float grid_element_height_;
 
 private:
-  void MakeInitialComputations(const cv::Mat& image, 
-                               cv::Mat& calibration_mat);
-
-  // Undistort keypoints given OpenCV distortion parameters.
-  // Only for the RGB-D case. Stereo must be already rectified!
-  // (called in the constructor).
-  void UndistortKeyPoints();
-
-  // Computes image bounds for the undistorted image (called in the constructor).
-  void ComputeImageBounds(const cv::Mat& imLeft);
-
-  // Assign keypoints to the grid for speed up feature matching (called in the constructor).
   std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols> grid_;
-  void AssignFeaturesToGrid();
 
   // Camera pose.
   cv::Mat mTcw;
@@ -288,6 +296,14 @@ private:
   std::deque<bool> is_outlier_;
 
   KeyFrame* reference_keyframe_;
+
+  int scale_levels_;
+  float scale_factor_;
+  float log_scale_factor_;
+  std::vector<float> scale_factors_;
+  std::vector<float> inv_scale_factors_;
+  std::vector<float> level_sigma_sq_;
+  std::vector<float> inv_level_sigma_sq_;
 
 };
 
