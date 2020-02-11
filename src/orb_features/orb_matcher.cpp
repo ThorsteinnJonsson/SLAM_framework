@@ -127,7 +127,7 @@ bool OrbMatcher::CheckDistEpipolarLine(const cv::KeyPoint &kp1,const cv::KeyPoin
 
     const float dsqr = num*num/den;
 
-    return dsqr<3.84*pKF2->mvLevelSigma2[kp2.octave];
+    return dsqr<3.84*pKF2->level_sigma_sq[kp2.octave];
 }
 
 int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPointMatches)
@@ -451,7 +451,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
         int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
         // Search in a radius
-        const float radius = th * pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th * pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -723,7 +723,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                     {
                         const float distex = ex-kp2.pt.x;
                         const float distey = ey-kp2.pt.y;
-                        if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
+                        if(distex*distex+distey*distey<100*pKF2->scale_factors[kp2.octave])
                             continue;
                     }
 
@@ -866,7 +866,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
         int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -901,7 +901,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
                 const float er = ur-kpr;
                 const float e2 = ex*ex+ey*ey+er*er;
 
-                if(e2*pKF->mvInvLevelSigma2[kpLevel]>7.8)
+                if(e2*pKF->inv_level_sigma_sq[kpLevel]>7.8)
                     continue;
             }
             else
@@ -912,7 +912,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
                 const float ey = v-kpy;
                 const float e2 = ex*ex+ey*ey;
 
-                if(e2*pKF->mvInvLevelSigma2[kpLevel]>5.99)
+                if(e2*pKF->inv_level_sigma_sq[kpLevel]>5.99)
                     continue;
             }
 
@@ -1025,7 +1025,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, cv::Mat Scw, const vector<MapPoint *> &vpPoi
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -1170,7 +1170,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF2);
 
         // Search in a radius
-        const float radius = th*pKF2->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF2->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF2->GetFeaturesInArea(u,v,radius);
 
@@ -1250,7 +1250,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF1);
 
         // Search in a radius of 2.5*sigma(ScaleLevel)
-        const float radius = th*pKF1->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF1->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF1->GetFeaturesInArea(u,v,radius);
 

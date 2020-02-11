@@ -277,7 +277,7 @@ void LocalMapper::CreateNewMapPoints() {
   const float invfx_cur = current_keyframe_->invfx;
   const float invfy_cur = current_keyframe_->invfy;
 
-  const float ratioFactor = 1.5f * current_keyframe_->mfScaleFactor;
+  const float ratioFactor = 1.5f * current_keyframe_->scale_factor;
 
   // Search matches with epipolar restriction and triangulate
   int num_added_points = 0;
@@ -414,7 +414,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       //Check reprojection error in first keyframe
-      const float sigmaSquare1 = current_keyframe_->mvLevelSigma2[kp1.octave];
+      const float sigmaSquare1 = current_keyframe_->level_sigma_sq[kp1.octave];
       const float x1 = rot_current_world.row(0).dot(x3Dt) + T_current_world.at<float>(0,3);
       const float y1 = rot_current_world.row(1).dot(x3Dt) + T_current_world.at<float>(1,3);
 
@@ -435,7 +435,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       //Check reprojection error in second keyframe
-      const float sigma_square_nbor = nbor_keyframe->mvLevelSigma2[kp2.octave];
+      const float sigma_square_nbor = nbor_keyframe->level_sigma_sq[kp2.octave];
       const float x_nbor = rot_nbor_world.row(0).dot(x3Dt) + T_nbor_world.at<float>(0,3);
       const float y_nbor = rot_nbor_world.row(1).dot(x3Dt) + T_nbor_world.at<float>(1,3);
       
@@ -464,7 +464,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       const float dist_ratio = dist2 / dist1;
-      const float ratioOctave = current_keyframe_->mvScaleFactors[kp1.octave] / nbor_keyframe->mvScaleFactors[kp2.octave];
+      const float ratioOctave = current_keyframe_->scale_factors[kp1.octave] / nbor_keyframe->scale_factors[kp2.octave];
 
       if (dist_ratio * ratioFactor < ratioOctave || dist_ratio / ratioFactor > ratioOctave) {
         continue;
@@ -623,8 +623,8 @@ cv::Mat LocalMapper::ComputeFundamentalMatrix(KeyFrame* keyframe1, KeyFrame* key
 
   const cv::Mat t12x = SkewSymmetricMatrix(t12);
 
-  const cv::Mat& K1 = keyframe1->mK;
-  const cv::Mat& K2 = keyframe2->mK;
+  const cv::Mat& K1 = keyframe1->calib_mat;
+  const cv::Mat& K2 = keyframe2->calib_mat;
 
   return K1.t().inv() * t12x * R12 * K2.inv();
 }

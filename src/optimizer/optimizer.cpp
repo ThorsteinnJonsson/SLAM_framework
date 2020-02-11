@@ -113,7 +113,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(keyframe->Id())));
         e->setMeasurement(obs);
-        const float invSigma2 = keyframe->mvInvLevelSigma2[kpUn.octave];
+        const float invSigma2 = keyframe->inv_level_sigma_sq[kpUn.octave];
         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
         if (is_robust) {
@@ -139,7 +139,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(keyframe->Id())));
         e->setMeasurement(obs);
-        const float& invSigma2 = keyframe->mvInvLevelSigma2[kpUn.octave];
+        const float& invSigma2 = keyframe->inv_level_sigma_sq[kpUn.octave];
         Eigen::Matrix3d Info = Eigen::Matrix3d::Identity()*invSigma2;
         e->setInformation(Info);
 
@@ -556,7 +556,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->Id())));
         e->setMeasurement(obs);
-        const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+        const float invSigma2 = pKFi->inv_level_sigma_sq[kpUn.octave];
         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
@@ -582,7 +582,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
         e->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id)));
         e->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(pKFi->Id())));
         e->setMeasurement(obs);
-        const float invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave];
+        const float invSigma2 = pKFi->inv_level_sigma_sq[kpUn.octave];
         e->setInformation(Eigen::Matrix3d::Identity()*invSigma2);
 
         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
@@ -978,8 +978,8 @@ int Optimizer::OptimizeSim3(KeyFrame* pKF1,
   optimizer.setAlgorithm(algorithm);
 
   // Calibration
-  const cv::Mat& K1 = pKF1->mK;
-  const cv::Mat& K2 = pKF2->mK;
+  const cv::Mat& K1 = pKF1->calib_mat;
+  const cv::Mat& K2 = pKF2->calib_mat;
 
   // Camera poses
   const cv::Mat R1w = pKF1->GetRotation();
@@ -1064,7 +1064,7 @@ int Optimizer::OptimizeSim3(KeyFrame* pKF1,
     e12->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id2)));
     e12->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
     e12->setMeasurement(obs1);
-    const float invSigmaSquare1 = pKF1->mvInvLevelSigma2[kpUn1.octave];
+    const float invSigmaSquare1 = pKF1->inv_level_sigma_sq[kpUn1.octave];
     e12->setInformation(Eigen::Matrix2d::Identity()*invSigmaSquare1);
 
     g2o::RobustKernelHuber* rk1 = new g2o::RobustKernelHuber;
@@ -1082,7 +1082,7 @@ int Optimizer::OptimizeSim3(KeyFrame* pKF1,
     e21->setVertex(0, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(id1)));
     e21->setVertex(1, dynamic_cast<g2o::OptimizableGraph::Vertex*>(optimizer.vertex(0)));
     e21->setMeasurement(obs2);
-    float invSigmaSquare2 = pKF2->mvInvLevelSigma2[kpUn2.octave];
+    float invSigmaSquare2 = pKF2->inv_level_sigma_sq[kpUn2.octave];
     e21->setInformation(Eigen::Matrix2d::Identity()*invSigmaSquare2);
 
     g2o::RobustKernelHuber* rk2 = new g2o::RobustKernelHuber;

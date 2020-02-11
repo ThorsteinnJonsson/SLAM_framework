@@ -342,13 +342,13 @@ void MapPoint::UpdateNormalAndDepth() {
   const cv::Mat PC = position - reference_keyframe->GetCameraCenter();
   const float dist = cv::norm(PC);
   const int level = reference_keyframe->mvKeysUn[observations[reference_keyframe]].octave;
-  const float levelScaleFactor = reference_keyframe->mvScaleFactors[level];
-  const int nLevels = reference_keyframe->mnScaleLevels;
+  const float levelScaleFactor = reference_keyframe->scale_factors[level];
+  const int nLevels = reference_keyframe->scale_levels;
 
   {
     std::unique_lock<std::mutex> lock3(position_mutex_);
     max_dist_ = dist * levelScaleFactor;
-    min_dist_ = max_dist_ / reference_keyframe->mvScaleFactors[nLevels - 1];
+    min_dist_ = max_dist_ / reference_keyframe->scale_factors[nLevels - 1];
     normal_vector_ = normal / n;
   }
 }
@@ -370,11 +370,11 @@ int MapPoint::PredictScale(const float dist, KeyFrame* keyframe) const {
     ratio = max_dist_ / dist;
   }
 
-  int nScale = std::ceil( std::log(ratio) / keyframe->mfLogScaleFactor );
+  int nScale = std::ceil( std::log(ratio) / keyframe->log_scale_factor );
   if (nScale < 0) {
     nScale = 0;
-  } else if (nScale >= keyframe->mnScaleLevels) {
-    nScale = keyframe->mnScaleLevels - 1;
+  } else if (nScale >= keyframe->scale_levels) {
+    nScale = keyframe->scale_levels - 1;
   }
   return nScale;
 }

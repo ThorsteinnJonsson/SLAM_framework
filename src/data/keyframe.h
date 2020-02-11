@@ -124,6 +124,7 @@ public:
   long unsigned int bundle_adj_global_for_keyframe_id;
 
   // Calibration parameters
+  const cv::Mat calib_mat;
   static float fx;
   static float fy;
   static float cx;
@@ -161,16 +162,12 @@ public:
   cv::Mat mTcp;
 
   // Scale
-  const int mnScaleLevels;
-  const float mfScaleFactor;
-  const float mfLogScaleFactor;
-  const std::vector<float> mvScaleFactors;
-  const std::vector<float> mvLevelSigma2;
-  const std::vector<float> mvInvLevelSigma2;
-  
-
-  // Calibration matrix
-  const cv::Mat mK;  
+  const int scale_levels;
+  const float scale_factor;
+  const float log_scale_factor;
+  const std::vector<float> scale_factors;
+  const std::vector<float> level_sigma_sq;
+  const std::vector<float> inv_level_sigma_sq;
 
 private:
   static long unsigned int next_id_;
