@@ -1204,7 +1204,7 @@ void Tracker::SearchLocalPoints() {
       continue;
     }
     // Project (this fills MapPoint variables for matching)
-    if (current_frame_.isInFrustum(pMP, 0.5)) {
+    if (current_frame_.IsInFrustum(pMP, 0.5)) {
       pMP->IncreaseVisible();
       ++nToMatch;
     }

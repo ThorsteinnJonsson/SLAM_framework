@@ -200,7 +200,8 @@ protected:
   static float grid_element_width_;
   static float grid_element_height_;
 
-  std::array<std::array<std::vector<std::size_t>, grid_rows>, grid_cols> grid_;
+  using FrameGrid = std::array<std::array<std::vector<std::size_t>, grid_rows>,grid_cols>; 
+  FrameGrid grid_;
 
   std::map<KeyFrame*,int> mConnectedKeyFrameWeights;
   std::vector<KeyFrame*> mvpOrderedConnectedKeyFrames;

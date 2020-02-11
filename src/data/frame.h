@@ -64,13 +64,11 @@ public:
   // Compute Bag of Words representation.
   void ComputeBoW();
 
-  // Set the camera pose.
   void SetPose(const cv::Mat& Tcw);
 
   // Computes rotation, translation and camera center matrices from the camera pose.
   void UpdatePoseMatrices();
 
-  // Returns the camera center.
   inline cv::Mat GetCameraCenter() { return Ow_.clone(); }
 
   // Returns inverse of rotation
@@ -78,7 +76,7 @@ public:
 
   // Check if a MapPoint is in the frustum of the camera
   // and fill variables of the MapPoint to be used by the tracking
-  bool isInFrustum(MapPoint* pMP, float viewingCosLimit);
+  bool IsInFrustum(MapPoint* pMP, float viewingCosLimit);
 
   // Compute the cell of a keypoint (return false if outside the grid)
   bool PosInGrid(const cv::KeyPoint& kp, 
@@ -164,9 +162,10 @@ public:
   const float GridElementWidth() const { return grid_element_width_; }
   const float GridElementHeight() const { return grid_element_height_; }
 
-  const std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>& GetGrid() const { return grid_; }
+  using FrameGrid = std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols>;
+  const FrameGrid& GetGrid() const { return grid_; }
 
-  const cv::Mat& GetPose() const { return mTcw; } // TODO rename variable
+  const cv::Mat& GetPose() const { return Tcw_; }
 
   long unsigned int Id() const { return mnId; } // TODO rename variable
   void SetId(long unsigned int id) { mnId = id; }
@@ -249,11 +248,10 @@ private:
   static float grid_element_width_;
   static float grid_element_height_;
 
-private:
-  std::array<std::array<std::vector<std::size_t>,grid_rows>,grid_cols> grid_;
+  FrameGrid grid_;
 
   // Camera pose.
-  cv::Mat mTcw;
+  cv::Mat Tcw_;
 
   // Rotation, translation and camera center
   cv::Mat Rcw_;

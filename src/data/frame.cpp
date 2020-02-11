@@ -264,22 +264,22 @@ void Frame::ComputeBoW() {
 }
 
 void Frame::SetPose(const cv::Mat& Tcw) {
-  mTcw = Tcw.clone();
+  Tcw_ = Tcw.clone();
   UpdatePoseMatrices();
 }
 
 void Frame::UpdatePoseMatrices() { 
-  Rcw_ = mTcw.rowRange(0,3).colRange(0,3);
+  Rcw_ = Tcw_.rowRange(0,3).colRange(0,3);
   Rwc_ = Rcw_.t();
-  tcw_ = mTcw.rowRange(0,3).col(3);
+  tcw_ = Tcw_.rowRange(0,3).col(3);
   Ow_ = -Rcw_.t() * tcw_;
 }
 
-bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
+bool Frame::IsInFrustum(MapPoint* pMP, float viewingCosLimit) {
   pMP->track_is_in_view = false;
 
   // 3D in absolute coordinates
-  cv::Mat P = pMP->GetWorldPos(); 
+  cv::Mat P = pMP->GetWorldPos();
 
   // 3D in camera coordinates
   const cv::Mat Pc = Rcw_*P + tcw_;
@@ -331,21 +331,19 @@ bool Frame::isInFrustum(MapPoint* pMP, float viewingCosLimit) {
   pMP->track_projected_x = u;
   pMP->track_projected_x_right = u - baseline_fx_ * invz;
   pMP->track_projected_y = v;
-  pMP->track_scale_level= nPredictedLevel;
+  pMP->track_scale_level = nPredictedLevel;
   pMP->track_view_cos = viewCos;
 
   return true;
 }
 
 bool Frame::PosInGrid(const cv::KeyPoint& kp, int& posX, int& posY) {
-  posX = round( (kp.pt.x - min_x_) / grid_element_width_);
-  posY = round( (kp.pt.y - min_y_) / grid_element_height_);
+  posX = std::round( (kp.pt.x - min_x_) / grid_element_width_);
+  posY = std::round( (kp.pt.y - min_y_) / grid_element_height_);
 
   //Keypoint's coordinates are undistorted, which could cause to go out of the image
-  if( posX < 0 || posX >= grid_cols || posY < 0 || posY >= grid_rows ) {
-    return false;
-  }
-  return true;
+  const bool is_inside = (posX >= 0 && posX < grid_cols && posY >= 0 && posY < grid_rows);
+  return is_inside;
 }
 
 std::vector<size_t> Frame::GetFeaturesInArea(const float x, 
