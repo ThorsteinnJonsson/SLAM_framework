@@ -232,7 +232,7 @@ void Tracker::Reset() {
 
   map_->Clear();
 
-  KeyFrame::nNextId = 0;
+  KeyFrame::ResetId();
   Frame::ResetId();
   state_ = TrackingState::NO_IMAGES_YET;
 

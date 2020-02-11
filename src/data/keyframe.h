@@ -85,18 +85,18 @@ public:
   // Compute Scene Depth (q=2 median). Used in monocular.
   float ComputeSceneMedianDepth(const int q);
 
-  static bool LesserId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->mnId < pKF2->mnId; }
+  static bool LesserId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->Id() < pKF2->Id(); }
 
 private:
   void UpdateBestCovisibles();
 
 // The following variables are accesed from only one thread or never change (no mutex needed)
 public:
-  static long unsigned int nNextId;
-  long unsigned int mnId;
-  const long unsigned int mnFrameId;
+  long unsigned int Id() const { return id_; }
+  void SetId(long unsigned int id) { id_ = id; }
+  long unsigned int FrameId() const { return frame_id_; }
 
-  const double timestamp_;
+  static void ResetId() { next_id_ = 0;}
 
   // Grid (to speed up feature matching)
   static constexpr int grid_rows = 48;
@@ -167,9 +167,18 @@ public:
   const std::vector<float> mvScaleFactors;
   const std::vector<float> mvLevelSigma2;
   const std::vector<float> mvInvLevelSigma2;
+  
 
   // Calibration matrix
   const cv::Mat mK;  
+
+private:
+  static long unsigned int next_id_;
+  long unsigned int id_;
+  const long unsigned int frame_id_;
+  const double timestamp_;
+
+
 
 // The following variables need to be accessed trough a mutex to be thread safe.
 protected:

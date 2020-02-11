@@ -48,7 +48,7 @@ void LoopCloser::Run() {
 
 void LoopCloser::InsertKeyFrame(KeyFrame* keyframe) {
   std::unique_lock<std::mutex> lock(loop_queue_mutex_);
-  if (keyframe->mnId != 0) {
+  if (keyframe->Id() != 0) {
     loop_keyframe_queue_.push_back(keyframe);
   }
 }
@@ -201,7 +201,7 @@ bool LoopCloser::DetectLoop() {
   }
 
   // If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-  if (current_keyframe_->mnId < last_loop_kf_id_ + 10) {
+  if (current_keyframe_->Id() < last_loop_kf_id_ + 10) {
     keyframe_db_->add(current_keyframe_);
     current_keyframe_->SetErase();
     return false;
@@ -430,9 +430,9 @@ bool LoopCloser::ComputeSim3() {
     for (MapPoint* map_point : map_points) {
       if (map_point
           && !map_point->isBad()
-          && map_point->loop_point_for_keyframe_id != current_keyframe_->mnId) {
+          && map_point->loop_point_for_keyframe_id != current_keyframe_->Id()) {
         loop_map_points_.push_back(map_point);
-        map_point->loop_point_for_keyframe_id = current_keyframe_->mnId;
+        map_point->loop_point_for_keyframe_id = current_keyframe_->Id();
       }
     }
   }
@@ -582,7 +582,7 @@ void LoopCloser::CorrectLoop() {
         if(!pMPi || pMPi->isBad()) {
           continue;
         }
-        if(pMPi->corrected_by_keyframe == current_keyframe_->mnId) {
+        if(pMPi->corrected_by_keyframe == current_keyframe_->Id()) {
           continue;
         }
 
@@ -593,8 +593,8 @@ void LoopCloser::CorrectLoop() {
 
         cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
         pMPi->SetWorldPos(cvCorrectedP3Dw);
-        pMPi->corrected_by_keyframe = current_keyframe_->mnId;
-        pMPi->corrected_reference = keyframe_i->mnId;
+        pMPi->corrected_by_keyframe = current_keyframe_->Id();
+        pMPi->corrected_reference = keyframe_i->Id();
         pMPi->UpdateNormalAndDepth();
       }
 
@@ -687,11 +687,11 @@ void LoopCloser::CorrectLoop() {
   stop_global_bundle_adj_ = false;
   global_bundle_adjustment_thread_.reset(new std::thread(&LoopCloser::RunGlobalBundleAdjustment, 
                                                          this, 
-                                                         current_keyframe_->mnId));
+                                                         current_keyframe_->Id()));
 
   // Loop closed. Release Local Mapping.
   local_mapper_->Release();    
-  last_loop_kf_id_ = current_keyframe_->mnId;   
+  last_loop_kf_id_ = current_keyframe_->Id();   
 }
 
 void LoopCloser::ResetIfRequested() {

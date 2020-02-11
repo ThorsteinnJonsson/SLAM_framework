@@ -3,7 +3,7 @@
 #include "util/converter.h"
 
 // Define static variables with initial values
-long unsigned int KeyFrame::nNextId = 0;
+long unsigned int KeyFrame::next_id_ = 0;
 
 bool KeyFrame::initial_computations = true;
 
@@ -21,9 +21,7 @@ float KeyFrame::grid_element_height_;
 KeyFrame::KeyFrame(const Frame& frame, 
                    const std::shared_ptr<Map>& pMap, 
                    const std::shared_ptr<KeyframeDatabase>& pKFDB) 
-      : mnFrameId(frame.Id())
-      , timestamp_(frame.GetTimestamp())
-      , mnTrackReferenceForFrame(0)
+      : mnTrackReferenceForFrame(0)
       , mnFuseTargetForKF(0)
       , bundle_adj_local_id_for_keyframe(0)
       , mnBAFixedForKF(0)
@@ -50,6 +48,8 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mvLevelSigma2(frame.LevelSigma2())
       , mvInvLevelSigma2(frame.InvLevelSigma2())
       , mK(frame.GetCalibMat())
+      , frame_id_(frame.Id())
+      , timestamp_(frame.GetTimestamp())
       , map_points_(frame.GetMapPoints())
       , keyframe_db_(pKFDB)
       , orb_vocabulary_(frame.GetVocabulary())
@@ -74,7 +74,7 @@ KeyFrame::KeyFrame(const Frame& frame,
     initial_computations = false;
   }
 
-  mnId = nNextId++;
+  id_ = next_id_++;
 
   grid_ = frame.GetGrid();
 
@@ -214,7 +214,7 @@ void KeyFrame::UpdateConnections() {
     for (std::map<KeyFrame*,size_t>::iterator mit = observations.begin();
                                               mit != observations.end(); 
                                               mit++) {
-      if ( mit->first->mnId == mnId ) {
+      if ( mit->first->Id() == id_ ) {
         continue;
       }
       KFcounter[mit->first]++;
@@ -268,7 +268,7 @@ void KeyFrame::UpdateConnections() {
     ordered_connected_keyframes_ = std::vector<KeyFrame*>(lKFs.begin(), lKFs.end());
     ordered_weights_ = std::vector<int>(lWs.begin(), lWs.end());
 
-    if (first_connection_ && mnId != 0) {
+    if (first_connection_ && id_ != 0) {
       parent_ = ordered_connected_keyframes_.front();
       parent_->AddChild(this);
       first_connection_ = false;
@@ -517,7 +517,7 @@ void KeyFrame::SetErase() {
 void KeyFrame::SetBadFlag() {
   {
     std::unique_lock<std::mutex> lock(connection_mutex_);
-    if (mnId == 0) {
+    if (id_ == 0) {
       return;
     } else if (not_erase_) {
       to_be_erased_ = true;
@@ -574,7 +574,7 @@ void KeyFrame::SetBadFlag() {
                                              spcit != sParentCandidates.end(); 
                                              spcit++) 
           {
-            if (vpConnected[i]->mnId == (*spcit)->mnId) {
+            if (vpConnected[i]->Id() == (*spcit)->Id()) {
               int w = pKF->GetWeight(vpConnected[i]);
               if(w > max) {
                 pC = pKF;

@@ -167,8 +167,8 @@ public:
 
   const cv::Mat& GetPose() const { return Tcw_; }
 
-  long unsigned int Id() const { return mnId; } // TODO rename variable
-  void SetId(long unsigned int id) { mnId = id; }
+  long unsigned int Id() const { return id_; }
+  void SetId(long unsigned int id) { id_ = id; }
   static void ResetId() { next_id_ = 0;}
   
   // Reference Keyframe.
@@ -213,7 +213,7 @@ private:
 private:
   // Current and Next Frame id.
   static long unsigned int next_id_;
-  long unsigned int mnId;
+  long unsigned int id_;
 
   static bool mbInitialComputations;
 

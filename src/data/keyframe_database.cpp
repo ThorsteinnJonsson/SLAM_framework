@@ -66,10 +66,10 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
                                           ++lit)
       {
         KeyFrame* pKFi = *lit;
-        if (pKFi->mnLoopQuery != pKF->mnId) {
+        if (pKFi->mnLoopQuery != pKF->Id()) {
           pKFi->mnLoopWords = 0;
           if (!spConnectedKeyFrames.count(pKFi)) {
-            pKFi->mnLoopQuery = pKF->mnId;
+            pKFi->mnLoopQuery = pKF->Id();
             lKFsSharingWords.push_back(pKFi);
           }
         }
@@ -136,7 +136,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
               ++vit)
     {
       KeyFrame* pKF2 = *vit;
-      if (pKF2->mnLoopQuery == pKF->mnId 
+      if (pKF2->mnLoopQuery == pKF->Id() 
           && pKF2->mnLoopWords > minCommonWords) {
         accScore += pKF2->mLoopScore;
         if (pKF2->mLoopScore > bestScore) {

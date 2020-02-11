@@ -232,7 +232,7 @@ void LocalMapper::ProcessNewKeyFrame() {
 void LocalMapper::MapPointCulling() {
   // Check Recent Added MapPoints
   
-  const long current_keyframe_id = static_cast<long>(current_keyframe_->mnId);
+  const long current_keyframe_id = static_cast<long>(current_keyframe_->Id());
   const int min_observations_thresh = is_monocular_? 2 : 3;
 
   std::list<MapPoint*>::iterator lit = recently_added_map_points_.begin();
@@ -497,17 +497,17 @@ void LocalMapper::SearchInNeighbors() {
   std::vector<KeyFrame*> target_keyframes;
   for (KeyFrame* nbor_keyframe : current_keyframe_->GetBestCovisibilityKeyFrames(num_kf)) {
     if (nbor_keyframe->isBad() 
-        || nbor_keyframe->mnFuseTargetForKF == current_keyframe_->mnId) {
+        || nbor_keyframe->mnFuseTargetForKF == current_keyframe_->Id()) {
       continue;
     }
     target_keyframes.push_back(nbor_keyframe);
-    nbor_keyframe->mnFuseTargetForKF = current_keyframe_->mnId;
+    nbor_keyframe->mnFuseTargetForKF = current_keyframe_->Id();
 
     // Extend to some second neighbors
     for (KeyFrame* second_nbor : nbor_keyframe->GetBestCovisibilityKeyFrames(5)) {
       if (second_nbor->isBad() || 
-          second_nbor->mnFuseTargetForKF == current_keyframe_->mnId || 
-          second_nbor->mnId == current_keyframe_->mnId) {
+          second_nbor->mnFuseTargetForKF == current_keyframe_->Id() || 
+          second_nbor->Id() == current_keyframe_->Id()) {
         continue;
       }
       target_keyframes.push_back(second_nbor);
@@ -529,10 +529,10 @@ void LocalMapper::SearchInNeighbors() {
     for (MapPoint* map_point : target_keyframe->GetMapPointMatches()) {
       if (!map_point
           || map_point->isBad()
-          || map_point->fuse_candidate_id_for_keyframe == current_keyframe_->mnId ) {
+          || map_point->fuse_candidate_id_for_keyframe == current_keyframe_->Id() ) {
         continue;
       }
-      map_point->fuse_candidate_id_for_keyframe = current_keyframe_->mnId;
+      map_point->fuse_candidate_id_for_keyframe = current_keyframe_->Id();
       fuse_candidates.push_back(map_point);
     }
   }
@@ -559,7 +559,7 @@ void LocalMapper::KeyFrameCulling() {
   // in at least other 3 keyframes (in the same or finer scale)
   // We only consider close stereo points
   for (KeyFrame* keyframe : current_keyframe_->GetVectorCovisibleKeyFrames()) {
-    if (keyframe->mnId == 0) {
+    if (keyframe->Id() == 0) {
       continue;
     }
     const std::vector<MapPoint*> map_points = keyframe->GetMapPointMatches();

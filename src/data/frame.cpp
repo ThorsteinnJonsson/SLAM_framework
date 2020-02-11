@@ -21,7 +21,7 @@ float Frame::grid_element_width_;
 float Frame::grid_element_height_;
 
 Frame::Frame(const Frame& frame)
-      : mnId(frame.Id())
+      : id_(frame.Id())
       , calib_mat_(frame.calib_mat_.clone())
       , dist_coeff_(frame.dist_coeff_.clone())
       , baseline_fx_(frame.GetBaselineFx())
@@ -78,7 +78,7 @@ Frame::Frame(const cv::Mat& imLeft,
     , timestamp_(timestamp)
     , reference_keyframe_(nullptr)  {
   
-  mnId = next_id_++;
+  id_ = next_id_++;
 
   ComputueScaleInfo();
 
@@ -129,7 +129,7 @@ Frame::Frame(const cv::Mat& imGray,
       , right_orb_extractor_(nullptr) 
       , timestamp_(timestamp) {
 
-  mnId = next_id_++;
+  id_ = next_id_++;
 
   ComputueScaleInfo();
 
@@ -142,7 +142,6 @@ Frame::Frame(const cv::Mat& imGray,
   }
 
   UndistortKeyPoints();
-
   ComputeStereoFromRGBD(imDepth);
 
   map_points_ = std::vector<MapPoint*>(num_keypoints_, nullptr);
@@ -177,7 +176,7 @@ Frame::Frame(const cv::Mat& imGray,
       , right_orb_extractor_(nullptr) 
       , timestamp_(timeStamp){
 
-  mnId = next_id_++;
+  id_ = next_id_++;
 
   ComputueScaleInfo();
 
