@@ -269,7 +269,7 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
   }
 
   std::vector<KeyFrame*> vpKFs = map_->GetAllKeyFrames();
-  std::sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+  std::sort(vpKFs.begin(), vpKFs.end(), KeyFrame::LesserId);
 
   // Transform all keyframes so that the first keyframe is at the origin.
   // After a loop closure the first keyframe might not be at the origin.
@@ -317,7 +317,7 @@ void SlamSystem::SaveKeyFrameTrajectory(const std::string& filename) const {
   std::cout << "\nSaving keyframe trajectory to " << filename << " ...\n";
 
   std::vector<KeyFrame*> keyframes = map_->GetAllKeyFrames();
-  std::sort(keyframes.begin(), keyframes.end(), KeyFrame::lId);
+  std::sort(keyframes.begin(), keyframes.end(), KeyFrame::LesserId);
 
   // Transform all keyframes so that the first keyframe is at the origin.
   // After a loop closure the first keyframe might not be at the origin.

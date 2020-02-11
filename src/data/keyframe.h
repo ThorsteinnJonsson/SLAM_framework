@@ -27,7 +27,7 @@ public:
            const std::shared_ptr<KeyframeDatabase>& pKFDB);
   ~KeyFrame() {}
 
-  void SetPose(const cv::Mat& Tcw);
+  void SetPose(const cv::Mat& Tcw_);
   cv::Mat GetPose();
   cv::Mat GetPoseInverse();
   cv::Mat GetCameraCenter();
@@ -74,26 +74,23 @@ public:
   std::vector<size_t> GetFeaturesInArea(const float x, const float y, const float r) const;
   cv::Mat UnprojectStereo(int i);
 
-  // Image
   bool IsInImage(const float x, const float y) const;
 
-  // Enable/Disable bad flag changes
   void SetNotErase();
   void SetErase();
   
-  // Set/check bad flag
   void SetBadFlag();
   bool isBad() const;
 
   // Compute Scene Depth (q=2 median). Used in monocular.
   float ComputeSceneMedianDepth(const int q);
 
-  static bool lId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->mnId < pKF2->mnId; }
+  static bool LesserId(KeyFrame* pKF1, KeyFrame* pKF2){ return pKF1->mnId < pKF2->mnId; }
 
 private:
   void UpdateBestCovisibles();
 
-// The following variables are accesed from only 1 thread or never change (no mutex needed).
+// The following variables are accesed from only one thread or never change (no mutex needed)
 public:
   static long unsigned int nNextId;
   long unsigned int mnId;
@@ -176,25 +173,24 @@ public:
 
 // The following variables need to be accessed trough a mutex to be thread safe.
 protected:
-
   // Image bounds
-  static int mnMinX;
-  static int mnMinY;
-  static int mnMaxX;
-  static int mnMaxY;
+  static int min_x_;
+  static int min_y_;
+  static int max_x_;
+  static int max_y_;
   // SE3 Pose and camera center
-  cv::Mat Tcw;
-  cv::Mat Twc;
-  cv::Mat Ow;
+  cv::Mat Tcw_;
+  cv::Mat Twc_;
+  cv::Mat Ow_;
 
-  cv::Mat Cw; // Stereo middle point. Only for visualization
+  cv::Mat Cw_; // Stereo middle point. Only for visualization
 
   // MapPoints associated to keypoints
-  std::vector<MapPoint*> mvpMapPoints;
+  std::vector<MapPoint*> map_points_;
 
   // BoW
-  std::shared_ptr<KeyframeDatabase> mpKeyFrameDB;
-  std::shared_ptr<OrbVocabulary> mpORBvocabulary;
+  std::shared_ptr<KeyframeDatabase> keyframe_db_;
+  std::shared_ptr<OrbVocabulary> orb_vocabulary_;
 
   // Grid over the image to speed up feature matching
   static float grid_element_width_;
@@ -203,30 +199,26 @@ protected:
   using FrameGrid = std::array<std::array<std::vector<std::size_t>, grid_rows>,grid_cols>; 
   FrameGrid grid_;
 
-  std::map<KeyFrame*,int> mConnectedKeyFrameWeights;
-  std::vector<KeyFrame*> mvpOrderedConnectedKeyFrames;
-  std::vector<int> mvOrderedWeights;
+  std::map<KeyFrame*,int> connected_keyframe_weights_;
+  std::vector<KeyFrame*> ordered_connected_keyframes_;
+  std::vector<int> ordered_weights_;
 
   // Spanning Tree and Loop Edges
-  bool mbFirstConnection;
-  KeyFrame* mpParent;
-  std::set<KeyFrame*> mspChildrens;
-  std::set<KeyFrame*> mspLoopEdges;
+  bool first_connection_ = true;
+  KeyFrame* parent_ = nullptr;
+  std::set<KeyFrame*> children_;
+  std::set<KeyFrame*> loop_edges_;
 
   // Bad flags
-  bool mbNotErase;
-  bool mbToBeErased;
-  bool mbBad;    
+  bool not_erase_ = false;
+  bool to_be_erased_ = false;
+  bool bad_ = false;    
 
-  float mHalfBaseline; // Only for visualization
-
-  std::shared_ptr<Map> mpMap;
+  std::shared_ptr<Map> map_;
 
   mutable std::mutex pose_mutex_;
   mutable std::mutex connection_mutex_;
   mutable std::mutex feature_mutex_;
-
-
 };
 
 #endif // SRC_KEYFRAME_H_

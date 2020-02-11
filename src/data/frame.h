@@ -233,7 +233,7 @@ private:
   static float invfy_;
   cv::Mat dist_coeff_;
 
-    // Stereo baseline multiplied by fx.
+  // Stereo baseline multiplied by fx.
   float baseline_fx_;
 
   // Stereo baseline in meters.
@@ -279,18 +279,14 @@ private:
   std::vector<float> stereo_coords_;
   std::vector<float> depths_;
 
-  // Bag of Words Vector structures.
   DBoW2::BowVector bow_vec_;
   DBoW2::FeatureVector feature_vec_;
 
-  // ORB descriptor, each row associated to a keypoint.
   cv::Mat descriptors_;
   cv::Mat right_descriptors_;
 
-  // MapPoints associated to keypoints, NULL pointer if no association.
   std::vector<MapPoint*> map_points_;
 
-  // Flag to identify outlier associations.
   std::deque<bool> is_outlier_;
 
   KeyFrame* reference_keyframe_;
