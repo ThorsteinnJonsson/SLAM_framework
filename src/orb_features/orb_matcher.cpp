@@ -205,7 +205,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                     {
                         vpMapPointMatches[bestIdxF]=pMP;
 
-                        const cv::KeyPoint &kp = pKF->mvKeysUn[realIdxKF];
+                        const cv::KeyPoint &kp = pKF->undistorted_keypoints[realIdxKF];
 
                         if(mbCheckOrientation)
                         {
@@ -469,7 +469,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
             if(vpMatched[idx])
                 continue;
 
-            const int &kpLevel= pKF->mvKeysUn[idx].octave;
+            const int &kpLevel= pKF->undistorted_keypoints[idx].octave;
 
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
@@ -498,12 +498,12 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
 
 int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
 {
-    const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
+    const vector<cv::KeyPoint> &vKeysUn1 = pKF1->undistorted_keypoints;
     const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
     const vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
     const cv::Mat &Descriptors1 = pKF1->mDescriptors;
 
-    const vector<cv::KeyPoint> &vKeysUn2 = pKF2->mvKeysUn;
+    const vector<cv::KeyPoint> &vKeysUn2 = pKF2->undistorted_keypoints;
     const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
     const vector<MapPoint*> vpMapPoints2 = pKF2->GetMapPointMatches();
     const cv::Mat &Descriptors2 = pKF2->mDescriptors;
@@ -687,7 +687,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                     if(!bStereo1)
                         continue;
                 
-                const cv::KeyPoint &kp1 = pKF1->mvKeysUn[idx1];
+                const cv::KeyPoint &kp1 = pKF1->undistorted_keypoints[idx1];
                 
                 const cv::Mat &d1 = pKF1->mDescriptors.row(idx1);
                 
@@ -717,7 +717,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                     if(dist>TH_LOW || dist>bestDist)
                         continue;
 
-                    const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
+                    const cv::KeyPoint &kp2 = pKF2->undistorted_keypoints[idx2];
 
                     if(!bStereo1 && !bStereo2)
                     {
@@ -736,7 +736,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                 
                 if(bestIdx2>=0)
                 {
-                    const cv::KeyPoint &kp2 = pKF2->mvKeysUn[bestIdx2];
+                    const cv::KeyPoint &kp2 = pKF2->undistorted_keypoints[bestIdx2];
                     vMatches12[idx1]=bestIdx2;
                     nmatches++;
 
@@ -883,7 +883,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF->undistorted_keypoints[idx];
 
             const int &kpLevel= kp.octave;
 
@@ -1041,7 +1041,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, cv::Mat Scw, const vector<MapPoint *> &vpPoi
         for(vector<size_t>::const_iterator vit=vIndices.begin(); vit!=vIndices.end(); vit++)
         {
             const size_t idx = *vit;
-            const int &kpLevel = pKF->mvKeysUn[idx].octave;
+            const int &kpLevel = pKF->undistorted_keypoints[idx].octave;
 
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
@@ -1186,7 +1186,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF2->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF2->undistorted_keypoints[idx];
 
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
@@ -1266,7 +1266,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF1->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF1->undistorted_keypoints[idx];
 
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
@@ -1545,7 +1545,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 
                     if(mbCheckOrientation)
                     {
-                        float rot = pKF->mvKeysUn[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
+                        float rot = pKF->undistorted_keypoints[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);

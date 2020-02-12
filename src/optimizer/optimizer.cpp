@@ -102,7 +102,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
 
       ++num_edges;
 
-      const cv::KeyPoint& kpUn = keyframe->mvKeysUn[mit->second];
+      const cv::KeyPoint& kpUn = keyframe->undistorted_keypoints[mit->second];
 
       if (keyframe->mvuRight[mit->second] < 0) {
         Eigen::Vector2d obs;
@@ -544,7 +544,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
       if (pKFi->isBad()) {
         continue;
       }
-      const cv::KeyPoint& kpUn = pKFi->mvKeysUn[mit->second];
+      const cv::KeyPoint& kpUn = pKFi->undistorted_keypoints[mit->second];
 
       // Monocular observation
       if(pKFi->mvuRight[mit->second] < 0) {
@@ -1057,7 +1057,7 @@ int Optimizer::OptimizeSim3(KeyFrame* pKF1,
 
     // Set edge x1 = S12*X2
     Eigen::Vector2d obs1;
-    const cv::KeyPoint& kpUn1 = pKF1->mvKeysUn[i];
+    const cv::KeyPoint& kpUn1 = pKF1->undistorted_keypoints[i];
     obs1 << kpUn1.pt.x, kpUn1.pt.y;
 
     g2o::EdgeSim3ProjectXYZ* e12 = new g2o::EdgeSim3ProjectXYZ();
@@ -1074,7 +1074,7 @@ int Optimizer::OptimizeSim3(KeyFrame* pKF1,
 
     // Set edge x2 = S21*X1
     Eigen::Vector2d obs2;
-    const cv::KeyPoint& kpUn2 = pKF2->mvKeysUn[i2];
+    const cv::KeyPoint& kpUn2 = pKF2->undistorted_keypoints[i2];
     obs2 << kpUn2.pt.x, kpUn2.pt.y;
 
     g2o::EdgeInverseSim3ProjectXYZ* e21 = new g2o::EdgeInverseSim3ProjectXYZ();

@@ -341,7 +341,7 @@ void MapPoint::UpdateNormalAndDepth() {
 
   const cv::Mat PC = position - reference_keyframe->GetCameraCenter();
   const float dist = cv::norm(PC);
-  const int level = reference_keyframe->mvKeysUn[observations[reference_keyframe]].octave;
+  const int level = reference_keyframe->undistorted_keypoints[observations[reference_keyframe]].octave;
   const float levelScaleFactor = reference_keyframe->scale_factors[level];
   const int nLevels = reference_keyframe->scale_levels;
 

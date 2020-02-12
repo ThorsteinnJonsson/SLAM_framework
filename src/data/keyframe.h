@@ -147,8 +147,8 @@ public:
   const int num_keyframes;
 
   // KeyPoints, stereo coordinate and descriptors (all associated by an index)
-  const std::vector<cv::KeyPoint> mvKeys;
-  const std::vector<cv::KeyPoint> mvKeysUn;
+  const std::vector<cv::KeyPoint> keypoints;
+  const std::vector<cv::KeyPoint> undistorted_keypoints;
   
   const std::vector<float> mvuRight; // negative value for monocular points
   const std::vector<float> mvDepth; // negative value for monocular points

@@ -335,11 +335,11 @@ void LocalMapper::CreateNewMapPoints() {
       const int idx1 = vMatchedIndices[ikp].first;
       const int idx2 = vMatchedIndices[ikp].second;
 
-      const cv::KeyPoint& kp1 = current_keyframe_->mvKeysUn[idx1];
+      const cv::KeyPoint& kp1 = current_keyframe_->undistorted_keypoints[idx1];
       const float kp1_ur = current_keyframe_->mvuRight[idx1];
       bool bStereo1 = (kp1_ur >= 0);
 
-      const cv::KeyPoint& kp2 = nbor_keyframe->mvKeysUn[idx2];
+      const cv::KeyPoint& kp2 = nbor_keyframe->undistorted_keypoints[idx2];
       const float kp2_ur = nbor_keyframe->mvuRight[idx2];
       bool bStereo2 = (kp2_ur >= 0);
 
@@ -579,7 +579,7 @@ void LocalMapper::KeyFrameCulling() {
 
         ++num_points;
         if (map_point->NumObservations() > obs_threshold) {
-          const int scale_level = keyframe->mvKeysUn[i].octave;
+          const int scale_level = keyframe->undistorted_keypoints[i].octave;
           const std::map<KeyFrame*,size_t> observations = map_point->GetObservations();
           int num_obs = 0;
           for (auto mit = observations.begin(); 
@@ -590,7 +590,7 @@ void LocalMapper::KeyFrameCulling() {
             if (obs_keyframe == keyframe) {
               continue;
             }
-            const int obs_scale_level = obs_keyframe->mvKeysUn[obs_idx].octave;
+            const int obs_scale_level = obs_keyframe->undistorted_keypoints[obs_idx].octave;
 
             if (obs_scale_level <= scale_level + 1) {
               ++num_obs;

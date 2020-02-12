@@ -33,8 +33,8 @@ KeyFrame::KeyFrame(const Frame& frame,
       , mb(frame.GetBaseline())
       , depth_threshold(frame.GetDepthThrehold())
       , num_keyframes(frame.NumKeypoints())
-      , mvKeys(frame.GetKeys())
-      , mvKeysUn(frame.GetUndistortedKeys())
+      , keypoints(frame.GetKeys())
+      , undistorted_keypoints(frame.GetUndistortedKeys())
       , mvuRight(frame.StereoCoordRight())
       , mvDepth(frame.StereoDepth())
       , mDescriptors(frame.GetDescriptors().clone())
@@ -463,7 +463,7 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
     for (int iy = nMinCellY; iy <= nMaxCellY; ++iy) {
       const std::vector<size_t>& vCell = grid_[ix][iy];
       for (size_t j = 0; j < vCell.size(); ++j) {
-        const cv::KeyPoint& kpUn = mvKeysUn[vCell[j]];
+        const cv::KeyPoint& kpUn = undistorted_keypoints[vCell[j]];
         const float distx = kpUn.pt.x - x;
         const float disty = kpUn.pt.y - y;
         if(std::fabs(distx) < r && std::fabs(disty) < r) {
@@ -478,8 +478,8 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
 cv::Mat KeyFrame::UnprojectStereo(int i) {
   const float z = mvDepth[i];
   if (z > 0) {
-    const float u = mvKeys[i].pt.x;
-    const float v = mvKeys[i].pt.y;
+    const float u = keypoints[i].pt.x;
+    const float v = keypoints[i].pt.y;
     const float x = (u - cx) * z * invfx;
     const float y = (v - cy) * z * invfy;
     cv::Mat x3Dc = (cv::Mat_<float>(3,1) << x, y, z);
