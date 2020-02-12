@@ -48,7 +48,7 @@ void LoopCloser::Run() {
 
 void LoopCloser::InsertKeyFrame(KeyFrame* keyframe) {
   std::unique_lock<std::mutex> lock(loop_queue_mutex_);
-  if (keyframe->mnId != 0) {
+  if (keyframe->Id() != 0) {
     loop_keyframe_queue_.push_back(keyframe);
   }
 }
@@ -116,14 +116,14 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long loop_kf_index) {
         for (KeyFrame* pChild : sChilds) {
           if (pChild->bundle_adj_global_for_keyframe_id != loop_kf_index) {
             cv::Mat Tchildc = pChild->GetPose() * Twc;
-            pChild->mTcwGBA = Tchildc * keyframe->mTcwGBA;
+            pChild->Tcw_global_bundle_adj = Tchildc * keyframe->Tcw_global_bundle_adj;
             pChild->bundle_adj_global_for_keyframe_id = loop_kf_index;
           }
           keyframes_to_check.push_back(pChild);
         }
 
-        keyframe->mTcwBefGBA = keyframe->GetPose();
-        keyframe->SetPose(keyframe->mTcwGBA);
+        keyframe->Tcw_before_global_bundle_adj = keyframe->GetPose();
+        keyframe->SetPose(keyframe->Tcw_global_bundle_adj);
         keyframes_to_check.pop_front();
       }
 
@@ -146,8 +146,8 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long loop_kf_index) {
           }
 
           // Map to non-corrected camera
-          cv::Mat Rcw = pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3);
-          cv::Mat tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
+          cv::Mat Rcw = pRefKF->Tcw_before_global_bundle_adj.rowRange(0,3).colRange(0,3);
+          cv::Mat tcw = pRefKF->Tcw_before_global_bundle_adj.rowRange(0,3).col(3);
           cv::Mat Xc = Rcw * pMP->GetWorldPos() + tcw;
 
           // Backproject using corrected camera
@@ -201,7 +201,7 @@ bool LoopCloser::DetectLoop() {
   }
 
   // If the map contains less than 10 KF or less than 10 KF have passed from last loop detection
-  if (current_keyframe_->mnId < last_loop_kf_id_ + 10) {
+  if (current_keyframe_->Id() < last_loop_kf_id_ + 10) {
     keyframe_db_->add(current_keyframe_);
     current_keyframe_->SetErase();
     return false;
@@ -210,13 +210,13 @@ bool LoopCloser::DetectLoop() {
   // Compute reference BoW similarity score
   // This is the lowest score to a connected keyframe in the covisibility graph
   // We will impose loop candidates to have a higher similarity than this
-  const DBoW2::BowVector& current_bow_vec = current_keyframe_->mBowVec;
+  const DBoW2::BowVector& current_bow_vec = current_keyframe_->bow_vec;
   float min_score = 1;
   for (KeyFrame* keyframe : current_keyframe_->GetVectorCovisibleKeyFrames()) {
     if (keyframe->isBad()) {
       continue;
     }
-    const float score = orb_vocabulary_->score(current_bow_vec, keyframe->mBowVec);
+    const float score = orb_vocabulary_->score(current_bow_vec, keyframe->bow_vec);
     min_score = std::min(min_score, score);
   }
 
@@ -430,9 +430,9 @@ bool LoopCloser::ComputeSim3() {
     for (MapPoint* map_point : map_points) {
       if (map_point
           && !map_point->isBad()
-          && map_point->loop_point_for_keyframe_id != current_keyframe_->mnId) {
+          && map_point->loop_point_for_keyframe_id != current_keyframe_->Id()) {
         loop_map_points_.push_back(map_point);
-        map_point->loop_point_for_keyframe_id = current_keyframe_->mnId;
+        map_point->loop_point_for_keyframe_id = current_keyframe_->Id();
       }
     }
   }
@@ -582,7 +582,7 @@ void LoopCloser::CorrectLoop() {
         if(!pMPi || pMPi->isBad()) {
           continue;
         }
-        if(pMPi->corrected_by_keyframe == current_keyframe_->mnId) {
+        if(pMPi->corrected_by_keyframe == current_keyframe_->Id()) {
           continue;
         }
 
@@ -593,8 +593,8 @@ void LoopCloser::CorrectLoop() {
 
         cv::Mat cvCorrectedP3Dw = Converter::toCvMat(eigCorrectedP3Dw);
         pMPi->SetWorldPos(cvCorrectedP3Dw);
-        pMPi->corrected_by_keyframe = current_keyframe_->mnId;
-        pMPi->corrected_reference = keyframe_i->mnId;
+        pMPi->corrected_by_keyframe = current_keyframe_->Id();
+        pMPi->corrected_reference = keyframe_i->Id();
         pMPi->UpdateNormalAndDepth();
       }
 
@@ -687,11 +687,11 @@ void LoopCloser::CorrectLoop() {
   stop_global_bundle_adj_ = false;
   global_bundle_adjustment_thread_.reset(new std::thread(&LoopCloser::RunGlobalBundleAdjustment, 
                                                          this, 
-                                                         current_keyframe_->mnId));
+                                                         current_keyframe_->Id()));
 
   // Loop closed. Release Local Mapping.
   local_mapper_->Release();    
-  last_loop_kf_id_ = current_keyframe_->mnId;   
+  last_loop_kf_id_ = current_keyframe_->Id();   
 }
 
 void LoopCloser::ResetIfRequested() {

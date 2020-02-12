@@ -8,8 +8,8 @@ Map::Map() : max_kf_id_(0)
 void Map::AddKeyFrame(KeyFrame *pKF) {
   std::unique_lock<std::mutex> lock(map_mutex_);
   keyframes_.insert(pKF);
-  if (pKF->mnId > max_kf_id_) {
-    max_kf_id_ = pKF->mnId;
+  if (pKF->Id() > max_kf_id_) {
+    max_kf_id_ = pKF->Id();
   } 
 }
 

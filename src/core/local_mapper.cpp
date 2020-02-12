@@ -232,8 +232,7 @@ void LocalMapper::ProcessNewKeyFrame() {
 void LocalMapper::MapPointCulling() {
   // Check Recent Added MapPoints
   
-  // const int current_keyframe_id = static_cast<int>(current_keyframe_->mnId);
-  const long current_keyframe_id = static_cast<long>(current_keyframe_->mnId);
+  const long current_keyframe_id = static_cast<long>(current_keyframe_->Id());
   const int min_observations_thresh = is_monocular_? 2 : 3;
 
   std::list<MapPoint*>::iterator lit = recently_added_map_points_.begin();
@@ -278,7 +277,7 @@ void LocalMapper::CreateNewMapPoints() {
   const float invfx_cur = current_keyframe_->invfx;
   const float invfy_cur = current_keyframe_->invfy;
 
-  const float ratioFactor = 1.5f * current_keyframe_->mfScaleFactor;
+  const float ratioFactor = 1.5f * current_keyframe_->scale_factor;
 
   // Search matches with epipolar restriction and triangulate
   int num_added_points = 0;
@@ -336,12 +335,12 @@ void LocalMapper::CreateNewMapPoints() {
       const int idx1 = vMatchedIndices[ikp].first;
       const int idx2 = vMatchedIndices[ikp].second;
 
-      const cv::KeyPoint& kp1 = current_keyframe_->mvKeysUn[idx1];
-      const float kp1_ur = current_keyframe_->mvuRight[idx1];
+      const cv::KeyPoint& kp1 = current_keyframe_->undistorted_keypoints[idx1];
+      const float kp1_ur = current_keyframe_->right_coords[idx1];
       bool bStereo1 = (kp1_ur >= 0);
 
-      const cv::KeyPoint& kp2 = nbor_keyframe->mvKeysUn[idx2];
-      const float kp2_ur = nbor_keyframe->mvuRight[idx2];
+      const cv::KeyPoint& kp2 = nbor_keyframe->undistorted_keypoints[idx2];
+      const float kp2_ur = nbor_keyframe->right_coords[idx2];
       bool bStereo2 = (kp2_ur >= 0);
 
       // Check parallax between rays
@@ -361,10 +360,10 @@ void LocalMapper::CreateNewMapPoints() {
 
       if (bStereo1) {
         cosParallaxStereo1 = std::cos(2*std::atan2(current_keyframe_->mb/2,
-                                                   current_keyframe_->mvDepth[idx1]));
+                                                   current_keyframe_->depths[idx1]));
       } else if (bStereo2) {
         cosParallaxStereo2 = std::cos(2*std::atan2(nbor_keyframe->mb/2,
-                                                   nbor_keyframe->mvDepth[idx2]));
+                                                   nbor_keyframe->depths[idx2]));
       }
 
       cosParallaxStereo = std::min(cosParallaxStereo1,cosParallaxStereo2);
@@ -415,7 +414,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       //Check reprojection error in first keyframe
-      const float sigmaSquare1 = current_keyframe_->mvLevelSigma2[kp1.octave];
+      const float sigmaSquare1 = current_keyframe_->level_sigma_sq[kp1.octave];
       const float x1 = rot_current_world.row(0).dot(x3Dt) + T_current_world.at<float>(0,3);
       const float y1 = rot_current_world.row(1).dot(x3Dt) + T_current_world.at<float>(1,3);
 
@@ -436,7 +435,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       //Check reprojection error in second keyframe
-      const float sigma_square_nbor = nbor_keyframe->mvLevelSigma2[kp2.octave];
+      const float sigma_square_nbor = nbor_keyframe->level_sigma_sq[kp2.octave];
       const float x_nbor = rot_nbor_world.row(0).dot(x3Dt) + T_nbor_world.at<float>(0,3);
       const float y_nbor = rot_nbor_world.row(1).dot(x3Dt) + T_nbor_world.at<float>(1,3);
       
@@ -465,7 +464,7 @@ void LocalMapper::CreateNewMapPoints() {
       }
 
       const float dist_ratio = dist2 / dist1;
-      const float ratioOctave = current_keyframe_->mvScaleFactors[kp1.octave] / nbor_keyframe->mvScaleFactors[kp2.octave];
+      const float ratioOctave = current_keyframe_->scale_factors[kp1.octave] / nbor_keyframe->scale_factors[kp2.octave];
 
       if (dist_ratio * ratioFactor < ratioOctave || dist_ratio / ratioFactor > ratioOctave) {
         continue;
@@ -498,17 +497,17 @@ void LocalMapper::SearchInNeighbors() {
   std::vector<KeyFrame*> target_keyframes;
   for (KeyFrame* nbor_keyframe : current_keyframe_->GetBestCovisibilityKeyFrames(num_kf)) {
     if (nbor_keyframe->isBad() 
-        || nbor_keyframe->mnFuseTargetForKF == current_keyframe_->mnId) {
+        || nbor_keyframe->fuse_target_for_kf == current_keyframe_->Id()) {
       continue;
     }
     target_keyframes.push_back(nbor_keyframe);
-    nbor_keyframe->mnFuseTargetForKF = current_keyframe_->mnId;
+    nbor_keyframe->fuse_target_for_kf = current_keyframe_->Id();
 
     // Extend to some second neighbors
     for (KeyFrame* second_nbor : nbor_keyframe->GetBestCovisibilityKeyFrames(5)) {
       if (second_nbor->isBad() || 
-          second_nbor->mnFuseTargetForKF == current_keyframe_->mnId || 
-          second_nbor->mnId == current_keyframe_->mnId) {
+          second_nbor->fuse_target_for_kf == current_keyframe_->Id() || 
+          second_nbor->Id() == current_keyframe_->Id()) {
         continue;
       }
       target_keyframes.push_back(second_nbor);
@@ -530,10 +529,10 @@ void LocalMapper::SearchInNeighbors() {
     for (MapPoint* map_point : target_keyframe->GetMapPointMatches()) {
       if (!map_point
           || map_point->isBad()
-          || map_point->fuse_candidate_id_for_keyframe == current_keyframe_->mnId ) {
+          || map_point->fuse_candidate_id_for_keyframe == current_keyframe_->Id() ) {
         continue;
       }
-      map_point->fuse_candidate_id_for_keyframe = current_keyframe_->mnId;
+      map_point->fuse_candidate_id_for_keyframe = current_keyframe_->Id();
       fuse_candidates.push_back(map_point);
     }
   }
@@ -560,7 +559,7 @@ void LocalMapper::KeyFrameCulling() {
   // in at least other 3 keyframes (in the same or finer scale)
   // We only consider close stereo points
   for (KeyFrame* keyframe : current_keyframe_->GetVectorCovisibleKeyFrames()) {
-    if (keyframe->mnId == 0) {
+    if (keyframe->Id() == 0) {
       continue;
     }
     const std::vector<MapPoint*> map_points = keyframe->GetMapPointMatches();
@@ -572,15 +571,15 @@ void LocalMapper::KeyFrameCulling() {
       MapPoint* map_point = map_points[i];
       if(map_point && !map_point->isBad()) {
         if (!is_monocular_) {
-          if (keyframe->mvDepth[i] > keyframe->mThDepth || 
-              keyframe->mvDepth[i] < 0) {
+          if (keyframe->depths[i] > keyframe->depth_threshold || 
+              keyframe->depths[i] < 0) {
             continue;
           }
         }
 
         ++num_points;
         if (map_point->NumObservations() > obs_threshold) {
-          const int scale_level = keyframe->mvKeysUn[i].octave;
+          const int scale_level = keyframe->undistorted_keypoints[i].octave;
           const std::map<KeyFrame*,size_t> observations = map_point->GetObservations();
           int num_obs = 0;
           for (auto mit = observations.begin(); 
@@ -591,7 +590,7 @@ void LocalMapper::KeyFrameCulling() {
             if (obs_keyframe == keyframe) {
               continue;
             }
-            const int obs_scale_level = obs_keyframe->mvKeysUn[obs_idx].octave;
+            const int obs_scale_level = obs_keyframe->undistorted_keypoints[obs_idx].octave;
 
             if (obs_scale_level <= scale_level + 1) {
               ++num_obs;
@@ -624,8 +623,8 @@ cv::Mat LocalMapper::ComputeFundamentalMatrix(KeyFrame* keyframe1, KeyFrame* key
 
   const cv::Mat t12x = SkewSymmetricMatrix(t12);
 
-  const cv::Mat& K1 = keyframe1->mK;
-  const cv::Mat& K2 = keyframe2->mK;
+  const cv::Mat& K1 = keyframe1->calib_mat;
+  const cv::Mat& K2 = keyframe2->calib_mat;
 
   return K1.t().inv() * t12x * R12 * K2.inv();
 }

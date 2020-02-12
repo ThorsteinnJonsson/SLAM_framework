@@ -123,7 +123,7 @@ cv::Mat SlamSystem::TrackStereo(const cv::Mat& imLeft,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }
@@ -166,7 +166,7 @@ cv::Mat SlamSystem::TrackRGBD(const cv::Mat& im,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }
@@ -208,7 +208,7 @@ cv::Mat SlamSystem::TrackMonocular(const cv::Mat& im,
 
   std::unique_lock<std::mutex> lock2(state_mutex_);
   tracking_state_ = tracker_->GetState();
-  tracked_map_points_ = tracker_->GetCurrentFrame().mvpMapPoints;
+  tracked_map_points_ = tracker_->GetCurrentFrame().GetMapPoints();
   tracked_keypoints_un_ = tracker_->GetCurrentFrame().GetUndistortedKeys();
   return Tcw;
 }
@@ -269,7 +269,7 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
   }
 
   std::vector<KeyFrame*> vpKFs = map_->GetAllKeyFrames();
-  std::sort(vpKFs.begin(), vpKFs.end(), KeyFrame::lId);
+  std::sort(vpKFs.begin(), vpKFs.end(), KeyFrame::LesserId);
 
   // Transform all keyframes so that the first keyframe is at the origin.
   // After a loop closure the first keyframe might not be at the origin.
@@ -294,7 +294,7 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
 
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
     while(pKF->isBad()) {
-      Trw = Trw * pKF->mTcp;
+      Trw = Trw * pKF->Tcp;
       pKF = pKF->GetParent();
     }
 
@@ -317,7 +317,7 @@ void SlamSystem::SaveKeyFrameTrajectory(const std::string& filename) const {
   std::cout << "\nSaving keyframe trajectory to " << filename << " ...\n";
 
   std::vector<KeyFrame*> keyframes = map_->GetAllKeyFrames();
-  std::sort(keyframes.begin(), keyframes.end(), KeyFrame::lId);
+  std::sort(keyframes.begin(), keyframes.end(), KeyFrame::LesserId);
 
   // Transform all keyframes so that the first keyframe is at the origin.
   // After a loop closure the first keyframe might not be at the origin.

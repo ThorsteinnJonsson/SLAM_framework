@@ -36,7 +36,7 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
         const vector<size_t> vIndices =
                 F.GetFeaturesInArea(pMP->track_projected_x,
                                     pMP->track_projected_y,
-                                    r*F.mvScaleFactors[nPredictedLevel],
+                                    r * F.ScaleFactors()[nPredictedLevel],
                                     nPredictedLevel-1,
                                     nPredictedLevel);
 
@@ -56,18 +56,20 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
         {
             const size_t idx = *vit;
 
-            if(F.mvpMapPoints[idx])
-                if(F.mvpMapPoints[idx]->NumObservations()>0)
-                    continue;
+            if (F.GetMapPoint(idx)) {
+              if (F.GetMapPoint(idx)->NumObservations() > 0) {
+                continue;
+              }
+            }
 
             if(F.StereoCoordRight()[idx]>0)
             {
                 const float er = fabs(pMP->track_projected_x_right-F.StereoCoordRight()[idx]);
-                if(er>r*F.mvScaleFactors[nPredictedLevel])
+                if(er>r*F.ScaleFactors()[nPredictedLevel])
                     continue;
             }
 
-            const cv::Mat &d = F.mDescriptors.row(idx);
+            const cv::Mat &d = F.GetDescriptors().row(idx);
 
             const int dist = DescriptorDistance(MPdescriptor,d);
 
@@ -87,12 +89,12 @@ int OrbMatcher::SearchByProjection(Frame &F, const vector<MapPoint*> &vpMapPoint
         }
 
         // Apply ratio to second match (only if best and second are in the same scale level)
-        if(bestDist<=TH_HIGH)
-        {
-            if(bestLevel==bestLevel2 && bestDist>mfNNratio*bestDist2)
-                continue;
+        if (bestDist <= TH_HIGH) {
+            if(bestLevel==bestLevel2 && bestDist>mfNNratio*bestDist2) {
+              continue;
+            }
 
-            F.mvpMapPoints[bestIdx]=pMP;
+            F.SetMapPoint(bestIdx, pMP);
             nmatches++;
         }
     }
@@ -125,7 +127,7 @@ bool OrbMatcher::CheckDistEpipolarLine(const cv::KeyPoint &kp1,const cv::KeyPoin
 
     const float dsqr = num*num/den;
 
-    return dsqr<3.84*pKF2->mvLevelSigma2[kp2.octave];
+    return dsqr<3.84*pKF2->level_sigma_sq[kp2.octave];
 }
 
 int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPointMatches)
@@ -134,7 +136,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 
     vpMapPointMatches = std::vector<MapPoint*>(F.NumKeypoints(),nullptr);
 
-    const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVecKF = pKF->feature_vec;
 
     int nmatches=0;
 
@@ -168,7 +170,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                 if(pMP->isBad())
                     continue;                
 
-                const cv::Mat &dKF= pKF->mDescriptors.row(realIdxKF);
+                const cv::Mat &dKF= pKF->descriptors.row(realIdxKF);
 
                 int bestDist1=256;
                 int bestIdxF =-1 ;
@@ -181,7 +183,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                     if(vpMapPointMatches[realIdxF])
                         continue;
 
-                    const cv::Mat &dF = F.mDescriptors.row(realIdxF);
+                    const cv::Mat &dF = F.GetDescriptors().row(realIdxF);
 
                     const int dist =  DescriptorDistance(dKF,dF);
 
@@ -203,7 +205,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                     {
                         vpMapPointMatches[bestIdxF]=pMP;
 
-                        const cv::KeyPoint &kp = pKF->mvKeysUn[realIdxKF];
+                        const cv::KeyPoint &kp = pKF->undistorted_keypoints[realIdxKF];
 
                         if(mbCheckOrientation)
                         {
@@ -287,7 +289,7 @@ int OrbMatcher::SearchForInitialization(Frame& F1,
       if(vIndices2.empty())
           continue;
 
-      cv::Mat d1 = F1.mDescriptors.row(i1);
+      cv::Mat d1 = F1.GetDescriptors().row(i1);
 
       int bestDist = INT_MAX;
       int bestDist2 = INT_MAX;
@@ -297,7 +299,7 @@ int OrbMatcher::SearchForInitialization(Frame& F1,
       {
           size_t i2 = *vit;
 
-          cv::Mat d2 = F2.mDescriptors.row(i2);
+          cv::Mat d2 = F2.GetDescriptors().row(i2);
 
           int dist = DescriptorDistance(d1,d2);
 
@@ -449,7 +451,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
         int nPredictedLevel = pMP->PredictScale(dist,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th * pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -467,12 +469,12 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
             if(vpMatched[idx])
                 continue;
 
-            const int &kpLevel= pKF->mvKeysUn[idx].octave;
+            const int &kpLevel= pKF->undistorted_keypoints[idx].octave;
 
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -496,15 +498,15 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
 
 int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
 {
-    const vector<cv::KeyPoint> &vKeysUn1 = pKF1->mvKeysUn;
-    const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
+    const vector<cv::KeyPoint> &vKeysUn1 = pKF1->undistorted_keypoints;
+    const DBoW2::FeatureVector &vFeatVec1 = pKF1->feature_vec;
     const vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
-    const cv::Mat &Descriptors1 = pKF1->mDescriptors;
+    const cv::Mat &Descriptors1 = pKF1->descriptors;
 
-    const vector<cv::KeyPoint> &vKeysUn2 = pKF2->mvKeysUn;
-    const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
+    const vector<cv::KeyPoint> &vKeysUn2 = pKF2->undistorted_keypoints;
+    const DBoW2::FeatureVector &vFeatVec2 = pKF2->feature_vec;
     const vector<MapPoint*> vpMapPoints2 = pKF2->GetMapPointMatches();
-    const cv::Mat &Descriptors2 = pKF2->mDescriptors;
+    const cv::Mat &Descriptors2 = pKF2->descriptors;
 
     vpMatches12 = vector<MapPoint*>(vpMapPoints1.size(),static_cast<MapPoint*>(nullptr));
     deque<bool> vbMatched2(vpMapPoints2.size(),false);
@@ -634,8 +636,8 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                                        const cv::Mat& F12,
                                        vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo)
 {    
-    const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
-    const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVec1 = pKF1->feature_vec;
+    const DBoW2::FeatureVector &vFeatVec2 = pKF2->feature_vec;
 
     //Compute epipole in second image
     cv::Mat Cw = pKF1->GetCameraCenter();
@@ -651,8 +653,8 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
     // Compare only ORB that share the same node
 
     int nmatches=0;
-    deque<bool> vbMatched2(pKF2->N,false);
-    vector<int> vMatches12(pKF1->N,-1);
+    deque<bool> vbMatched2(pKF2->num_keyframes,false);
+    vector<int> vMatches12(pKF1->num_keyframes,-1);
 
     vector<int> rotHist[HISTO_LENGTH];
     for(int i=0;i<HISTO_LENGTH;i++)
@@ -679,15 +681,15 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                 if(pMP1)
                     continue;
 
-                const bool bStereo1 = pKF1->mvuRight[idx1]>=0;
+                const bool bStereo1 = pKF1->right_coords[idx1]>=0;
 
                 if(bOnlyStereo)
                     if(!bStereo1)
                         continue;
                 
-                const cv::KeyPoint &kp1 = pKF1->mvKeysUn[idx1];
+                const cv::KeyPoint &kp1 = pKF1->undistorted_keypoints[idx1];
                 
-                const cv::Mat &d1 = pKF1->mDescriptors.row(idx1);
+                const cv::Mat &d1 = pKF1->descriptors.row(idx1);
                 
                 int bestDist = TH_LOW;
                 int bestIdx2 = -1;
@@ -702,26 +704,26 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                     if(vbMatched2[idx2] || pMP2)
                         continue;
 
-                    const bool bStereo2 = pKF2->mvuRight[idx2]>=0;
+                    const bool bStereo2 = pKF2->right_coords[idx2]>=0;
 
                     if(bOnlyStereo)
                         if(!bStereo2)
                             continue;
                     
-                    const cv::Mat &d2 = pKF2->mDescriptors.row(idx2);
+                    const cv::Mat &d2 = pKF2->descriptors.row(idx2);
                     
                     const int dist = DescriptorDistance(d1,d2);
                     
                     if(dist>TH_LOW || dist>bestDist)
                         continue;
 
-                    const cv::KeyPoint &kp2 = pKF2->mvKeysUn[idx2];
+                    const cv::KeyPoint &kp2 = pKF2->undistorted_keypoints[idx2];
 
                     if(!bStereo1 && !bStereo2)
                     {
                         const float distex = ex-kp2.pt.x;
                         const float distey = ey-kp2.pt.y;
-                        if(distex*distex+distey*distey<100*pKF2->mvScaleFactors[kp2.octave])
+                        if(distex*distex+distey*distey<100*pKF2->scale_factors[kp2.octave])
                             continue;
                     }
 
@@ -734,7 +736,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                 
                 if(bestIdx2>=0)
                 {
-                    const cv::KeyPoint &kp2 = pKF2->mvKeysUn[bestIdx2];
+                    const cv::KeyPoint &kp2 = pKF2->undistorted_keypoints[bestIdx2];
                     vMatches12[idx1]=bestIdx2;
                     nmatches++;
 
@@ -864,7 +866,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
         int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -881,25 +883,25 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF->undistorted_keypoints[idx];
 
             const int &kpLevel= kp.octave;
 
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            if(pKF->mvuRight[idx]>=0)
+            if(pKF->right_coords[idx]>=0)
             {
                 // Check reprojection error in stereo
                 const float &kpx = kp.pt.x;
                 const float &kpy = kp.pt.y;
-                const float &kpr = pKF->mvuRight[idx];
+                const float &kpr = pKF->right_coords[idx];
                 const float ex = u-kpx;
                 const float ey = v-kpy;
                 const float er = ur-kpr;
                 const float e2 = ex*ex+ey*ey+er*er;
 
-                if(e2*pKF->mvInvLevelSigma2[kpLevel]>7.8)
+                if(e2*pKF->inv_level_sigma_sq[kpLevel]>7.8)
                     continue;
             }
             else
@@ -910,11 +912,11 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
                 const float ey = v-kpy;
                 const float e2 = ex*ex+ey*ey;
 
-                if(e2*pKF->mvInvLevelSigma2[kpLevel]>5.99)
+                if(e2*pKF->inv_level_sigma_sq[kpLevel]>5.99)
                     continue;
             }
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -1023,7 +1025,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, cv::Mat Scw, const vector<MapPoint *> &vpPoi
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF);
 
         // Search in a radius
-        const float radius = th*pKF->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF->GetFeaturesInArea(u,v,radius);
 
@@ -1039,12 +1041,12 @@ int OrbMatcher::Fuse(KeyFrame *pKF, cv::Mat Scw, const vector<MapPoint *> &vpPoi
         for(vector<size_t>::const_iterator vit=vIndices.begin(); vit!=vIndices.end(); vit++)
         {
             const size_t idx = *vit;
-            const int &kpLevel = pKF->mvKeysUn[idx].octave;
+            const int &kpLevel = pKF->undistorted_keypoints[idx].octave;
 
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             int dist = DescriptorDistance(dMP,dKF);
 
@@ -1168,7 +1170,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF2);
 
         // Search in a radius
-        const float radius = th*pKF2->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF2->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF2->GetFeaturesInArea(u,v,radius);
 
@@ -1184,12 +1186,12 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF2->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF2->undistorted_keypoints[idx];
 
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF2->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF2->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -1248,7 +1250,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         const int nPredictedLevel = pMP->PredictScale(dist3D,pKF1);
 
         // Search in a radius of 2.5*sigma(ScaleLevel)
-        const float radius = th*pKF1->mvScaleFactors[nPredictedLevel];
+        const float radius = th*pKF1->scale_factors[nPredictedLevel];
 
         const vector<size_t> vIndices = pKF1->GetFeaturesInArea(u,v,radius);
 
@@ -1264,12 +1266,12 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
         {
             const size_t idx = *vit;
 
-            const cv::KeyPoint &kp = pKF1->mvKeysUn[idx];
+            const cv::KeyPoint &kp = pKF1->undistorted_keypoints[idx];
 
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF1->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF1->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -1307,8 +1309,10 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
     return nFound;
 }
 
-int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, const float th, const bool bMono)
-{
+int OrbMatcher::SearchByProjection(Frame& CurrentFrame, 
+                                   const Frame& LastFrame, 
+                                   const float th, 
+                                   const bool bMono) {
     int nmatches = 0;
 
     // Rotation Histogram (to check rotation consistency)
@@ -1317,26 +1321,24 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
         rotHist[i].reserve(500);
     const float factor = 1.0f/HISTO_LENGTH;
 
-    const cv::Mat Rcw = CurrentFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tcw = CurrentFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rcw = CurrentFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tcw = CurrentFrame.GetPose().rowRange(0,3).col(3);
 
     const cv::Mat twc = -Rcw.t()*tcw;
 
-    const cv::Mat Rlw = LastFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tlw = LastFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rlw = LastFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tlw = LastFrame.GetPose().rowRange(0,3).col(3);
 
     const cv::Mat tlc = Rlw*twc+tlw;
 
-    const bool bForward = tlc.at<float>(2)>CurrentFrame.mb && !bMono;
-    const bool bBackward = -tlc.at<float>(2)>CurrentFrame.mb && !bMono;
+    const bool bForward = tlc.at<float>(2) > CurrentFrame.GetBaseline() && !bMono;
+    const bool bBackward = -tlc.at<float>(2) > CurrentFrame.GetBaseline() && !bMono;
 
     for (int i = 0; i < LastFrame.NumKeypoints(); ++i) {
-        MapPoint* pMP = LastFrame.mvpMapPoints[i];
+        MapPoint* pMP = LastFrame.GetMapPoint(i);
 
-        if(pMP)
-        {
-            if(!LastFrame.mvbOutlier[i])
-            {
+        if (pMP) {
+            if (!LastFrame.IsOutlier(i)) {
                 // Project
                 cv::Mat x3Dw = pMP->GetWorldPos();
                 cv::Mat x3Dc = Rcw*x3Dw+tcw;
@@ -1348,18 +1350,21 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 if(invzc<0)
                     continue;
 
-                float u = CurrentFrame.fx*xc*invzc+CurrentFrame.cx;
-                float v = CurrentFrame.fy*yc*invzc+CurrentFrame.cy;
+                float u = CurrentFrame.GetFx() * xc * invzc + CurrentFrame.GetCx();
+                float v = CurrentFrame.GetFy() * yc * invzc + CurrentFrame.GetCy();
 
-                if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
-                    continue;
-                if(v<CurrentFrame.mnMinY || v>CurrentFrame.mnMaxY)
-                    continue;
+                if (u < CurrentFrame.GetMinX() || u > CurrentFrame.GetMaxX()) {
+                  continue;
+                }
+
+                if (v < CurrentFrame.GetMinY() || v > CurrentFrame.GetMaxY()) {
+                  continue;
+                }
 
                 int nLastOctave = LastFrame.GetKeys()[i].octave;
 
                 // Search in a window. Size depends on scale
-                float radius = th*CurrentFrame.mvScaleFactors[nLastOctave];
+                float radius = th * CurrentFrame.ScaleFactors()[nLastOctave];
 
                 vector<size_t> vIndices2;
 
@@ -1381,21 +1386,20 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
                 for(std::vector<size_t>::const_iterator vit=vIndices2.begin(), vend=vIndices2.end(); vit!=vend; vit++)
                 {
                     const size_t i2 = *vit;
-                    if(CurrentFrame.mvpMapPoints[i2]) {
-                      if(CurrentFrame.mvpMapPoints[i2]->NumObservations() > 0) {
+                    if(CurrentFrame.GetMapPoint(i2)) {
+                      if(CurrentFrame.GetMapPoint(i2)->NumObservations() > 0) {
                           continue;
                       }
                     }
 
-                    if(CurrentFrame.StereoCoordRight()[i2]>0)
-                    {
-                        const float ur = u - CurrentFrame.mbf*invzc;
+                    if (CurrentFrame.StereoCoordRight()[i2] > 0) {
+                        const float ur = u - CurrentFrame.GetBaselineFx() * invzc;
                         const float er = fabs(ur - CurrentFrame.StereoCoordRight()[i2]);
                         if(er>radius)
                             continue;
                     }
 
-                    const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                    const cv::Mat &d = CurrentFrame.GetDescriptors().row(i2);
 
                     const int dist = DescriptorDistance(dMP,d);
 
@@ -1408,11 +1412,10 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
 
                 if(bestDist<=TH_HIGH)
                 {
-                    CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
-                    nmatches++;
+                    CurrentFrame.SetMapPoint(bestIdx2,pMP);
+                    ++nmatches;
 
-                    if(mbCheckOrientation)
-                    {
+                    if(mbCheckOrientation) {
                         float rot = LastFrame.GetUndistortedKeys()[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
@@ -1436,14 +1439,11 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, const Frame &LastFrame, 
 
         ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
 
-        for(int i=0; i<HISTO_LENGTH; i++)
-        {
-            if(i!=ind1 && i!=ind2 && i!=ind3)
-            {
-                for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
-                {
-                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=static_cast<MapPoint*>(nullptr);
-                    nmatches--;
+        for(int i=0; i<HISTO_LENGTH; i++) {
+            if(i!=ind1 && i!=ind2 && i!=ind3) {
+                for(size_t j=0, jend=rotHist[i].size(); j<jend; j++) {
+                    CurrentFrame.SetMapPoint(rotHist[i][j], nullptr);
+                    --nmatches;
                 }
             }
         }
@@ -1456,8 +1456,8 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 {
     int nmatches = 0;
 
-    const cv::Mat Rcw = CurrentFrame.mTcw.rowRange(0,3).colRange(0,3);
-    const cv::Mat tcw = CurrentFrame.mTcw.rowRange(0,3).col(3);
+    const cv::Mat Rcw = CurrentFrame.GetPose().rowRange(0,3).colRange(0,3);
+    const cv::Mat tcw = CurrentFrame.GetPose().rowRange(0,3).col(3);
     const cv::Mat Ow = -Rcw.t()*tcw;
 
     // Rotation Histogram (to check rotation consistency)
@@ -1484,13 +1484,15 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
                 const float yc = x3Dc.at<float>(1);
                 const float invzc = 1.0/x3Dc.at<float>(2);
 
-                const float u = CurrentFrame.fx*xc*invzc+CurrentFrame.cx;
-                const float v = CurrentFrame.fy*yc*invzc+CurrentFrame.cy;
+                const float u = CurrentFrame.GetFx() * xc * invzc + CurrentFrame.GetCx();
+                const float v = CurrentFrame.GetFy() * yc * invzc + CurrentFrame.GetCy();
 
-                if(u<CurrentFrame.mnMinX || u>CurrentFrame.mnMaxX)
-                    continue;
-                if(v<CurrentFrame.mnMinY || v>CurrentFrame.mnMaxY)
-                    continue;
+                if(u < CurrentFrame.GetMinX() || u > CurrentFrame.GetMaxX()) {
+                  continue;
+                }
+                if(v < CurrentFrame.GetMinY() || v > CurrentFrame.GetMaxY()) {
+                  continue;
+                }
 
                 // Compute predicted scale level
                 cv::Mat PO = x3Dw-Ow;
@@ -1506,7 +1508,7 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
                 int nPredictedLevel = pMP->PredictScale(dist3D,&CurrentFrame);
 
                 // Search in a window
-                const float radius = th*CurrentFrame.mvScaleFactors[nPredictedLevel];
+                const float radius = th * CurrentFrame.ScaleFactors()[nPredictedLevel];
 
                 const vector<size_t> vIndices2 = CurrentFrame.GetFeaturesInArea(u, v, radius, nPredictedLevel-1, nPredictedLevel+1);
 
@@ -1521,10 +1523,11 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
                 for(vector<size_t>::const_iterator vit=vIndices2.begin(); vit!=vIndices2.end(); vit++)
                 {
                     const size_t i2 = *vit;
-                    if(CurrentFrame.mvpMapPoints[i2])
-                        continue;
+                    if (CurrentFrame.GetMapPoint(i2)) {
+                      continue;
+                    }
 
-                    const cv::Mat &d = CurrentFrame.mDescriptors.row(i2);
+                    const cv::Mat &d = CurrentFrame.GetDescriptors().row(i2);
 
                     const int dist = DescriptorDistance(dMP,d);
 
@@ -1537,12 +1540,12 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 
                 if(bestDist<=ORBdist)
                 {
-                    CurrentFrame.mvpMapPoints[bestIdx2]=pMP;
-                    nmatches++;
+                    CurrentFrame.SetMapPoint(bestIdx2, pMP);
+                    ++nmatches;
 
                     if(mbCheckOrientation)
                     {
-                        float rot = pKF->mvKeysUn[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
+                        float rot = pKF->undistorted_keypoints[i].angle-CurrentFrame.GetUndistortedKeys()[bestIdx2].angle;
                         if(rot<0.0)
                             rot+=360.0f;
                         int bin = round(rot*factor);
@@ -1565,14 +1568,11 @@ int OrbMatcher::SearchByProjection(Frame &CurrentFrame, KeyFrame *pKF, const set
 
         ComputeThreeMaxima(rotHist,HISTO_LENGTH,ind1,ind2,ind3);
 
-        for(int i=0; i<HISTO_LENGTH; i++)
-        {
-            if(i!=ind1 && i!=ind2 && i!=ind3)
-            {
-                for(size_t j=0, jend=rotHist[i].size(); j<jend; j++)
-                {
-                    CurrentFrame.mvpMapPoints[rotHist[i][j]]=nullptr;
-                    nmatches--;
+        for (int i=0; i<HISTO_LENGTH; i++) {
+            if (i!=ind1 && i!=ind2 && i!=ind3) {
+                for(size_t j=0, jend=rotHist[i].size(); j<jend; j++) {
+                    CurrentFrame.SetMapPoint(rotHist[i][j], nullptr);
+                    --nmatches;
                 }
             }
         }

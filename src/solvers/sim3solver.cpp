@@ -80,11 +80,11 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1,
             if(indexKF1<0 || indexKF2<0)
                 continue;
 
-            const cv::KeyPoint &kp1 = pKF1->mvKeysUn[indexKF1];
-            const cv::KeyPoint &kp2 = pKF2->mvKeysUn[indexKF2];
+            const cv::KeyPoint &kp1 = pKF1->undistorted_keypoints[indexKF1];
+            const cv::KeyPoint &kp2 = pKF2->undistorted_keypoints[indexKF2];
 
-            const float sigmaSquare1 = pKF1->mvLevelSigma2[kp1.octave];
-            const float sigmaSquare2 = pKF2->mvLevelSigma2[kp2.octave];
+            const float sigmaSquare1 = pKF1->level_sigma_sq[kp1.octave];
+            const float sigmaSquare2 = pKF2->level_sigma_sq[kp2.octave];
 
             mvnMaxError1.push_back(9.210*sigmaSquare1);
             mvnMaxError2.push_back(9.210*sigmaSquare2);
@@ -104,8 +104,8 @@ Sim3Solver::Sim3Solver(KeyFrame *pKF1,
         }
     }
 
-    mK1 = pKF1->mK;
-    mK2 = pKF2->mK;
+    mK1 = pKF1->calib_mat;
+    mK2 = pKF2->calib_mat;
 
     FromCameraToImage(mvX3Dc1,mvP1im1,mK1);
     FromCameraToImage(mvX3Dc2,mvP2im2,mK2);

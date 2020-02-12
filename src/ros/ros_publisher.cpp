@@ -75,7 +75,7 @@ nav_msgs::Path RosPublisher::GetCameraTrajectory() {
   if (keyframes.empty()) {
     return camera_path;
   }
-  std::nth_element(keyframes.begin(), keyframes.begin(), keyframes.end(), KeyFrame::lId);
+  std::nth_element(keyframes.begin(), keyframes.begin(), keyframes.end(), KeyFrame::LesserId);
   cv::Mat T_world_to_origin = keyframes[0]->GetPoseInverse();
 
   auto ref_keyframe_it = tracker_->GetReferenceKeyframes().begin();
@@ -86,7 +86,7 @@ nav_msgs::Path RosPublisher::GetCameraTrajectory() {
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
 
     while (ref_keyframe->isBad()) {
-      Trw = Trw*ref_keyframe->mTcp;
+      Trw = Trw*ref_keyframe->Tcp;
       ref_keyframe = ref_keyframe->GetParent();
     }
 

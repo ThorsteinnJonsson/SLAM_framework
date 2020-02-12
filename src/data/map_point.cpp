@@ -16,8 +16,8 @@ MapPoint::MapPoint(const cv::Mat& position,
       , corrected_by_keyframe(0)
       , corrected_reference(0)
       , bundle_adj_global_for_keyframe_id(0)
-      , first_keyframe_id_(reference_keyframe->mnId)
-      , first_frame_id_(reference_keyframe->mnFrameId)
+      , first_keyframe_id_(reference_keyframe->Id())
+      , first_frame_id_(reference_keyframe->FrameId())
       , num_observations_(0)
       , reference_keyframe_(reference_keyframe)
       , num_visible_(1)
@@ -50,7 +50,7 @@ MapPoint::MapPoint(const cv::Mat& position,
       , corrected_reference(0)
       , bundle_adj_global_for_keyframe_id(0)
       , first_keyframe_id_(-1)
-      , first_frame_id_(frame->mnId)
+      , first_frame_id_(frame->Id())
       , num_observations_(0)
       , reference_keyframe_(nullptr)
       , num_visible_(1)
@@ -66,13 +66,13 @@ MapPoint::MapPoint(const cv::Mat& position,
   const cv::Mat PC = position - Ow;
   const float dist = cv::norm(PC);
   const int level = frame->GetUndistortedKeys()[idxF].octave;
-  const float levelScaleFactor =  frame->mvScaleFactors[level];
-  const int nLevels = frame->mnScaleLevels;
+  const float levelScaleFactor =  frame->ScaleFactors()[level];
+  const int nLevels = frame->GetScaleLevel();
 
   max_dist_ = dist*levelScaleFactor;
-  min_dist_ = max_dist_/frame->mvScaleFactors[nLevels-1];
+  min_dist_ = max_dist_/frame->ScaleFactors()[nLevels-1];
 
-  frame->mDescriptors.row(idxF).copyTo(descriptor_);
+  frame->GetDescriptors().row(idxF).copyTo(descriptor_);
 
   // MapPoints can be created from Tracking and Local Mapping. 
   //This mutex avoid conflicts with ID.
@@ -117,7 +117,7 @@ void MapPoint::AddObservation(KeyFrame* keyframe, size_t idx) {
     return;
   }
   observations_[keyframe] = idx;
-  if (keyframe->mvuRight[idx] >= 0) {
+  if (keyframe->right_coords[idx] >= 0) {
     num_observations_ += 2;
   } else {
     num_observations_ += 1;
@@ -130,7 +130,7 @@ void MapPoint::EraseObservation(KeyFrame* keyframe) {
     std::unique_lock<std::mutex> lock(feature_mutex_);
     if (observations_.count(keyframe)) {
       const int idx = observations_[keyframe];
-      if (keyframe->mvuRight[idx] >= 0) {
+      if (keyframe->right_coords[idx] >= 0) {
         num_observations_ -= 2;
       } else {
         num_observations_ -= 1;            
@@ -264,7 +264,7 @@ void MapPoint::ComputeDistinctiveDescriptors() {
                                              ++mit) {
     KeyFrame* keyframe = mit->first;
     if (!keyframe->isBad()) {
-      descriptors.push_back(keyframe->mDescriptors.row(mit->second));
+      descriptors.push_back(keyframe->descriptors.row(mit->second));
     }      
   }
   if (descriptors.empty()) {
@@ -341,14 +341,14 @@ void MapPoint::UpdateNormalAndDepth() {
 
   const cv::Mat PC = position - reference_keyframe->GetCameraCenter();
   const float dist = cv::norm(PC);
-  const int level = reference_keyframe->mvKeysUn[observations[reference_keyframe]].octave;
-  const float levelScaleFactor = reference_keyframe->mvScaleFactors[level];
-  const int nLevels = reference_keyframe->mnScaleLevels;
+  const int level = reference_keyframe->undistorted_keypoints[observations[reference_keyframe]].octave;
+  const float levelScaleFactor = reference_keyframe->scale_factors[level];
+  const int nLevels = reference_keyframe->scale_levels;
 
   {
     std::unique_lock<std::mutex> lock3(position_mutex_);
     max_dist_ = dist * levelScaleFactor;
-    min_dist_ = max_dist_ / reference_keyframe->mvScaleFactors[nLevels - 1];
+    min_dist_ = max_dist_ / reference_keyframe->scale_factors[nLevels - 1];
     normal_vector_ = normal / n;
   }
 }
@@ -370,11 +370,11 @@ int MapPoint::PredictScale(const float dist, KeyFrame* keyframe) const {
     ratio = max_dist_ / dist;
   }
 
-  int nScale = std::ceil( std::log(ratio) / keyframe->mfLogScaleFactor );
+  int nScale = std::ceil( std::log(ratio) / keyframe->log_scale_factor );
   if (nScale < 0) {
     nScale = 0;
-  } else if (nScale >= keyframe->mnScaleLevels) {
-    nScale = keyframe->mnScaleLevels - 1;
+  } else if (nScale >= keyframe->scale_levels) {
+    nScale = keyframe->scale_levels - 1;
   }
   return nScale;
 }
@@ -386,11 +386,11 @@ int MapPoint::PredictScale(const float dist, Frame* frame) const {
     ratio = max_dist_ / dist;
   }
 
-  int nScale = std::ceil(std::log(ratio) / frame->mfLogScaleFactor);
+  int nScale = std::ceil(std::log(ratio) / frame->GetLogScaleFactor());
   if (nScale < 0) {
     nScale = 0;
-  } else if (nScale >= frame->mnScaleLevels) {
-    nScale = frame->mnScaleLevels - 1;
+  } else if (nScale >= frame->GetScaleLevel()) {
+    nScale = frame->GetScaleLevel() - 1;
   }
   return nScale;
 }
