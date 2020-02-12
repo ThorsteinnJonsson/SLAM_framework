@@ -86,7 +86,7 @@ nav_msgs::Path RosPublisher::GetCameraTrajectory() {
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
 
     while (ref_keyframe->isBad()) {
-      Trw = Trw*ref_keyframe->mTcp;
+      Trw = Trw*ref_keyframe->Tcp;
       ref_keyframe = ref_keyframe->GetParent();
     }
 

@@ -336,11 +336,11 @@ void LocalMapper::CreateNewMapPoints() {
       const int idx2 = vMatchedIndices[ikp].second;
 
       const cv::KeyPoint& kp1 = current_keyframe_->undistorted_keypoints[idx1];
-      const float kp1_ur = current_keyframe_->mvuRight[idx1];
+      const float kp1_ur = current_keyframe_->right_coords[idx1];
       bool bStereo1 = (kp1_ur >= 0);
 
       const cv::KeyPoint& kp2 = nbor_keyframe->undistorted_keypoints[idx2];
-      const float kp2_ur = nbor_keyframe->mvuRight[idx2];
+      const float kp2_ur = nbor_keyframe->right_coords[idx2];
       bool bStereo2 = (kp2_ur >= 0);
 
       // Check parallax between rays
@@ -360,10 +360,10 @@ void LocalMapper::CreateNewMapPoints() {
 
       if (bStereo1) {
         cosParallaxStereo1 = std::cos(2*std::atan2(current_keyframe_->mb/2,
-                                                   current_keyframe_->mvDepth[idx1]));
+                                                   current_keyframe_->depths[idx1]));
       } else if (bStereo2) {
         cosParallaxStereo2 = std::cos(2*std::atan2(nbor_keyframe->mb/2,
-                                                   nbor_keyframe->mvDepth[idx2]));
+                                                   nbor_keyframe->depths[idx2]));
       }
 
       cosParallaxStereo = std::min(cosParallaxStereo1,cosParallaxStereo2);
@@ -571,8 +571,8 @@ void LocalMapper::KeyFrameCulling() {
       MapPoint* map_point = map_points[i];
       if(map_point && !map_point->isBad()) {
         if (!is_monocular_) {
-          if (keyframe->mvDepth[i] > keyframe->depth_threshold || 
-              keyframe->mvDepth[i] < 0) {
+          if (keyframe->depths[i] > keyframe->depth_threshold || 
+              keyframe->depths[i] < 0) {
             continue;
           }
         }

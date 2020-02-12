@@ -136,7 +136,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
 
     vpMapPointMatches = std::vector<MapPoint*>(F.NumKeypoints(),nullptr);
 
-    const DBoW2::FeatureVector &vFeatVecKF = pKF->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVecKF = pKF->feature_vec;
 
     int nmatches=0;
 
@@ -170,7 +170,7 @@ int OrbMatcher::SearchByBoW(KeyFrame* pKF,Frame &F, vector<MapPoint*> &vpMapPoin
                 if(pMP->isBad())
                     continue;                
 
-                const cv::Mat &dKF= pKF->mDescriptors.row(realIdxKF);
+                const cv::Mat &dKF= pKF->descriptors.row(realIdxKF);
 
                 int bestDist1=256;
                 int bestIdxF =-1 ;
@@ -474,7 +474,7 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -499,14 +499,14 @@ int OrbMatcher::SearchByProjection(KeyFrame* pKF, cv::Mat Scw, const vector<MapP
 int OrbMatcher::SearchByBoW(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &vpMatches12)
 {
     const vector<cv::KeyPoint> &vKeysUn1 = pKF1->undistorted_keypoints;
-    const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVec1 = pKF1->feature_vec;
     const vector<MapPoint*> vpMapPoints1 = pKF1->GetMapPointMatches();
-    const cv::Mat &Descriptors1 = pKF1->mDescriptors;
+    const cv::Mat &Descriptors1 = pKF1->descriptors;
 
     const vector<cv::KeyPoint> &vKeysUn2 = pKF2->undistorted_keypoints;
-    const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVec2 = pKF2->feature_vec;
     const vector<MapPoint*> vpMapPoints2 = pKF2->GetMapPointMatches();
-    const cv::Mat &Descriptors2 = pKF2->mDescriptors;
+    const cv::Mat &Descriptors2 = pKF2->descriptors;
 
     vpMatches12 = vector<MapPoint*>(vpMapPoints1.size(),static_cast<MapPoint*>(nullptr));
     deque<bool> vbMatched2(vpMapPoints2.size(),false);
@@ -636,8 +636,8 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                                        const cv::Mat& F12,
                                        vector<pair<size_t, size_t> > &vMatchedPairs, const bool bOnlyStereo)
 {    
-    const DBoW2::FeatureVector &vFeatVec1 = pKF1->mFeatVec;
-    const DBoW2::FeatureVector &vFeatVec2 = pKF2->mFeatVec;
+    const DBoW2::FeatureVector &vFeatVec1 = pKF1->feature_vec;
+    const DBoW2::FeatureVector &vFeatVec2 = pKF2->feature_vec;
 
     //Compute epipole in second image
     cv::Mat Cw = pKF1->GetCameraCenter();
@@ -681,7 +681,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                 if(pMP1)
                     continue;
 
-                const bool bStereo1 = pKF1->mvuRight[idx1]>=0;
+                const bool bStereo1 = pKF1->right_coords[idx1]>=0;
 
                 if(bOnlyStereo)
                     if(!bStereo1)
@@ -689,7 +689,7 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                 
                 const cv::KeyPoint &kp1 = pKF1->undistorted_keypoints[idx1];
                 
-                const cv::Mat &d1 = pKF1->mDescriptors.row(idx1);
+                const cv::Mat &d1 = pKF1->descriptors.row(idx1);
                 
                 int bestDist = TH_LOW;
                 int bestIdx2 = -1;
@@ -704,13 +704,13 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
                     if(vbMatched2[idx2] || pMP2)
                         continue;
 
-                    const bool bStereo2 = pKF2->mvuRight[idx2]>=0;
+                    const bool bStereo2 = pKF2->right_coords[idx2]>=0;
 
                     if(bOnlyStereo)
                         if(!bStereo2)
                             continue;
                     
-                    const cv::Mat &d2 = pKF2->mDescriptors.row(idx2);
+                    const cv::Mat &d2 = pKF2->descriptors.row(idx2);
                     
                     const int dist = DescriptorDistance(d1,d2);
                     
@@ -890,12 +890,12 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            if(pKF->mvuRight[idx]>=0)
+            if(pKF->right_coords[idx]>=0)
             {
                 // Check reprojection error in stereo
                 const float &kpx = kp.pt.x;
                 const float &kpy = kp.pt.y;
-                const float &kpr = pKF->mvuRight[idx];
+                const float &kpr = pKF->right_coords[idx];
                 const float ex = u-kpx;
                 const float ey = v-kpy;
                 const float er = ur-kpr;
@@ -916,7 +916,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, const vector<MapPoint *> &vpMapPoints, const
                     continue;
             }
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -1046,7 +1046,7 @@ int OrbMatcher::Fuse(KeyFrame *pKF, cv::Mat Scw, const vector<MapPoint *> &vpPoi
             if(kpLevel<nPredictedLevel-1 || kpLevel>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF->descriptors.row(idx);
 
             int dist = DescriptorDistance(dMP,dKF);
 
@@ -1191,7 +1191,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF2->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF2->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 
@@ -1271,7 +1271,7 @@ int OrbMatcher::SearchBySim3(KeyFrame* pKF1,
             if(kp.octave<nPredictedLevel-1 || kp.octave>nPredictedLevel)
                 continue;
 
-            const cv::Mat &dKF = pKF1->mDescriptors.row(idx);
+            const cv::Mat &dKF = pKF1->descriptors.row(idx);
 
             const int dist = DescriptorDistance(dMP,dKF);
 

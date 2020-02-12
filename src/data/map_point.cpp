@@ -117,7 +117,7 @@ void MapPoint::AddObservation(KeyFrame* keyframe, size_t idx) {
     return;
   }
   observations_[keyframe] = idx;
-  if (keyframe->mvuRight[idx] >= 0) {
+  if (keyframe->right_coords[idx] >= 0) {
     num_observations_ += 2;
   } else {
     num_observations_ += 1;
@@ -130,7 +130,7 @@ void MapPoint::EraseObservation(KeyFrame* keyframe) {
     std::unique_lock<std::mutex> lock(feature_mutex_);
     if (observations_.count(keyframe)) {
       const int idx = observations_[keyframe];
-      if (keyframe->mvuRight[idx] >= 0) {
+      if (keyframe->right_coords[idx] >= 0) {
         num_observations_ -= 2;
       } else {
         num_observations_ -= 1;            
@@ -264,7 +264,7 @@ void MapPoint::ComputeDistinctiveDescriptors() {
                                              ++mit) {
     KeyFrame* keyframe = mit->first;
     if (!keyframe->isBad()) {
-      descriptors.push_back(keyframe->mDescriptors.row(mit->second));
+      descriptors.push_back(keyframe->descriptors.row(mit->second));
     }      
   }
   if (descriptors.empty()) {

@@ -10,8 +10,8 @@ KeyframeDatabase::KeyframeDatabase (const std::shared_ptr<OrbVocabulary>& voc)
 void KeyframeDatabase::add(KeyFrame* pKF) {
   std::unique_lock<std::mutex> lock(mMutex);
 
-  for (DBoW2::BowVector::const_iterator vit = pKF->mBowVec.begin(); 
-                                        vit != pKF->mBowVec.end(); 
+  for (DBoW2::BowVector::const_iterator vit = pKF->bow_vec.begin(); 
+                                        vit != pKF->bow_vec.end(); 
                                         ++vit) {
     mvInvertedFile[vit->first].push_back(pKF);
   }
@@ -21,8 +21,8 @@ void KeyframeDatabase::erase(KeyFrame* pKF) {
   std::unique_lock<std::mutex> lock(mMutex);
 
   // Erase elements in the Inverse File for the entry
-  for (DBoW2::BowVector::const_iterator vit = pKF->mBowVec.begin(); 
-                                        vit != pKF->mBowVec.end();
+  for (DBoW2::BowVector::const_iterator vit = pKF->bow_vec.begin(); 
+                                        vit != pKF->bow_vec.end();
                                         vit++) 
   {
     // List of keyframes that share the word
@@ -55,8 +55,8 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
   {
     std::unique_lock<std::mutex> lock(mMutex);
 
-    for (DBoW2::BowVector::const_iterator vit = pKF->mBowVec.begin(); 
-                                          vit != pKF->mBowVec.end(); 
+    for (DBoW2::BowVector::const_iterator vit = pKF->bow_vec.begin(); 
+                                          vit != pKF->bow_vec.end(); 
                                           ++vit)
     {
       std::list<KeyFrame*>& lKFs = mvInvertedFile[vit->first];
@@ -105,8 +105,8 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectLoopCandidates(KeyFrame* pKF,
     KeyFrame* pKFi = *lit;
     if (pKFi->mnLoopWords > minCommonWords) {
       ++nscores;
-      pKFi->mLoopScore = mpVoc->score(pKF->mBowVec,
-                                      pKFi->mBowVec);
+      pKFi->mLoopScore = mpVoc->score(pKF->bow_vec,
+                                      pKFi->bow_vec);
       if (pKFi->mLoopScore >= minScore) {
         lScoreAndMatch.push_back(std::make_pair(pKFi->mLoopScore, pKFi));
       }
@@ -232,7 +232,7 @@ std::vector<KeyFrame*> KeyframeDatabase::DetectRelocalizationCandidates(const Fr
     if (pKFi->mnRelocWords > minCommonWords) {
       ++nscores;
       pKFi->mRelocScore = mpVoc->score(frame.GetBowVector(),
-                                       pKFi->mBowVec);
+                                       pKFi->bow_vec);
       lScoreAndMatch.push_back(std::make_pair(pKFi->mRelocScore, pKFi));
     }
   }

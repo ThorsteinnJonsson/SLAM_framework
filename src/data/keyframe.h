@@ -150,16 +150,16 @@ public:
   const std::vector<cv::KeyPoint> keypoints;
   const std::vector<cv::KeyPoint> undistorted_keypoints;
   
-  const std::vector<float> mvuRight; // negative value for monocular points
-  const std::vector<float> mvDepth; // negative value for monocular points
-  const cv::Mat mDescriptors;
+  const std::vector<float> right_coords; // negative value for monocular points
+  const std::vector<float> depths; // negative value for monocular points
+  const cv::Mat descriptors;
 
   //BoW
-  DBoW2::BowVector mBowVec;
-  DBoW2::FeatureVector mFeatVec;
+  DBoW2::BowVector bow_vec;
+  DBoW2::FeatureVector feature_vec;
 
   // Pose relative to parent (this is computed when bad flag is activated)
-  cv::Mat mTcp;
+  cv::Mat Tcp;
 
   // Scale
   const int scale_levels;
@@ -174,8 +174,6 @@ private:
   long unsigned int id_;
   const long unsigned int frame_id_;
   const double timestamp_;
-
-
 
 // The following variables need to be accessed trough a mutex to be thread safe.
 protected:

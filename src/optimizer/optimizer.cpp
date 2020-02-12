@@ -104,7 +104,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
 
       const cv::KeyPoint& kpUn = keyframe->undistorted_keypoints[mit->second];
 
-      if (keyframe->mvuRight[mit->second] < 0) {
+      if (keyframe->right_coords[mit->second] < 0) {
         Eigen::Vector2d obs;
         obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -131,7 +131,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
 
       } else {
         Eigen::Vector3d obs;
-        const float kp_ur = keyframe->mvuRight[mit->second];
+        const float kp_ur = keyframe->right_coords[mit->second];
         obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
         g2o::EdgeStereoSE3ProjectXYZ* e = new g2o::EdgeStereoSE3ProjectXYZ();
@@ -547,7 +547,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
       const cv::KeyPoint& kpUn = pKFi->undistorted_keypoints[mit->second];
 
       // Monocular observation
-      if(pKFi->mvuRight[mit->second] < 0) {
+      if(pKFi->right_coords[mit->second] < 0) {
         Eigen::Vector2d obs;
         obs << kpUn.pt.x, kpUn.pt.y;
 
@@ -574,7 +574,7 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
         vpMapPointEdgeMono.push_back(local_map_point);
       } else { // Stereo observation
         Eigen::Vector3d obs;
-        const float kp_ur = pKFi->mvuRight[mit->second];
+        const float kp_ur = pKFi->right_coords[mit->second];
         obs << kpUn.pt.x, kpUn.pt.y, kp_ur;
 
         g2o::EdgeStereoSE3ProjectXYZ* e = new g2o::EdgeStereoSE3ProjectXYZ();

@@ -35,11 +35,11 @@ KeyFrame::KeyFrame(const Frame& frame,
       , num_keyframes(frame.NumKeypoints())
       , keypoints(frame.GetKeys())
       , undistorted_keypoints(frame.GetUndistortedKeys())
-      , mvuRight(frame.StereoCoordRight())
-      , mvDepth(frame.StereoDepth())
-      , mDescriptors(frame.GetDescriptors().clone())
-      , mBowVec(frame.GetBowVector())
-      , mFeatVec(frame.GetFeatureVector())
+      , right_coords(frame.StereoCoordRight())
+      , depths(frame.StereoDepth())
+      , descriptors(frame.GetDescriptors().clone())
+      , bow_vec(frame.GetBowVector())
+      , feature_vec(frame.GetFeatureVector())
       , scale_levels(frame.GetScaleLevel())
       , scale_factor(frame.GetScaleFactor())
       , log_scale_factor(frame.GetLogScaleFactor())
@@ -125,13 +125,13 @@ cv::Mat KeyFrame::GetTranslation() {
 }
 
 void KeyFrame::ComputeBoW() {
-  if (mBowVec.empty() || mFeatVec.empty()) {
-    std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(mDescriptors);
+  if (bow_vec.empty() || feature_vec.empty()) {
+    std::vector<cv::Mat> vCurrentDesc = Converter::toDescriptorVector(descriptors);
     // Feature vector associates features with nodes in the 4th level (from leaves up)
     // We assume the vocabulary tree has 6 levels, change the 4 otherwise
     orb_vocabulary_->transform(vCurrentDesc,
-                               mBowVec,
-                               mFeatVec,
+                               bow_vec,
+                               feature_vec,
                                4);
   }
 }
@@ -476,7 +476,7 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
 }
 
 cv::Mat KeyFrame::UnprojectStereo(int i) {
-  const float z = mvDepth[i];
+  const float z = depths[i];
   if (z > 0) {
     const float u = keypoints[i].pt.x;
     const float v = keypoints[i].pt.y;
@@ -605,7 +605,7 @@ void KeyFrame::SetBadFlag() {
     }
 
     parent_->EraseChild(this);
-    mTcp = Tcw_ * parent_->GetPoseInverse();
+    Tcp = Tcw_ * parent_->GetPoseInverse();
     bad_ = true;
   }
 

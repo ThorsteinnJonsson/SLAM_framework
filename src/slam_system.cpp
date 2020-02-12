@@ -294,7 +294,7 @@ void SlamSystem::SaveTrajectoryKITTI(const std::string& filename) const {
 
     cv::Mat Trw = cv::Mat::eye(4,4,CV_32F);
     while(pKF->isBad()) {
-      Trw = Trw * pKF->mTcp;
+      Trw = Trw * pKF->Tcp;
       pKF = pKF->GetParent();
     }
 
