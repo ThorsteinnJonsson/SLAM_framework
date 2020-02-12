@@ -21,10 +21,8 @@ float KeyFrame::grid_element_height_;
 KeyFrame::KeyFrame(const Frame& frame, 
                    const std::shared_ptr<Map>& pMap, 
                    const std::shared_ptr<KeyframeDatabase>& pKFDB) 
-      : mnTrackReferenceForFrame(0)
-      , mnFuseTargetForKF(0)
-      , bundle_adj_local_id_for_keyframe(0)
-      , mnBAFixedForKF(0)
+      : bundle_adj_local_id_for_keyframe(0)
+      , bundle_adj_fixed_for_keyframe(0)
       , mnLoopQuery(0)
       , mnLoopWords(0)
       , mnRelocQuery(0)
@@ -33,8 +31,8 @@ KeyFrame::KeyFrame(const Frame& frame,
       , calib_mat(frame.GetCalibMat())
       , mbf(frame.GetBaselineFx())
       , mb(frame.GetBaseline())
-      , mThDepth(frame.GetDepthThrehold())
-      , N(frame.NumKeypoints())
+      , depth_threshold(frame.GetDepthThrehold())
+      , num_keyframes(frame.NumKeypoints())
       , mvKeys(frame.GetKeys())
       , mvKeysUn(frame.GetUndistortedKeys())
       , mvuRight(frame.StereoCoordRight())
@@ -420,7 +418,7 @@ int KeyFrame::TrackedMapPoints(const int minObs) {
 
   int nPoints = 0;
   const bool bCheckObs = minObs > 0;
-  for (int i = 0; i < N; ++i) {
+  for (int i = 0; i < num_keyframes; ++i) {
     MapPoint* pMP = map_points_[i];
     if (pMP && !pMP->isBad()) {
       if (bCheckObs) {
@@ -446,7 +444,7 @@ std::vector<size_t> KeyFrame::GetFeaturesInArea(const float x,
                                                 const float r) const 
 {
   std::vector<size_t> vIndices;
-  vIndices.reserve(N);
+  vIndices.reserve(num_keyframes);
 
   const int nMinCellX = std::max(0,
                                  static_cast<int>(std::floor((x-min_x_-r) / grid_element_width_)));
@@ -631,11 +629,11 @@ float KeyFrame::ComputeSceneMedianDepth(const int q) {
   }
 
   std::vector<float> vDepths;
-  vDepths.reserve(N);
+  vDepths.reserve(num_keyframes);
   cv::Mat Rcw2 = Tcw_.row(2).colRange(0,3);
   Rcw2 = Rcw2.t();
   float zcw = Tcw_.at<float>(2,3);
-  for (int i = 0; i < N; ++i) {
+  for (int i = 0; i < num_keyframes; ++i) {
     if (map_points_[i]) {
       MapPoint* pMP = map_points_[i];
       cv::Mat x3Dw = pMP->GetWorldPos();

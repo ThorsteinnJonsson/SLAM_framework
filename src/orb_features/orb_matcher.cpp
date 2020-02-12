@@ -653,8 +653,8 @@ int OrbMatcher::SearchForTriangulation(KeyFrame *pKF1,
     // Compare only ORB that share the same node
 
     int nmatches=0;
-    deque<bool> vbMatched2(pKF2->N,false);
-    vector<int> vMatches12(pKF1->N,-1);
+    deque<bool> vbMatched2(pKF2->num_keyframes,false);
+    vector<int> vMatches12(pKF1->num_keyframes,-1);
 
     vector<int> rotHist[HISTO_LENGTH];
     for(int i=0;i<HISTO_LENGTH;i++)

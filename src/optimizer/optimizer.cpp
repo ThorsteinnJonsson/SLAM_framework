@@ -181,7 +181,7 @@ void Optimizer::BundleAdjustment(const std::vector<KeyFrame*>& keyframes,
     if (loop_kf_index == 0) {
       keyframe->SetPose(Converter::toCvMat(SE3quat));
     } else {
-      keyframe->mTcwGBA = Converter::toCvMat(SE3quat);
+      keyframe->Tcw_global_bundle_adj = Converter::toCvMat(SE3quat);
       keyframe->bundle_adj_global_for_keyframe_id = loop_kf_index;
     }
   }
@@ -450,8 +450,8 @@ void Optimizer::LocalBundleAdjustment(KeyFrame* pKF,
       KeyFrame* pKFi = mit->first;
 
       if (pKFi->bundle_adj_local_id_for_keyframe != pKF->Id() 
-          && pKFi->mnBAFixedForKF != pKF->Id()) {                
-        pKFi->mnBAFixedForKF=pKF->Id();
+          && pKFi->bundle_adj_fixed_for_keyframe != pKF->Id()) {                
+        pKFi->bundle_adj_fixed_for_keyframe=pKF->Id();
         if(!pKFi->isBad()) {
           fixed_cameras.push_back(pKFi);
         }

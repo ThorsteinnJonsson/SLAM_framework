@@ -103,24 +103,24 @@ public:
   static constexpr int grid_cols = 64;
 
   // Variables used by the tracking
-  long unsigned int mnTrackReferenceForFrame;
-  long unsigned int mnFuseTargetForKF;
+  long unsigned int track_reference_for_frame = 0;
+  long unsigned int fuse_target_for_kf = 0;
 
   // Variables used by the local mapping
-  long unsigned int bundle_adj_local_id_for_keyframe;
-  long unsigned int mnBAFixedForKF;
+  long unsigned int bundle_adj_local_id_for_keyframe = 0;
+  long unsigned int bundle_adj_fixed_for_keyframe = 0;
 
   // Variables used by the keyframe database
-  long unsigned int mnLoopQuery;
-  int mnLoopWords;
+  long unsigned int mnLoopQuery = 0;
+  int mnLoopWords = 0;
   float mLoopScore;
-  long unsigned int mnRelocQuery;
-  int mnRelocWords;
+  long unsigned int mnRelocQuery = 0;
+  int mnRelocWords = 0;
   float mRelocScore;
 
   // Variables used by loop closing
-  cv::Mat mTcwGBA;
-  cv::Mat mTcwBefGBA;
+  cv::Mat Tcw_global_bundle_adj;
+  cv::Mat Tcw_before_global_bundle_adj;
   long unsigned int bundle_adj_global_for_keyframe_id;
 
   // Calibration parameters
@@ -141,10 +141,10 @@ public:
 
   // Threshold close/far points. Close points are inserted from 1 view.
   // Far points are inserted as in the monocular case from 2 views.
-  const float mThDepth;
+  const float depth_threshold;
 
   // Number of KeyPoints
-  const int N;
+  const int num_keyframes;
 
   // KeyPoints, stereo coordinate and descriptors (all associated by an index)
   const std::vector<cv::KeyPoint> mvKeys;

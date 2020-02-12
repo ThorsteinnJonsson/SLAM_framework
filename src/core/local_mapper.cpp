@@ -497,16 +497,16 @@ void LocalMapper::SearchInNeighbors() {
   std::vector<KeyFrame*> target_keyframes;
   for (KeyFrame* nbor_keyframe : current_keyframe_->GetBestCovisibilityKeyFrames(num_kf)) {
     if (nbor_keyframe->isBad() 
-        || nbor_keyframe->mnFuseTargetForKF == current_keyframe_->Id()) {
+        || nbor_keyframe->fuse_target_for_kf == current_keyframe_->Id()) {
       continue;
     }
     target_keyframes.push_back(nbor_keyframe);
-    nbor_keyframe->mnFuseTargetForKF = current_keyframe_->Id();
+    nbor_keyframe->fuse_target_for_kf = current_keyframe_->Id();
 
     // Extend to some second neighbors
     for (KeyFrame* second_nbor : nbor_keyframe->GetBestCovisibilityKeyFrames(5)) {
       if (second_nbor->isBad() || 
-          second_nbor->mnFuseTargetForKF == current_keyframe_->Id() || 
+          second_nbor->fuse_target_for_kf == current_keyframe_->Id() || 
           second_nbor->Id() == current_keyframe_->Id()) {
         continue;
       }
@@ -571,7 +571,7 @@ void LocalMapper::KeyFrameCulling() {
       MapPoint* map_point = map_points[i];
       if(map_point && !map_point->isBad()) {
         if (!is_monocular_) {
-          if (keyframe->mvDepth[i] > keyframe->mThDepth || 
+          if (keyframe->mvDepth[i] > keyframe->depth_threshold || 
               keyframe->mvDepth[i] < 0) {
             continue;
           }

@@ -116,14 +116,14 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long loop_kf_index) {
         for (KeyFrame* pChild : sChilds) {
           if (pChild->bundle_adj_global_for_keyframe_id != loop_kf_index) {
             cv::Mat Tchildc = pChild->GetPose() * Twc;
-            pChild->mTcwGBA = Tchildc * keyframe->mTcwGBA;
+            pChild->Tcw_global_bundle_adj = Tchildc * keyframe->Tcw_global_bundle_adj;
             pChild->bundle_adj_global_for_keyframe_id = loop_kf_index;
           }
           keyframes_to_check.push_back(pChild);
         }
 
-        keyframe->mTcwBefGBA = keyframe->GetPose();
-        keyframe->SetPose(keyframe->mTcwGBA);
+        keyframe->Tcw_before_global_bundle_adj = keyframe->GetPose();
+        keyframe->SetPose(keyframe->Tcw_global_bundle_adj);
         keyframes_to_check.pop_front();
       }
 
@@ -146,8 +146,8 @@ void LoopCloser::RunGlobalBundleAdjustment(unsigned long loop_kf_index) {
           }
 
           // Map to non-corrected camera
-          cv::Mat Rcw = pRefKF->mTcwBefGBA.rowRange(0,3).colRange(0,3);
-          cv::Mat tcw = pRefKF->mTcwBefGBA.rowRange(0,3).col(3);
+          cv::Mat Rcw = pRefKF->Tcw_before_global_bundle_adj.rowRange(0,3).colRange(0,3);
+          cv::Mat tcw = pRefKF->Tcw_before_global_bundle_adj.rowRange(0,3).col(3);
           cv::Mat Xc = Rcw * pMP->GetWorldPos() + tcw;
 
           // Backproject using corrected camera

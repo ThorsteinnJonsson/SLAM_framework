@@ -1073,7 +1073,7 @@ void Tracker::UpdateLocalKeyFrames() {
       }
 
       local_keyframes_.push_back(it->first);
-      pKF->mnTrackReferenceForFrame = current_frame_.Id();
+      pKF->track_reference_for_frame = current_frame_.Id();
   }
 
 
@@ -1097,9 +1097,9 @@ void Tracker::UpdateLocalKeyFrames() {
     {
       KeyFrame* pNeighKF = *itNeighKF;
       if (!pNeighKF->isBad() 
-          && pNeighKF->mnTrackReferenceForFrame != current_frame_.Id()) {
+          && pNeighKF->track_reference_for_frame != current_frame_.Id()) {
         local_keyframes_.push_back(pNeighKF);
-        pNeighKF->mnTrackReferenceForFrame = current_frame_.Id();
+        pNeighKF->track_reference_for_frame = current_frame_.Id();
         break;
       }
     }
@@ -1111,18 +1111,18 @@ void Tracker::UpdateLocalKeyFrames() {
     {
       KeyFrame* pChildKF = *sit;
       if (!pChildKF->isBad() 
-          && pChildKF->mnTrackReferenceForFrame != current_frame_.Id()) {
+          && pChildKF->track_reference_for_frame != current_frame_.Id()) {
         local_keyframes_.push_back(pChildKF);
-        pChildKF->mnTrackReferenceForFrame = current_frame_.Id();
+        pChildKF->track_reference_for_frame = current_frame_.Id();
         break;
       }
     }
 
     KeyFrame* pParent = pKF->GetParent();
     if (pParent
-        && pParent->mnTrackReferenceForFrame != current_frame_.Id()) {
+        && pParent->track_reference_for_frame != current_frame_.Id()) {
       local_keyframes_.push_back(pParent);
-      pParent->mnTrackReferenceForFrame = current_frame_.Id();
+      pParent->track_reference_for_frame = current_frame_.Id();
       break;
     }
   }
